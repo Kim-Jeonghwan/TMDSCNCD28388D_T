@@ -1,0 +1,27 @@
+.metadata/ 
+.theia/ 
+Debug/ 
+Release/ 
+.metadata/ 
+.theia/ 
+Debug/ 
+Release/ 
+.metadata/ 
+.theia/ 
+Debug/ 
+Release/ 
+# Build folders
+**/Debug/
+**/Release/
+**/bin/
+**/obj/
+**/publish/
+
+# Executable files
+*.exebin/ 
+obj/ 
+*.exe 
+.metadata/ 
+.theia/ 
+Debug/ 
+Release/ 

@@ -1,0 +1,63 @@
+/**********************************************************************
+    Nexcom Co., Ltd.
+    Filename         : CSU_IPC.h
+    Description      : CM Core IPC 통신 프로토콜 정의
+    Last Updated     : 2026. 04. 27.
+**********************************************************************/
+
+#ifndef CSU_IPC_H
+#define CSU_IPC_H
+
+#include "main.h"
+
+// IPC 통신용 공용 데이터 구조체 (32비트 정렬 권장)
+typedef struct {
+    uint32_t Command;       // 명령어
+    uint32_t Status;        // 상태 플래그
+    uint32_t Address;       // 메모리 주소 (필요시)
+    uint32_t Payload[16];   // 실제 데이터 배열
+} stIpcDataPacket;
+
+// Message RAM 정의 (F2838x 하드웨어 매핑)
+// CPU1 -> CM: 0x39000 (CPU1 View) == 0x20080000 (CM View)
+// CM -> CPU1: 0x38000 (CPU1 View) == 0x20082000 (CM View)
+#define IPC_CPU1_TO_CM_MSGRAM_ADDR    0x39000U
+#define IPC_CM_TO_CPU1_MSGRAM_ADDR    0x38000U
+
+// 1. GSRAM 주소 정의 (F2838x 정적 매핑)
+#define GS0_CPU_START_ADDR    0x0000D000U  // C28x GS0 Start
+#define GS0_CM_START_ADDR     0x20014000U  // CM GS0 Start
+#define GS1_CPU_START_ADDR    0x0000E000U  // C28x GS1 Start
+#define GS1_CM_START_ADDR     0x20016000U  // CM GS1 Start
+
+// 2. 주소 변환 매크로 (CM Byte Addr <-> CPU Word Addr)
+#define CONVERT_CM_TO_CPU_ADDR(cm_addr)  (GS0_CPU_START_ADDR + (((cm_addr) - GS0_CM_START_ADDR) >> 1))
+#define CONVERT_CPU_TO_CM_ADDR(cpu_addr) (GS0_CM_START_ADDR + (((cpu_addr) - GS0_CPU_START_ADDR) << 1))
+
+// IPC 명령어 정의
+
+extern volatile stIpcDataPacket *pxIpcCpu1ToCm;
+extern volatile stIpcDataPacket *pxIpcCmToCpu1;
+
+typedef struct {
+    uint16_t Command;
+    uint32_t Address;
+    uint32_t Data;
+} stRcvIpcMsg;
+
+typedef struct {
+    uint16_t Command;
+    uint32_t Address;
+    uint32_t Data;
+} stXmtIpcMsg;
+
+extern stRcvIpcMsg xRcvIpcCmMsg;
+extern stXmtIpcMsg xXmtIpcCmMsg;
+
+// CM으로부터 수신된 IPC 메시지 처리
+void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data);
+
+// CM으로 메시지 전송
+void sendIpcCmMessage1(void);
+
+#endif // CSU_IPC_H
