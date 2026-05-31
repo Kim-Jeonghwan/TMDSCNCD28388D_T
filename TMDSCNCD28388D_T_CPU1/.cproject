@@ -88,7 +88,7 @@
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry excluding="SDK/headers/cmd/f2838x_headers_nonBIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu1.cmd|SDK/common/cmd/flash_programming_cpu2_RAM_2838.cmd|SDK/common/cmd/flash_programming_cpu1tocpu2_RAM_2838.cmd|SDK/common/cmd/flash_programming_cpu1tocm_RAM_2838.cmd|SDK/common/cmd/2838x_RAM_SGEN_lnk_cpu1.cmd|SDK/common/cmd/2838x_RAM_SDFM_lnk_cpu1.cmd|SDK/common/cmd/2838x_RAM_SDFM_CLA_lnk_cpu2.cmd|SDK/common/cmd/2838x_RAM_SDFM_CLA_lnk_cpu1.cmd|SDK/common/cmd/2838x_RAM_lnk_shared_cpu2.cmd|SDK/common/cmd/2838x_RAM_lnk_shared_cpu1.cmd|SDK/common/cmd/2838x_RAM_lnk_SHA_combined.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu2.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu1.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu1_far.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu1_exfat.cmd|SDK/common/cmd/2838x_RAM_IQMATH_lnk_cpu1.cmd|SDK/common/cmd/2838x_RAM_combined_lnk_cpu1.cmd|SDK/common/cmd/2838x_RAM_combined_lnk_cpu1_far.cmd|SDK/common/cmd/2838x_RAM_CLA_lnk_cpu2.cmd|SDK/common/cmd/2838x_RAM_CLA_lnk_cpu1.cmd|SDK/common/cmd/2838x_math_fpufastrts_f64.cmd|SDK/common/cmd/2838x_math_fpufastrts_f32.cmd|SDK/common/cmd/2838x_lnk_DCSM_cpu1.cmd|SDK/common/cmd/2838x_FLASH_SGEN_lnk_cpu1.cmd|SDK/common/cmd/2838x_FLASH_SDFM_CLA_lnk_cpu2.cmd|SDK/common/cmd/2838x_FLASH_SDFM_CLA_lnk_cpu1.cmd|SDK/common/cmd/2838x_FLASH_lnk_shared_cpu2.cmd|SDK/common/cmd/2838x_FLASH_lnk_shared_cpu1.cmd|SDK/common/cmd/2838x_FLASH_lnk_crc_cpu1.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu2.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu1_far.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu1_exfat.cmd|SDK/common/cmd/2838x_FLASH_IQMATH_lnk_cpu1.cmd|SDK/common/cmd/2838x_FLASH_CLA_lnk_cpu2.cmd|SDK/common/cmd/2838x_FLASH_CLA_lnk_cpu1.cmd|SDK/common/cmd/2838x_flash_api_lnk.cmd|SDK/common/cmd/2838x_erad_ram_lnk_cpu1.cmd|SDK/common/cmd/2838x_erad_flash_lnk_cpu1.cmd|SDK/common/cmd/2838x_dsp_fpu_vector.cmd|SDK/common/cmd/2838x_dsp_fpu_rfft.cmd|SDK/common/cmd/2838x_dsp_fpu_iir_filter.cmd|SDK/common/cmd/2838x_dsp_fpu_fir_filter.cmd|SDK/common/cmd/2838x_dsp_fpu_fft.cmd|SDK/common/source/f2838x_swprioritizedpievect.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="SDK/headers/cmd/f2838x_headers_nonBIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu1.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu2.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu1.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu2.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>
@@ -180,7 +180,7 @@
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="SDK/headers/cmd/f2838x_headers_BIOS_cpu1.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_nonBIOS_cpu2.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu2.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu1.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu2.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>

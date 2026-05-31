@@ -160,12 +160,13 @@
                                     <listOptionValue value="${COM_TI_C2000WARE_LIBRARIES}"/>
                                     <listOptionValue value="libc.a"/>
                                 </option>
+                                <option id="com.ti.ccstudio.buildDefinitions.TMS470_20.2.linkerID.DIAG_WARNING.1362082600" superClass="com.ti.ccstudio.buildDefinitions.TMS470_20.2.linkerID.DIAG_WARNING" valueType="stringList"/>
                             </tool>
                             <tool id="com.ti.ccstudio.buildDefinitions.TMS470_20.2.hex.1859625771" name="Arm Hex Utility" superClass="com.ti.ccstudio.buildDefinitions.TMS470_20.2.hex"/>
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="SDK/common/cmd/2838x_flash_api_lnk_cm.cmd|SDK/common/cmd/2838x_FLASH_combined_sxram_lnk_cm.cmd|SDK/common/cmd/2838x_FLASH_lnk_shared_cm.cmd|SDK/common/cmd/2838x_FLASH_secure_boot_lnk_cm.cmd|SDK/common/cmd/2838x_RAM_combined_lnk_cm.cmd|SDK/common/cmd/F2838x_RAM_sci_flash_kernel_cm.cmd|SDK/common/cmd/2838x_RAM_lnk_cm.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>
