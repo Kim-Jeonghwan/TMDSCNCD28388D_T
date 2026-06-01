@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Collections.Generic;
 
-namespace TR28386_T_PC
+namespace TMDSCNCD28388D_T_PC
 {
     public class CanProtocol : IProtocol
     {
@@ -18,7 +18,6 @@ namespace TR28386_T_PC
         public event Action<byte[]> OnRawTx;
         public event Action<byte[]> OnRawRx;
 
-        private byte _incNumber = 0;
         private string _rxBuffer = "";
 
         public bool IsConnected => _serialPort != null && _serialPort.IsOpen;
@@ -27,18 +26,15 @@ namespace TR28386_T_PC
         {
             if (IsConnected) Disconnect();
 
-            // ASCII 모드에서는 시리얼 포트를 사용합니다.
             _serialPort = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
             _serialPort.Open();
 
-            // CAN 컨버터 초기화 (가장 단순한 버전으로 원복)
-            _serialPort.Write("S8\r"); // 1Mbps 설정
+            _serialPort.Write("S8\r"); 
             Thread.Sleep(300);
             
-            _serialPort.Write("O\r");  // 채널 열기
+            _serialPort.Write("O\r");  
             Thread.Sleep(300);
 
-            // 보낸 명령어 로그 출력
             OnRawTx?.Invoke(Encoding.ASCII.GetBytes("S8\r"));
             OnRawTx?.Invoke(Encoding.ASCII.GetBytes("O\r"));
 
@@ -66,7 +62,6 @@ namespace TR28386_T_PC
 
         public void ReInit()
         {
-            _incNumber = 0;
             _rxBuffer = "";
         }
 
@@ -76,14 +71,10 @@ namespace TR28386_T_PC
 
             try
             {
-                byte ledBits = 0;
-                for (int i = 0; i < 8; i++) if (ctrlDto.LEDs[i]) ledBits |= (byte)(1 << i);
-
                 // ASCII Packet: e[ID:8][DLC:1][DATA:DLC*2]\r
                 StringBuilder sb = new StringBuilder();
-                sb.Append("e18FF30AD2"); // Extended, ID 18FF30AD, DLC 2
-                sb.Append(_incNumber.ToString("X2"));
-                sb.Append(ledBits.ToString("X2"));
+                sb.Append("e18FF30AD1"); // Extended, ID 18FF30AD, DLC 1
+                sb.Append(ctrlDto.ManualSeqNum.ToString("X2"));
                 sb.Append("\r");
 
                 string packet = sb.ToString();
@@ -91,7 +82,6 @@ namespace TR28386_T_PC
                 _serialPort.Write(txBytes, 0, txBytes.Length);
 
                 OnRawTx?.Invoke(txBytes);
-                _incNumber++;
             }
             catch (Exception ex)
             {
@@ -145,7 +135,7 @@ namespace TR28386_T_PC
 
         private void ProcessCanPacket(string idStr, string hexData)
         {
-            if (hexData.Length < 4) return;
+            if (hexData.Length < 2) return;
 
             try
             {
@@ -159,9 +149,10 @@ namespace TR28386_T_PC
                 if (idStr == "15555555")
                 {
                     _lastStatus.IncNumber = data[0];
-                    byte statusBits = data[1];
-                    _lastStatus.Tact01 = (statusBits & 0x01) != 0;
-                    _lastStatus.Tact02 = (statusBits & 0x02) != 0;
+                    if (data.Length >= 2)
+                    {
+                        _lastStatus.Status = data[1];
+                    }
                 }
 
                 OnStatusReceived?.Invoke(_lastStatus);

@@ -1,0 +1,38 @@
+﻿
+C:\Users\Kim Jeonghwan\.gemini\antigravity-ide\brain\f35ccd0b-ac47-4238-9299-6a5959bd51bd\.system_generated\logs\transc
+ript.jsonl:887:{"step_index":891,"source":"MODEL","type":"VIEW_FILE","status":"DONE","created_at":"2026-06-01T06:18:03Z
+","content":"Created At: 2026-06-01T06:18:03Z\nCompleted At: 2026-06-01T06:18:03Z\nFile Path: `file:///d:/Nexcom/Firmwa
+re/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/CSU/CSU_SCI_PC.h`\nTotal Lines: 79\nTot
+al Bytes: 3248\nShowing lines 1 to 79\nThe following code has been modified to include a line number before every line,
+ in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove 
+the line number, colon, and leading space.\n1: /**********************************************************************\
+r\n2:     Nexcom Co., Ltd.\r\n3:     Filename         : CSU_SCI_PC.h\r\n4:     Description      : PC Interface Communic
+ation (SCI_PC) Protocol Definition\r\n5:     Last Updated     : 2026. 06. 01. (제어 명령 비트필드명 Reserved1~8 교정 및 주석 정리)\r\n6
+: **********************************************************************/\r\n7: \r\n8: #ifndef CSU_SCI_PC_H\r\n9: #defi
+ne CSU_SCI_PC_H\r\n10: \r\n11: /* ************************** [[   include  ]]  ****************************************
+******************* */\r\n12: #include \"main.h\"\r\n13: \r\n14: /* ************************** [[   define   ]]  ******
+***************************************************** */\r\n15: /* 통신 패킷 관련 상수는 CSU_SCI_PC.c에 정의됨 (SOF: 0x7E, EOT: 0x0D
+, ID: 0x10) */\r\n16: \r\n17: /* ************************** [[   enum or struct   ]]  *********************************
+****************** */\r\n18: \r\n19: /**\r\n20:  * @brief PC로부터 수신되는 제어 명령 공용체 구조체 (ID: 0x10, 데이터 영역: 총 2 Bytes = 16비트 
+= 1 Word)\r\n21:  * @details 하위 8비트는 IncNumber, 상위 8비트는 Reserved1~8 비트필드로 구성되어 단 1 Word 내에 완벽하게 안착합니다.\r\n22:  */\r\n23
+: typedef union {\r\n24:     uint16_t all;\r\n25:     struct {\r\n26:         /* --- 하위 8비트: Sequence Number (Byte 3) -
+-- */\r\n27:         uint16_t          IncNumber:8u;   \r\n28:         \r\n29:         /* --- 상위 8비트: 제어 명령 비트필드 (Byte 
+4, Reserved1~8) --- \n<truncated 42 bytes>\n1:1u;   // Bit 8: Reserved 1\r\n31:         bool              Reserved2:1u;
+   // Bit 9: Reserved 2\r\n32:         bool              Reserved3:1u;   // Bit 10: Reserved 3\r\n33:         bool     
+         Reserved4:1u;   // Bit 11: Reserved 4\r\n34:         bool              Reserved5:1u;   // Bit 12: Reserved 5\r
+\n35:         bool              Reserved6:1u;   // Bit 13: Reserved 6\r\n36:         bool              Reserved7:1u;   
+// Bit 14: Reserved 7\r\n37:         bool              Reserved8:1u;   // Bit 15: Reserved 8\r\n38:     } bit;\r\n39: }
+ stRcvSciPcMsg1;\r\n40: \r\n41: /**\r\n42:  * @brief MCU에서 PC로 송신하는 상태 보고 구조체 (ID: 0x10, 데이터 영역: 4 Bytes)\r\n43:  */\r\
+n44: typedef struct\r\n45: {\r\n46:     /* --- 1. Sequence Number (1 byte) --- */\r\n47:     uint16_t          IncNumbe
+r:8u;   // Byte 3: Sequence Number (0~255)\r\n48:     \r\n49:     /* --- 2. 상태 및 에러 플래그 (Status - 1 byte) --- */\r\n50:
+     uint16_t          Status:8u;      // Byte 4: MCU 상태 필드 (개별 bit 제어)\r\n51: \r\n52:     /* --- 3. 데이터 필드 (DspTemp - 
+2 bytes) --- */\r\n53:     int16_t           DspTemp;        // Byte 5~6: DSP 정션 온도 (소수점 한자리 표현용 ×10 스케일링 값)\r\n54: } s
+tXmtSciPcMsg1;\r\n55: \r\n56: \r\n57: \r\n58: /* ************************** [[   global   ]]  *************************
+********************************** */\r\n59: extern stRcvSciPcMsg1 xRcvSciPcMsg1;\r\n60: extern stXmtSciPcMsg1\txXmtSci
+PcMsg1;\r\n61: \r\n62: \r\n63: \r\n64: /* ************************** [[  function  ]]  ********************************
+*************************** */\r\n65: /**\r\n66:  * @brief PC로부터 수신된 SCI_PC 메시지를 해석하여 구조체에 저장\r\n67:  */\r\n68: void re
+cvSciPcMessage(uint16_t ID, uint16_t Data[]);\r\n69: \r\n70: /**\r\n71:  * @brief 현재 시스템 상태 및 엔코더 데이터를 PC로 송신 (10ms 주기)
+\r\n72:  */\r\n73: void sendSciPcMessage1(void);\r\n74: \r\n75: \r\n76: \r\n77: #endif\t// #ifndef CSU_SCI_PC_H\r\n78: 
+\r\n79: \nThe above content shows the entire, complete file contents of the requested file.\n"}
+
+

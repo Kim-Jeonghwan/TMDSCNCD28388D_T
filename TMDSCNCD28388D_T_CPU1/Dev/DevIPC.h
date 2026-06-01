@@ -13,6 +13,6 @@
 // Function Prototypes
 void Initial_IPC_Mastership(void);
 void Initial_IPC(void);
-void sendIpcMessageToCM(uint32_t command, uint32_t addr, uint32_t data);
+
 
 #endif // DEV_IPC_H

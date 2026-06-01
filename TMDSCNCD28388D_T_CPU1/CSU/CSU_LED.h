@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_LED.h
     Description      : System Status LED Control (Green / Orange)
-    Last Updated     : 2026. 01. 30.
+    Last Updated     : 2026. 06. 01. (GPIO LED 정의 추가)
 **********************************************************************/
 
 #ifndef CSU_LED_H
@@ -20,18 +20,20 @@
 #define LED_NONE	false
 #define LED_TOGGLE	true
 
-/* POWERON 상태 표시용 LED(GPIO 31)*/
-#define GPIO_LED_POWERON     31u
+/* POWERON 상태 표시용 LED(GPIO 145)*/
+#define GPIO_LED_POWERON     145u
+/* ERROR 상태 표시용 LED(GPIO 146)*/
+#define GPIO_LED_ERROR       146u
 
-/* 배열 LED (GPIO 32~39) */
-#define GPIO_LED_01          32u // 
-#define GPIO_LED_02          33u // 
-#define GPIO_LED_03          34u // 
-#define GPIO_LED_04          35u // 
-#define GPIO_LED_05          36u // 
-#define GPIO_LED_06          37u // 
-#define GPIO_LED_07          38u // 
-#define GPIO_LED_08          39u //  
+/* 배열 LED */
+#define GPIO_LED_01          31u 
+#define GPIO_LED_02          32u 
+#define GPIO_LED_03          33u 
+#define GPIO_LED_04          34u 
+#define GPIO_LED_05          35u 
+#define GPIO_LED_06          36u 
+#define GPIO_LED_07          37u 
+#define GPIO_LED_08          38u
 
 /* ************************** [[   enum or struct   ]]  **************************************************** */
 
@@ -40,15 +42,16 @@
  */
 typedef enum
 {
-	eLED_POWERON			    = 31u,
-	eLED_01					    = 32u,
-    eLED_02                     = 33u,
-	eLED_03				    	= 34u,
-    eLED_04                     = 35u,
-    eLED_05                     = 36u,
-    eLED_06				    	= 37u,
-	eLED_07				    	= 38u,
-	eLED_08				    	= 39u
+	eLED_RUN			        = 145u,
+	eLED_ERROR				    = 146u,
+    eLED_01                     = 31u,
+	eLED_02				    	= 32u,
+    eLED_03                     = 33u,
+    eLED_04                     = 34u,
+    eLED_05				    	= 35u,
+	eLED_06				    	= 36u,
+	eLED_07				    	= 37u,
+	eLED_08				    	= 38u
 
 }eLed;
 
@@ -70,12 +73,13 @@ typedef struct
  */
 typedef struct
 {
-	stLed	ledPowerOn;
-	stLed	led01;
-    stLed   led02;
-    stLed	led03;    
-    stLed	led04;
-    stLed   led05;
+	stLed	ledRun;
+	stLed	ledError;
+    stLed   led01;
+    stLed	led02;    
+    stLed	led03;
+    stLed   led04;
+    stLed	led05;
     stLed	led06;
     stLed	led07;
     stLed	led08;

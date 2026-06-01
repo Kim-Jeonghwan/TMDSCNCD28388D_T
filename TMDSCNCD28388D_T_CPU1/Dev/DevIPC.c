@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevIPC.c
     Description      : CM Core IPC Device Driver 및 공유 메모리 설정
-    Last Updated     : 2026. 05. 29. (정적 시험 기준 준수 및 함수 주석 보강)
+    Last Updated     : 2026. 06. 01. (정적 시험 준수 및 미사용 변수 제거)
 **********************************************************************/
 
 #include "DevIPC.h"
@@ -44,8 +44,8 @@ void Initial_IPC(void)
     // CM으로부터 수신받을 인터럽트 등록 (IPC0)
     IPC_registerInterrupt(IPC_CPU1_L_CM_R, IPC_INT0, isrIpcFromCM);
 
-    // CM 코어와 동기화 수행
-    IPC_sync(IPC_CPU1_L_CM_R, IPC_FLAG31);
+    // CM 코어와 동기화 수행 (CM 코어 코드 미로드 시 대기 방지를 위해 임시 주석 처리)
+    // IPC_sync(IPC_CPU1_L_CM_R, IPC_FLAG31);
 }
 
 /*
@@ -58,43 +58,5 @@ void Initial_IPC(void)
 */
 static __interrupt void isrIpcFromCM(void)
 {
-    uint32_t command, addr, data;
-    bool status;
-
-    // 명령 읽기
-    status = IPC_readCommand(IPC_CPU1_L_CM_R, IPC_FLAG0, IPC_ADDR_CORRECTION_DISABLE, &command, &addr, &data);
-
-    if(status == true)
-    {
-        // CSU_IPC에서 메시지 처리 실행
-        recvIpcCmMessage(command, addr, data);
-
-        // 플래그 승인(Acknowledge) 처리
-        IPC_ackFlagRtoL(IPC_CPU1_L_CM_R, IPC_FLAG0);
-    }
-
-    // IPC용 PIE ACK 클리어 (CM-to-CPU IPC0은 Group 11에 속함)
     Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP11);
-}
-
-/*
-@funtion    void sendIpcMessageToCM(uint32_t command, uint32_t addr, uint32_t data)
-@brief      CM 코어로 IPC 명령 및 데이터 패킷 전송
-@param      uint32_t command: 전송할 명령어 코드
-@param      uint32_t addr: 전송 주소 또는 보조 데이터
-@param      uint32_t data: 전송할 일반 데이터
-@return     void
-@remark
-    - 이전 전송이 완료되어 플래그가 클리어될 때까지 대기한 후 신규 명령 패킷을 송출합니다.
-*/
-void sendIpcMessageToCM(uint32_t command, uint32_t addr, uint32_t data)
-{
-    // IPC 송신 플래그가 해제될 때까지 대기
-    while(IPC_isFlagBusyLtoR(IPC_CPU1_L_CM_R, IPC_FLAG1) == true)
-    {
-        // 대기 (아무 작업도 하지 않음)
-    }
-
-    // 명령 전송 실행
-    IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, command, addr, data);
 }

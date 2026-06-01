@@ -27,10 +27,7 @@
  */
 void Initial_Epwm7a(void);
 
-/**
- * @brief IPC 메시지에 따른 EPWM7A 상태 및 주파수, Duty 업데이트
- */
-void updateEpwm7aStatus(void);
+
 
 
 #endif // CSU_EPWM_H

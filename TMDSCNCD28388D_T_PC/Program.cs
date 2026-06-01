@@ -1,4 +1,4 @@
-namespace TR28386_T_PC;
+namespace TMDSCNCD28388D_T_PC;
 
 static class Program
 {

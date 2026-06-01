@@ -113,8 +113,6 @@ static void Initial_GPIO(void)
 */
 static void Init_GpioDin(void)
 {
-    initGpioDinTact();
-
     // GPIO 1: 입력 설정 (GND 체크용)
     GPIO_setPinConfig(GPIO_1_GPIO1);
     GPIO_setPadConfig(1, GPIO_PIN_TYPE_PULLUP);
@@ -193,9 +191,6 @@ static void initSystemPwm(void)
 static void initSystemUserInterface(void)
 {
 	Initial_LED();
-	Init_Eqep1Gpio();
-	Init_Eqep1();
-	Initial_Tact();
 }
 
 /*
@@ -209,8 +204,6 @@ static void initSystemCommunications(void)
 	Initial_SPI();
 	Initial_SCI();
 	Initial_TIMER();
-	EEPROM_Init();
-	Initial_CAN();
 	Initial_IPC();
 }
 

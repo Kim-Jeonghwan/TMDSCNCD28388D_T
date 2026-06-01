@@ -1,41 +1,21 @@
 using System;
 using System.IO.Ports;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
-namespace TR28386_T_PC
+namespace TMDSCNCD28388D_T_PC
 {
     public class StatusMessageData
     {
-        public bool Tact01 { get; set; }
-        public bool Tact02 { get; set; }
-        public bool EthLoop1 { get; set; }
-        public bool EthLoop2 { get; set; }
-        public double EncoderAngle { get; set; }
-        public ushort EncoderRawPD { get; set; }
-        public byte EepromReadVal { get; set; }
-        public double PWMRaw { get; set; }
-        public double PWMRCLPF { get; set; }
-        public double PWMBWLPF { get; set; }
-        public double PotenRAW { get; set; }
-        public double PotenMAVE { get; set; }
         public byte IncNumber { get; set; }
+        public byte Status { get; set; }
+        public double DspTemp { get; set; }
         public bool IsCommError { get; set; }
     }
 
     public class ControlMessageData
     {
-        public bool[] LEDs { get; set; } = new bool[8];
-        public bool EepWrite { get; set; }
-        public bool EepRead { get; set; }
-        public bool Epwm7aEn { get; set; }
-        public bool LoopbackTest { get; set; }
-
-        public ushort EepAddr { get; set; }
-        public byte EepromWriteVal { get; set; }
-        public byte Epwm7aDuty { get; set; }
-        public byte Epwm7aFreq { get; set; }
+        public byte ManualSeqNum { get; set; }
     }
 
     public class SciPcProtocol : IProtocol
@@ -47,17 +27,21 @@ namespace TR28386_T_PC
         public event Action<StatusMessageData> OnStatusReceived;
         public event Action<string> OnCommError;
         public event Action OnPortClosed;
+        public event Action<int> OnCrcErrorCountUpdated; // CRC 에러 발생 횟수 알림
         
         public event Action<byte[]> OnRawTx;
         public event Action<byte[]> OnRawRx;
 
-        private byte _incNumber = 0;
-
         public bool IsConnected => _serialPort != null && _serialPort.IsOpen;
+        
+        private int _crcErrorCount = 0;
 
         public void Connect(string portName, int baudRate)
         {
             if (IsConnected) Disconnect();
+
+            _crcErrorCount = 0;
+            OnCrcErrorCountUpdated?.Invoke(_crcErrorCount);
 
             _serialPort = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
             _serialPort.Open();
@@ -88,8 +72,9 @@ namespace TR28386_T_PC
 
         public void ReInit()
         {
-            // 통신 초기화 버튼 동작
-            _incNumber = 0;
+            _crcErrorCount = 0;
+            OnCrcErrorCountUpdated?.Invoke(_crcErrorCount);
+            
             if (_serialPort != null && _serialPort.IsOpen)
             {
                 _serialPort.DiscardInBuffer();
@@ -103,52 +88,28 @@ namespace TR28386_T_PC
 
             try
             {
-                // Command bits (16-bit)
-                ushort commandVal = 0;
-                if (ctrlDto.LEDs[0]) commandVal |= (1 << 0);
-                if (ctrlDto.LEDs[1]) commandVal |= (1 << 1);
-                if (ctrlDto.LEDs[2]) commandVal |= (1 << 2);
-                if (ctrlDto.LEDs[3]) commandVal |= (1 << 3);
-                if (ctrlDto.LEDs[4]) commandVal |= (1 << 4);
-                if (ctrlDto.LEDs[5]) commandVal |= (1 << 5);
-                if (ctrlDto.LEDs[6]) commandVal |= (1 << 6);
-                if (ctrlDto.LEDs[7]) commandVal |= (1 << 7);
-                if (ctrlDto.EepWrite) commandVal |= (1 << 8);
-                if (ctrlDto.EepRead) commandVal |= (1 << 9);
-                if (ctrlDto.Epwm7aEn) commandVal |= (1 << 10);
-                if (ctrlDto.LoopbackTest) commandVal |= (1 << 11);
+                // Packet Size: SOF(1) + ID(1) + LEN(1) + Payload(2) + CRC(1) + EOT(1) = 7 bytes
+                byte[] packet = new byte[7];
+                packet[0] = 0x7E; // SOF
+                packet[1] = 0x10; // ID
+                packet[2] = 0x03; // LEN = Payload(2) + 1
 
-                byte[] packet = new byte[13];
-                packet[0] = 0x7E;
-                packet[1] = 0x10;
-                packet[2] = 0x09; // Length = Payload(8) + 1 = 9
+                // Payload (2 bytes)
+                packet[3] = ctrlDto.ManualSeqNum;
+                packet[4] = 0x00; // Command (Reserved 1~8) - unused, set to 0
 
-                // Payload (8 bytes)
-                packet[3] = _incNumber;
-                packet[4] = (byte)(commandVal & 0xFF);
-                packet[5] = (byte)((commandVal >> 8) & 0xFF);
-                packet[6] = (byte)(ctrlDto.EepAddr & 0xFF);
-                packet[7] = (byte)((ctrlDto.EepAddr >> 8) & 0xFF);
-                packet[8] = ctrlDto.EepromWriteVal;
-                packet[9] = ctrlDto.Epwm7aDuty;
-                packet[10] = ctrlDto.Epwm7aFreq;
-
-                // CRC = Length + Payload Sum
-                int crcSum = packet[2]; // Length
-                for (int i = 3; i < 11; i++)
+                // CheckSum
+                int crcSum = packet[2]; // start with LEN
+                for (int i = 3; i < 5; i++)
                 {
                     crcSum += packet[i];
                 }
                 
-                packet[11] = (byte)(crcSum & 0xFF);
-                packet[12] = 0x0D;
+                packet[5] = (byte)(crcSum & 0xFF);
+                packet[6] = 0x0D; // EOT
 
                 _serialPort.Write(packet, 0, packet.Length);
                 OnRawTx?.Invoke(packet);
-                
-                // 순환 증가
-                _incNumber++;
-                if (_incNumber > 255) _incNumber = 0; 
             }
             catch (Exception ex)
             {
@@ -158,7 +119,7 @@ namespace TR28386_T_PC
 
         private void ReadWorker()
         {
-            var buffer = new System.Collections.Generic.List<byte>();
+            var buffer = new List<byte>();
             
             while (_keepReading)
             {
@@ -191,14 +152,9 @@ namespace TR28386_T_PC
                             }
 
                             byte len = buffer[2];
-                            int totalPacketLen = len + + 4; // SOF, ID, LEN, [Payload+CheckSum...], EOT -> 1(SOF)+1(ID)+1(LEN)+ (LEN bytes of payload+CRC?) Let's check firmware:
-                            // MCU sends Length value = 17.
-                            // SOF(1) + ID(1) + LEN(1) + PAYLOAD(16) + CRC(1) + EOT(1) = Total 21 bytes.
-                            // If LEN=17, total = 17(this encompasses 16 payload + length byte itself... wait)
-                            // Firmware calc: Buf[2] = pos - 2 = 19 - 2 = 17. CheckSum is Buf[19].
-                            // Payload bytes = 16. Total bytes = 1(SOF) + 1(ID) + 1(LEN) + 16(Payload) + 1(CRC) + 1(EOT) = 21. 
-                            // So 1 + 1 + 1 + (len-1) + 1 + 1 = 4 + len. Wait. If len = 17, 4 + 17 = 21. Correct. 
-                            totalPacketLen = len + 4;
+                            // For MCU -> PC Msg1, LEN should be 5.
+                            // Total length = 4 (Header/EOT base) + len = 4 + 5 = 9.
+                            int totalPacketLen = len + 4; 
 
                             if (buffer.Count < totalPacketLen) break; // Wait for more
 
@@ -220,42 +176,24 @@ namespace TR28386_T_PC
 
                             if ((calcCrc & 0xFF) != receivedCrc)
                             {
-                                buffer.RemoveAt(0);
-                                OnCommError?.Invoke("통신 오류 (CRC Error)");
-                                continue;
+                                buffer.RemoveAt(0); // Drop the packet header and re-sync
+                                _crcErrorCount++;
+                                OnCrcErrorCountUpdated?.Invoke(_crcErrorCount);
+                                OnCommError?.Invoke($"통신 오류 (CRC Error) - 누적: {_crcErrorCount}");
+                                continue; // 점검 프로그램 기준, CRC 통과 실패 시 패킷 수신 거부 (Drop)
                             }
 
                             // Parse Payload (from index 3)
                             var status = new StatusMessageData();
-                            int pos = 3; // incNumber is buffer[3]
+                            int pos = 3; 
+                            
                             status.IncNumber = buffer[pos++];
+                            status.Status = buffer[pos++];
 
-                            ushort statusBits = buffer[pos++];
-                            status.Tact01 = (statusBits & 0x01) != 0;
-                            status.Tact02 = (statusBits & 0x02) != 0;
-                            status.EthLoop1 = (statusBits & 0x04) != 0;
-                            status.EthLoop2 = (statusBits & 0x08) != 0;
-
-                            ushort encAngleRaw = (ushort)(buffer[pos++] | (buffer[pos++] << 8));
-                            status.EncoderAngle = encAngleRaw / 100.0;
-
-                            status.EncoderRawPD = buffer[pos++];
-                            status.EepromReadVal = buffer[pos++];
-
-                            ushort pwmRaw = (ushort)(buffer[pos++] | (buffer[pos++] << 8));
-                            status.PWMRaw = pwmRaw / 1000.0;
-
-                            ushort pwmclpf = (ushort)(buffer[pos++] | (buffer[pos++] << 8));
-                            status.PWMRCLPF = pwmclpf / 1000.0;
-
-                            ushort pwmbwlpf = (ushort)(buffer[pos++] | (buffer[pos++] << 8));
-                            status.PWMBWLPF = pwmbwlpf / 1000.0;
-
-                            ushort potenRaw = (ushort)(buffer[pos++] | (buffer[pos++] << 8));
-                            status.PotenRAW = potenRaw / 1000.0;
-
-                            ushort potenMave = (ushort)(buffer[pos++] | (buffer[pos++] << 8));
-                            status.PotenMAVE = potenMave / 1000.0;
+                            // DspTemp is uint16_t (2 bytes, Little Endian)
+                            ushort tempRaw = (ushort)(buffer[pos++] | (buffer[pos++] << 8));
+                            // DSP 측에서 소수점 1자리를 위해 x10 해서 보냈으므로 10.0으로 나눔
+                            status.DspTemp = tempRaw / 10.0;
                             
                             status.IsCommError = false;
 

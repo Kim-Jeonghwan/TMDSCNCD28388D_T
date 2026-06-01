@@ -5,10 +5,10 @@
 
 	Filename		: DevSpi.c
 	Version			: 00.00
-	Description		: 
+	Description		: SPI Driver for SSI Encoder
 	Tracebility		: 
 	Programmer		: 
-	Last Updated	: 2026. 05. 29. (정적 시험 기준 준수 및 함수 주석 보강)
+	Last Updated	: 2026. 06. 01. (불필요한 공백 및 InitSpib 찌꺼기 주석 정리)
 
 	Function List	:	
 						
@@ -38,16 +38,13 @@
 #define ENCODER_CLK_GPIC	52u // SPI CLKC
 // #define SSI_CS			66u // Chip Select
 
-#define EEPROM_SIMO_GPIOA    58u // SPIA SIMO
-#define EEPROM_SOMI_GPIOA    59u // SPIA SOMI
-#define EEPROM_CLK_GPIOA     60u // SPIA CLK
-#define EEPROM_CS_GPIOA      61u // SPIA CS (GPIO)
+
 
 /* ************************** [[   global   ]]  *********************************************************** */
 
 
 /* ************************** [[   static prototype  ]]  ************************************************** */
-static void InitSpia(void);
+
 static void InitSpic(void);
 
 
@@ -64,73 +61,12 @@ static void InitSpic(void);
 */
 void Initial_SPI(void)
 {
-	// EEPROM
-    InitSpia();
 
 	// SSI
     InitSpic();
 
 }
 
-
-
-/*
-@funtion	static void InitSpib(void)
-@brief		
-@param		void
-@return		static void
-@remark	
-	-	
-*/
-
-
-/*
-@funtion    static void InitSpia(void)
-@brief      EEPROM 통신용 SPI-A 모듈 초기화 및 GPIO 설정
-@param      void
-@return     static void
-@remark
-    - GPIO 58, 59, 60번을 SPI-A 기능으로 할당하고 CS핀(GPIO 61)을 출력으로 제어합니다.
-    - SPI-A 모듈을 Master 모드, 1MHz, 8비트 단위 통신 규격으로 구동합니다.
-*/
-static void InitSpia(void)
-{
-    EALLOW; 
-
-    // 핀 설정
-    GPIO_setPinConfig(GPIO_58_SPIA_SIMO);
-    GPIO_setPadConfig(EEPROM_SIMO_GPIOA, GPIO_PIN_TYPE_STD);
-    GPIO_setQualificationMode(EEPROM_SIMO_GPIOA, GPIO_QUAL_ASYNC);
-
-    GPIO_setPinConfig(GPIO_59_SPIA_SOMI);
-    GPIO_setPadConfig(EEPROM_SOMI_GPIOA, GPIO_PIN_TYPE_STD);
-    GPIO_setQualificationMode(EEPROM_SOMI_GPIOA, GPIO_QUAL_ASYNC);
-
-    GPIO_setPinConfig(GPIO_60_SPIA_CLK);
-    GPIO_setPadConfig(EEPROM_CLK_GPIOA, GPIO_PIN_TYPE_STD);
-    GPIO_setQualificationMode(EEPROM_CLK_GPIOA, GPIO_QUAL_ASYNC);
-
-    // CS를 일반 GPIO 출력으로 설정
-    GPIO_setPinConfig(GPIO_61_GPIO61);
-    GPIO_setPadConfig(EEPROM_CS_GPIOA, GPIO_PIN_TYPE_STD);
-    GPIO_setQualificationMode(EEPROM_CS_GPIOA, GPIO_QUAL_ASYNC);
-    GPIO_setDirectionMode(EEPROM_CS_GPIOA, GPIO_DIR_MODE_OUT);
-    GPIO_writePin(EEPROM_CS_GPIOA, 1); // CS 초기 상태 High (비활성)
-
-    // SPI 초기화
-    SPI_disableModule(SPIA_BASE);
-    SPI_setConfig(SPIA_BASE, 
-					DEVICE_LSPCLK_FREQ, 
-					SPI_PROT_POL0PHA1, // C2000의 POL0PHA1 이 표준 SPI Mode 0 (Data latched on rising edge) 와 일치함
-					SPI_MODE_MASTER, 
-					1000000u,          // 1MHz
-					8);                // EEPROM 통신은 8비트 단위
-    SPI_disableFIFO(SPIA_BASE);
-    SPI_setEmulationMode(SPIA_BASE, SPI_EMULATION_STOP_AFTER_TRANSMIT);
-    SPI_enableModule(SPIA_BASE);
-
-    EDIS;
-}
 
 /*
 @funtion    static void InitSpic(void)

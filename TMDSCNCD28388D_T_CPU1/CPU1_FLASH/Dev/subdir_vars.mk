@@ -7,7 +7,6 @@ SHELL = cmd.exe
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Dev/DevAdc.c \
-../Dev/DevCan.c \
 ../Dev/DevCommon.c \
 ../Dev/DevDspInit.c \
 ../Dev/DevIPC.c \
@@ -17,7 +16,6 @@ C_SRCS += \
 
 C_DEPS += \
 ./Dev/DevAdc.d \
-./Dev/DevCan.d \
 ./Dev/DevCommon.d \
 ./Dev/DevDspInit.d \
 ./Dev/DevIPC.d \
@@ -27,7 +25,6 @@ C_DEPS += \
 
 OBJS += \
 ./Dev/DevAdc.obj \
-./Dev/DevCan.obj \
 ./Dev/DevCommon.obj \
 ./Dev/DevDspInit.obj \
 ./Dev/DevIPC.obj \
@@ -37,7 +34,6 @@ OBJS += \
 
 OBJS__QUOTED += \
 "Dev\DevAdc.obj" \
-"Dev\DevCan.obj" \
 "Dev\DevCommon.obj" \
 "Dev\DevDspInit.obj" \
 "Dev\DevIPC.obj" \
@@ -47,7 +43,6 @@ OBJS__QUOTED += \
 
 C_DEPS__QUOTED += \
 "Dev\DevAdc.d" \
-"Dev\DevCan.d" \
 "Dev\DevCommon.d" \
 "Dev\DevDspInit.d" \
 "Dev\DevIPC.d" \
@@ -57,7 +52,6 @@ C_DEPS__QUOTED += \
 
 C_SRCS__QUOTED += \
 "../Dev/DevAdc.c" \
-"../Dev/DevCan.c" \
 "../Dev/DevCommon.c" \
 "../Dev/DevDspInit.c" \
 "../Dev/DevIPC.c" \

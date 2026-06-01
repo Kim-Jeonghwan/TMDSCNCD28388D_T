@@ -8,7 +8,7 @@
 	Description		: 
 	Tracebility		: 
 	Programmer		: 
-	Last Updated	: 2026. 04. 13.
+	Last Updated	: 2026. 06. 01. (ADC ISR 및 updateAdcData 뼈대 복원)
 
 	Function List	:	
 						
@@ -51,30 +51,18 @@
 
 
 /* ************************** [[   global   ]]  *********************************************************** */
-extern float32_t f32PotenRAW;
-extern float32_t f32PotenMAVE;
-extern float32_t f32PWMRaw;
-extern float32_t f32PWMRCLPF;
-extern float32_t f32PWMBWLPF;
+
 
 /* ************************** [[  function  ]]  *********************************************************** */
-// ADC 인터럽트 서비스 루틴(함수)
-interrupt void AdcaIsr(void);
-//interrupt void AdcbIsr(void);
-//interrupt void AdccIsr(void);
-//interrupt void AdcdIsr(void);
-
 // ADC ISR 초기화
 void InitialAdc(void);
 
 // ADC 모듈 초기화 함수
 void InitAdcModules(void);
 
-float32_t low_pass_filter(float32_t input, float32_t alpha, float32_t *prev_output);
-
-
-float32_t Within_f32(float32_t val, float32_t min, float32_t max);
-
 void initEPWM8(void);
+
+// ADCINA1 인터럽트 서비스 루틴 (뼈대)
+interrupt void AdcaIsr(void);
 
 #endif	// #ifndef DEVADC_H

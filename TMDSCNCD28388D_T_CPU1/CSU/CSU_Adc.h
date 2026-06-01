@@ -1,8 +1,8 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : CSU_Adc.h
-    Description      : ADC Application Logic (100ms Periodic Task)
-    Last Updated     : 2026. 4. 13.
+    Description      : ADC Application Logic (10ms Periodic Task)
+    Last Updated     : 2026. 06. 01. (updateAdcData 뼈대 함수 추가)
 **********************************************************************/
 
 #ifndef CSU_ADC_H
@@ -27,8 +27,10 @@
 void Initial_Adc(void);
 
 /**
- * @brief 100ms 주기로 실행되는 ADC 데이터 처리 루틴
+ * @brief ADC 데이터 업데이트 (뼈대)
  */
 void updateAdcData(void);
+
+
 
 #endif /* CSU_ADC_H */

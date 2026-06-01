@@ -1,8 +1,8 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : main.c
-    Description      : 
-    Last Updated     : 2026. 05. 29. (정적 시험 기준 준수 및 1ms 중복 호출 제거)
+    Description      : Main background loop and periodic tasks
+    Last Updated     : 2026. 06. 01. (updateAdcData 호출 주석 해제 및 정리)
 **********************************************************************/
 
 /* ************************** [[   include  ]]  *********************************************************** */
@@ -30,11 +30,6 @@ static void cycle_100ms(void);
 
 // 1000ms(1Hz)
 static void cycle_1000ms(void);
-
-// 10ms 주기를 위한 헬퍼 함수 (복잡도 최적화)
-static void processInputDevices(void);
-static void processCanRoutine(void);
-
 
 
 /* ************************** [[  function  ]]  *********************************************************** */
@@ -107,58 +102,11 @@ static void cycle_1ms(void)
 */
 static void cycle_10ms(void)
 {
-	processInputDevices();
-
     updateAdcData();
     
-    // EPWM7A 상태 업데이트 (10ms 주기)
-    updateEpwm7aStatus();
-
     // 3. 통신 메시지 송신
     sendSciPcMessage1();
-
-    // 이더넷 루프백 테스트 업데이트
-    updateLoopbackTest();
-
-	processCanRoutine();
-
-	updateEepromStatus();
-
 }
-
-
-
-/*
-@funtion	static void processInputDevices(void)
-@brief		10ms 주기 스위치 및 엔코더 입력 갱신
-@param		void
-@return		static void
-*/
-static void processInputDevices(void)
-{
-	EqeptoEncoder();
-	updateHwSwitchStatus2();
-	updateTactStatus();
-}
-
-
-
-/*
-@funtion	static void processCanRoutine(void)
-@brief		10ms 주기 CAN 통신 송수신 및 상태 관리
-@param		void
-@return		static void
-*/
-static void processCanRoutine(void)
-{
-	recvCanMessage();
-	updateCanXmtData();
-	sendCanMessage();
-	updateCanStatus();
-}
-
-
-
 
 
 /*

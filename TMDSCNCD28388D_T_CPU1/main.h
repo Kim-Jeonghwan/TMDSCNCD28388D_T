@@ -1,8 +1,8 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : main.h
-    Description      : 
-    Last Updated     : 2026. 04. 23.
+    Description      : Core header files inclusion
+    Last Updated     : 2026. 06. 01.
 **********************************************************************/
 
 #ifndef MAIN_H
@@ -35,17 +35,12 @@
 #include "DevSpi.h"
 #include "DevTimer.h"
 #include "DevAdc.h"
-#include "DevCan.h"
 #include "DevIPC.h"
 
 #include "CSU_SCI_PC.h"
 #include "CSU_LED.h"
-#include "CSU_eQEP.h"
 #include "CSU_Adc.h"
-#include "CSU_EEPROM.h"
-#include "CSU_Tact.h"
 #include "CSU_EPWM.h"
-#include "CSU_CAN.h"
 #include "CSU_IPC.h"
 
 
