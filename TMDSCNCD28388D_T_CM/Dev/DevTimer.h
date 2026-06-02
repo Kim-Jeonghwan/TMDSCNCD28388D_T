@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevTimer.h
     Description      : CM Core SysTick 타이머 헤더
-    Last Updated     : 2026. 04. 22.
+    Last Updated     : 2026. 06. 01. (Cycle_2ms 필드 추가 - UDP 송신 주기 전용)
 **********************************************************************/
 #ifndef DEVTIMER_H
 #define DEVTIMER_H
@@ -13,6 +13,7 @@
 typedef struct
 {
     uint16_t Cycle_1ms;
+    uint16_t Cycle_2ms;    // 2ms 주기 - UDP 송신 전용
     uint16_t Cycle_10ms;
     uint16_t Cycle_100ms;
     uint16_t Cycle_1000ms;

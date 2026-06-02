@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevIPC.c
     Description      : CM Core IPC Device Driver
-    Last Updated     : 2026. 05. 29. (정적 시험 기준 준수 및 함수 주석 보강)
+    Last Updated     : 2026. 06. 02. (IPC_init 추가로 레지스터 플래그 초기화 보강)
 **********************************************************************/
 
 #include "DevIPC.h"
@@ -19,6 +19,9 @@ static __interrupt void isrIpcFromCPU1(void);
 */
 void Initial_IPC(void)
 {
+    /* IPC 제어 레지스터의 모든 플래그 강제 클리어 (이전 오염 플래그 제거) */
+    IPC_init(IPC_CM_L_CPU1_R);
+
     // 1. CPU1으로부터 수신받을 인터럽트 등록
     IPC_registerInterrupt(IPC_CM_L_CPU1_R, IPC_INT1, isrIpcFromCPU1);
 

@@ -8,7 +8,7 @@
 	Description		: 
 	Tracebility		: 
 	Programmer		: 
-	Last Updated	: 2026. 06. 01. (ADC ISR 및 updateAdcData 뼈대 복원)
+	Last Updated	: 2026. 06. 02. (온도 센서 전용 1kHz 느린 트리거용 ePWM9 함수 전역 선언 추가)
 
 	Function List	:	
 						
@@ -18,7 +18,7 @@
 /*
  * Modification History
  * --------------------
- * 
+ * 2026. 06. 02. - 온도 센서 전용 1kHz 느린 트리거용 ePWM9 함수 전역 선언 추가
  * 
 */
 
@@ -61,6 +61,7 @@ void InitialAdc(void);
 void InitAdcModules(void);
 
 void initEPWM8(void);
+void initEPWM9(void); // 온도 센서 전용 1kHz 느린 트리거용 ePWM9 함수 추가
 
 // ADCINA1 인터럽트 서비스 루틴 (뼈대)
 interrupt void AdcaIsr(void);

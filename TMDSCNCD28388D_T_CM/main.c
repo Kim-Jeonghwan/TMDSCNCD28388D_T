@@ -2,12 +2,13 @@
     Nexcom Co., Ltd.
     Filename         : main.c
     Description      : CM Core Main Entry
-    Last Updated     : 2026. 05. 29. (정적 시험 기준 준수 및 Task 용어 통일)
+    Last Updated     : 2026. 06. 02. (Flash 벡터 리다이렉션 및 PHY 100ms 안정화 대기 추가)
 **********************************************************************/
 
 #include "main.h"
 
 // --- 정적 함수 선언 ---
+static void Cycle_2ms(void);
 static void Cycle_1ms(void);
 static void Cycle_10ms(void);
 static void Cycle_100ms(void);
@@ -26,8 +27,21 @@ int main(void)
     /* 1. 시스템 초기화 (CM 코어 클럭 및 인터럽트 등) */
     CM_init(); 
 
+    /* --- [필수 핵심 패치] Flash 벡터 테이블을 RAM으로 복사 및 하드웨어 매핑 리다이렉션 --- */
+    Interrupt_initRAMVectorTable(vectorTableFlash, vectorTableRAM);
+
     /* 2. 통신 및 주변장치 초기화 */
     Initial_IPC();
+
+    /* --- [물리 이더넷 프리징 예방] PHY 칩 리셋 해제 후 하드웨어 안정화 대기 딜레이 (100ms) --- */
+    {
+        volatile uint32_t uiDelay = 0U;
+        for(uiDelay = 0U; uiDelay < 12000000U; uiDelay++)
+        {
+            __asm(" NOP");
+        }
+    }
+
     Initial_Ethernet();
     Initial_TIMER();
     
@@ -37,8 +51,15 @@ int main(void)
     /* 3. 백그라운드 무한 루프 (Background Loop) */
     while(1)
     {
+        /* --- 2ms Task: UDP Reflect MSG 송신 --- */
+        if (xTimer.Cycle_2ms >= 1U)
+        {
+            xTimer.Cycle_2ms = 0U;
+            Cycle_2ms();
+        }
+
         /* --- 1ms Task --- */
-        if (xTimer.Cycle_1ms >= 1)
+        if (xTimer.Cycle_1ms >= 1U)
         {
             xTimer.Cycle_1ms = 0;
             Cycle_1ms();
@@ -73,6 +94,19 @@ int main(void)
 // --- 주기별 Task 구현부 ---
 
 /*
+@funtion    static void Cycle_2ms(void)
+@brief      2ms 주기 UDP Reflect MSG 송신 Task
+@param      void
+@return     static void
+@remark
+    - CPU1이 IPC로 전달한 온도/시퀀스 데이터를 UDP 패킷으로 조립하여 PC로 송신합니다.
+*/
+static void Cycle_2ms(void)
+{
+    buildAndSendUdpPacket();
+}
+
+/*
 @funtion    static void Cycle_1ms(void)
 @brief      1ms 주기로 실행되는 주기 Task
 @param      void
@@ -82,7 +116,6 @@ int main(void)
 */
 static void Cycle_1ms(void)
 {
-    // 1ms 작업 내용
     xTimer.Hzcnt++;
 }
 

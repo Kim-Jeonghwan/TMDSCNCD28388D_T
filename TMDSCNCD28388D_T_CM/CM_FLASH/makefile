@@ -174,7 +174,7 @@ all: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 # Tool invocations
 TMDSCNCD28388D_T_CM.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 	@echo 'Arm Linker - building target: "$@"'
-	"C:/ti/ti-cgt-arm_20.2.7.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=none -me -Ooff --define=DEBUG --define=_FLASH --diag_warning=225 --diag_wrap=off --display_error_number --gen_func_subsections=on -z -m"TMDSCNCD28388D_T_CM.map" --heap_size=1024 --stack_size=512 -i"C:/ti/ti-cgt-arm_20.2.7.LTS/lib" -i"C:/ti/ti-cgt-arm_20.2.7.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="TMDSCNCD28388D_T_CM_linkInfo.xml" --rom_model -o "TMDSCNCD28388D_T_CM.out" $(ORDERED_OBJS)
+	"C:/ti/ti-cgt-arm_20.2.7.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=none -me -O1 --define=DEBUG --define=_FLASH --diag_warning=225 --diag_wrap=off --display_error_number --gen_func_subsections=on -z -m"TMDSCNCD28388D_T_CM.map" --heap_size=1024 --stack_size=512 -i"C:/ti/ti-cgt-arm_20.2.7.LTS/lib" -i"C:/ti/ti-cgt-arm_20.2.7.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="TMDSCNCD28388D_T_CM_linkInfo.xml" --rom_model -o "TMDSCNCD28388D_T_CM.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 

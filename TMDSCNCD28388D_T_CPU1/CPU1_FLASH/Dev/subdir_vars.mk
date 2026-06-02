@@ -9,6 +9,7 @@ C_SRCS += \
 ../Dev/DevAdc.c \
 ../Dev/DevCommon.c \
 ../Dev/DevDspInit.c \
+../Dev/DevEpwmTimer.c \
 ../Dev/DevIPC.c \
 ../Dev/DevSci.c \
 ../Dev/DevSpi.c \
@@ -18,6 +19,7 @@ C_DEPS += \
 ./Dev/DevAdc.d \
 ./Dev/DevCommon.d \
 ./Dev/DevDspInit.d \
+./Dev/DevEpwmTimer.d \
 ./Dev/DevIPC.d \
 ./Dev/DevSci.d \
 ./Dev/DevSpi.d \
@@ -27,6 +29,7 @@ OBJS += \
 ./Dev/DevAdc.obj \
 ./Dev/DevCommon.obj \
 ./Dev/DevDspInit.obj \
+./Dev/DevEpwmTimer.obj \
 ./Dev/DevIPC.obj \
 ./Dev/DevSci.obj \
 ./Dev/DevSpi.obj \
@@ -36,6 +39,7 @@ OBJS__QUOTED += \
 "Dev\DevAdc.obj" \
 "Dev\DevCommon.obj" \
 "Dev\DevDspInit.obj" \
+"Dev\DevEpwmTimer.obj" \
 "Dev\DevIPC.obj" \
 "Dev\DevSci.obj" \
 "Dev\DevSpi.obj" \
@@ -45,6 +49,7 @@ C_DEPS__QUOTED += \
 "Dev\DevAdc.d" \
 "Dev\DevCommon.d" \
 "Dev\DevDspInit.d" \
+"Dev\DevEpwmTimer.d" \
 "Dev\DevIPC.d" \
 "Dev\DevSci.d" \
 "Dev\DevSpi.d" \
@@ -54,6 +59,7 @@ C_SRCS__QUOTED += \
 "../Dev/DevAdc.c" \
 "../Dev/DevCommon.c" \
 "../Dev/DevDspInit.c" \
+"../Dev/DevEpwmTimer.c" \
 "../Dev/DevIPC.c" \
 "../Dev/DevSci.c" \
 "../Dev/DevSpi.c" \

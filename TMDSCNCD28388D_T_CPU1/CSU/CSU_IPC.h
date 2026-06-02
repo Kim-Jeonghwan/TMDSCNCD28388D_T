@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_IPC.h
     Description      : CM Core IPC 통신 프로토콜 정의
-    Last Updated     : 2026. 06. 01.
+    Last Updated     : 2026. 06. 01. (ETH IPC 명령어 상수 및 recvIpcCmMessage 추가)
 **********************************************************************/
 
 #ifndef CSU_IPC_H
@@ -34,13 +34,14 @@ typedef struct {
 #define CONVERT_CM_TO_CPU_ADDR(cm_addr)  (GS0_CPU_START_ADDR + (((cm_addr) - GS0_CM_START_ADDR) >> 1))
 #define CONVERT_CPU_TO_CM_ADDR(cpu_addr) (GS0_CM_START_ADDR + (((cpu_addr) - GS0_CPU_START_ADDR) << 1))
 
-// IPC 명령어 정의
+/* IPC 명령어 정의 */
+#define IPC_CMD_CPU1_ETH_TX_DATA  (0x2001U)  /* CPU1 -> CM: 온도+시퀀스 전달 */
+#define IPC_CMD_CM_ETH_RX_DATA    (0x2002U)  /* CM -> CPU1: 수신 SeqNum/Status 전달 */
 
 extern volatile stIpcDataPacket *pxIpcCpu1ToCm;
 extern volatile stIpcDataPacket *pxIpcCmToCpu1;
 
-
-
-
+/* CM에서 수신한 IPC 메시지 체인 함수 */
+void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data);
 
 #endif // CSU_IPC_H

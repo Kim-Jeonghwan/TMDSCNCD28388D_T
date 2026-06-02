@@ -3,16 +3,17 @@
     Copyright 2021. All Rights Reserved.
 
     Filename        : DevAdc.c
-    Version         : 00.00
-    Description     : ADC Driver (Focus on internal Temperature Sensor & EPWM8 Trigger)
+    Version         : 00.01
+    Description     : ADC Driver (Focus on internal Temperature Sensor & EPWM9 Trigger)
     Tracebility     :
     Programmer      :
-    Last Updated    : 2026. 06. 01. (ADCA SOC2 온도센서 ePWM 자동 수집 구조 및 코드 포맷 대규모 정돈)
+    Last Updated    : 2026. 06. 02. (온도 센서 전용 1kHz 느린 트리거용 ePWM9 모듈 추가 및 ADC 락업 방어 패치)
 
     Function List   :
                       void InitialAdc(void)
                       void InitAdcModules(void)
                       void initEPWM8(void)
+                      void initEPWM9(void)
                       interrupt void AdcaIsr(void)
 **********************************************************************/
 
@@ -25,6 +26,8 @@
 static void setupEPWM8_TimeBase(uint16_t prd);
 static void setupEPWM8_ActionQualifier(void);
 static void setupEPWM8_AdcTrigger(void);
+static void setupEPWM9_TimeBase(uint16_t prd);
+static void setupEPWM9_AdcTrigger(void);
 
 /* ************************** [[   define   ]] *********************************************************** */
 #define DEFAULT_MAVE_COUNT  100u   // 이동 평균 필터 카운트
@@ -72,8 +75,8 @@ void InitAdcModules(void)
     ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM8_SOCA, ADC_CH_ADCIN2, 14u);  // SOC0: A2 (주기 구동용)
     ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER1, ADC_TRIGGER_EPWM8_SOCA, ADC_CH_ADCIN4, 14u);  // SOC1: A4 (주기 구동용)
     
-    // SOC2: 내부 온도 센서 (ePWM8_SOCA 자동 트리거 연동, 250 샘플링 윈도우 확보)
-    ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER2, ADC_TRIGGER_EPWM8_SOCA, ADC_CH_ADCIN13, 250);
+    // SOC2: 내부 온도 센서 (ePWM9_SOCA 자동 트리거 연동, 250 샘플링 윈도우 확보)
+    ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER2, ADC_TRIGGER_EPWM9_SOCA, ADC_CH_ADCIN13, 250);
 
     // SOC0, SOC1, SOC2 중 최종 채널인 SOC2의 변환 완료 시점 기준 인터럽트 INT1 발생
     ADC_setInterruptSource(ADCA_BASE, ADC_INT_NUMBER1, ADC_SOC_NUMBER2);
@@ -183,6 +186,58 @@ static void setupEPWM8_AdcTrigger(void)
 }
 
 /**
+ * @function    void initEPWM9(void)
+ * @brief       ePWM9 모듈 초기화 (온도 센서 전용 1kHz 느린 트리거)
+ * @param       void
+ * @return      void
+ */
+void initEPWM9(void)
+{
+    EALLOW;
+    SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_EPWM9); // ePWM9 클럭 인가
+
+    // ePWM9 타임베이스 주기 연산 (느리고 안전한 1kHz 설정)
+    uint32_t prd = SYSCLK / (1000u * 4u); 
+
+    setupEPWM9_TimeBase((uint16_t)prd);
+    setupEPWM9_AdcTrigger();
+
+    // ePWM 타임베이스 클럭 전역 동기화 및 기동
+    SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC); 
+    EDIS;
+}
+
+/**
+ * @function    static void setupEPWM9_TimeBase(uint16_t prd)
+ * @brief       ePWM9 타임 베이스 주파수 및 분주 설정
+ * @param       uint16_t prd: 계산된 주기 값
+ * @return      void
+ */
+static void setupEPWM9_TimeBase(uint16_t prd)
+{
+    EPWM_setTimeBasePeriod(EPWM9_BASE, prd);
+    EPWM_setPhaseShift(EPWM9_BASE, 0u);
+    EPWM_setTimeBaseCounter(EPWM9_BASE, 0u);
+
+    EPWM_setTimeBaseCounterMode(EPWM9_BASE, EPWM_COUNTER_MODE_UP); // 업 카운트 모드
+    EPWM_disablePhaseShiftLoad(EPWM9_BASE);
+    EPWM_setClockPrescaler(EPWM9_BASE, EPWM_CLOCK_DIVIDER_2, EPWM_HSCLOCK_DIVIDER_1); // 클럭 분주 /2
+}
+
+/**
+ * @function    static void setupEPWM9_AdcTrigger(void)
+ * @brief       ePWM9 ADC SOCA 발생 이벤트 설정
+ * @param       void
+ * @return      void
+ */
+static void setupEPWM9_AdcTrigger(void)
+{
+    EPWM_enableADCTrigger(EPWM9_BASE, EPWM_SOC_A);
+    EPWM_setADCTriggerSource(EPWM9_BASE, EPWM_SOC_A, EPWM_SOC_TBCTR_PERIOD); // 주기에 도달할 때 SOCA 펄스 발생
+    EPWM_setADCTriggerEventPrescale(EPWM9_BASE, EPWM_SOC_A, 1u);            // 1회 매칭당 1회 트리거
+}
+
+/**
  * @function    interrupt void AdcaIsr(void)
  * @brief       ADCINA1 인터럽트 서비스 루틴 (백그라운드 실시간 초고속 데이터 취득)
  * @param       void
@@ -190,8 +245,14 @@ static void setupEPWM8_AdcTrigger(void)
  */
 interrupt void AdcaIsr(void)
 {
-    // SOC2 (내부 온도 센서 채널 14) 변환 결과 실시간 초고속 취득
+    // SOC2 (내부 온도 센서 채널 13) 변환 결과 실시간 취득
     adcResult = ADC_readResult(ADCARESULT_BASE, ADC_SOC_NUMBER2);
+
+    // 인터럽트 오버플로우(Interrupt Overflow) 감지 시 강제 해제하여 ADC 락업 방어 (CWE-658 방어 규격 준수)
+    if (ADC_getInterruptOverflowStatus(ADCA_BASE, ADC_INT_NUMBER1))
+    {
+        ADC_clearInterruptOverflowStatus(ADCA_BASE, ADC_INT_NUMBER1);
+    }
 
     ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
     Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);

@@ -2,6 +2,7 @@
  * File: MainForm.cs
  * Created: 2026-06-01 (Modified by Antigravity)
  * Description: TMDSCNCD28388D_T PC Monitoring Dashboard MainForm
+ * Last Updated: 2026. 06. 01. (SCI/UDP 프로토콜 선택 RadioButton 및 통신 두절 UI 추가)
  */
 
 using System;
@@ -52,6 +53,12 @@ namespace TMDSCNCD28388D_T_PC
         private LogForm _logForm;
         private Label lblLogRxInfo;
         private Label lblLogTxInfo;
+
+        // 프로토콜 선택 UI
+        private RadioButton rdoSci;
+        private RadioButton rdoUdp;
+        private Label lblCommStatus;  // 통신 두절 표시
+
 
         public MainForm()
         {
@@ -135,10 +142,45 @@ namespace TMDSCNCD28388D_T_PC
             btnInit = CreateBorderedButton("초기화", 750, commY + 45, 100, 40); 
             btnInit.Click += (s, e) => _protocol.ReInit();
 
+            /* 프로토콜 선택: SCI / UDP */
+            rdoSci = new RadioButton
+            {
+                Text = "SCI (기본)",
+                Location = new Point(20, commY + 105),
+                AutoSize = true,
+                Checked = true,
+                Font = new Font("맑은 고딕", 11, FontStyle.Bold),
+                ForeColor = Color.Cyan
+            };
+            rdoUdp = new RadioButton
+            {
+                Text = "UDP (Ethernet)",
+                Location = new Point(200, commY + 105),
+                AutoSize = true,
+                Font = new Font("맑은 고딕", 11, FontStyle.Bold),
+                ForeColor = Color.Orange
+            };
+            rdoUdp.CheckedChanged += (s, e) =>
+            {
+                /* UDP 선택 시 COM Port/Baud 콤보박스 비활성화 */
+                cmbPorts.Enabled = rdoSci.Checked;
+                cmbBauds.Enabled = rdoSci.Checked;
+            };
+
+            lblCommStatus = new Label
+            {
+                Text = "",
+                Location = new Point(680, commY + 50),
+                Size = new Size(250, 30),
+                Font = new Font("맑은 고딕", 11, FontStyle.Bold),
+                ForeColor = Color.Red
+            };
+
             pnlComm.Controls.AddRange(new Control[] {
                 lblPort, lblBaud, cmbPorts, cmbBauds, btnRefresh,
                 btnConnect, btnDisconnect, btnInit,
-                lblPortConnected, lblCommReceiving
+                lblPortConnected, lblCommReceiving,
+                rdoSci, rdoUdp, lblCommStatus
             });
             mainLayout.Controls.Add(pnlComm, 0, 0);
 
@@ -316,21 +358,37 @@ namespace TMDSCNCD28388D_T_PC
 
         private void Connect()
         {
-            if (cmbPorts.SelectedItem == null || cmbBauds.SelectedItem == null) return;
             try
             {
                 if (_protocol != null && _protocol.IsConnected) _protocol.Disconnect();
 
-                _protocol = new SciPcProtocol();
+                /* 프로토콜 선택: SCI 또는 UDP */
+                if (rdoUdp != null && rdoUdp.Checked)
+                {
+                    _protocol = new UdpEthProtocol();
+                }
+                else
+                {
+                    if (cmbPorts.SelectedItem == null || cmbBauds.SelectedItem == null) return;
+                    _protocol = new SciPcProtocol();
+                }
 
                 SetupProtocolEvents();
 
-                string rawSelection = cmbPorts.SelectedItem.ToString();
-                string portName = rawSelection;
-                var match = Regex.Match(rawSelection, @"\((COM\d+)\)");
-                if (match.Success) portName = match.Groups[1].Value;
+                if (rdoUdp != null && rdoUdp.Checked)
+                {
+                    /* UDP: portName/baudRate 인자는 무시됨 (클래스 내부 고정 IP 사용) */
+                    _protocol.Connect("UDP", 0);
+                }
+                else
+                {
+                    string rawSelection = cmbPorts.SelectedItem.ToString();
+                    string portName = rawSelection;
+                    var match = Regex.Match(rawSelection, @"\((COM\d+)\)");
+                    if (match.Success) portName = match.Groups[1].Value;
+                    _protocol.Connect(portName, int.Parse(cmbBauds.SelectedItem.ToString()));
+                }
 
-                _protocol.Connect(portName, int.Parse(cmbBauds.SelectedItem.ToString()));
                 UpdateConnectButtons();
                 _timer.Start();
             }
@@ -390,6 +448,10 @@ namespace TMDSCNCD28388D_T_PC
 
                 lblSeqNumber.Text = data.IncNumber.ToString();
                 lblBoardTemp.Text = string.Format("{0:0.0} °C", data.DspTemp);
+
+                /* 통신 정상 수신 시 통신 두절 표시 해제 */
+                if (lblCommStatus != null)
+                    lblCommStatus.Text = "";
             }));
         }
 
@@ -398,6 +460,16 @@ namespace TMDSCNCD28388D_T_PC
             if (_logForm != null && !_logForm.IsDisposed)
             {
                 _logForm.AddLog($"[ERROR] {msg}");
+            }
+
+            /* 통신 두절 표시 (슈드 UI 스레드 안전 처리) */
+            if (lblCommStatus != null && !IsDisposed)
+            {
+                BeginInvoke((Action)(() =>
+                {
+                    lblCommStatus.Text = "⚠ " + msg;
+                    lblCommReceiving.ForeColor = Color.Red;
+                }));
             }
         }
 
