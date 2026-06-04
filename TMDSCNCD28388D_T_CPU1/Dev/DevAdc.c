@@ -7,7 +7,7 @@
     Description     : ADC Driver (Focus on internal Temperature Sensor & EPWM9 Trigger)
     Tracebility     :
     Programmer      :
-    Last Updated    : 2026. 06. 02. (온도 센서 전용 1kHz 느린 트리거용 ePWM9 모듈 추가 및 ADC 락업 방어 패치)
+    Last Updated    : 2026. 06. 04. (AdcSetMode → ADC_setMode, DELAY_US → DEVICE_DELAY_US 신형 driverlib API로 전환)
 
     Function List   :
                       void InitialAdc(void)
@@ -66,10 +66,10 @@ void InitAdcModules(void)
     // -------------------------------------------------------------------------
     EALLOW;
     ADC_setPrescaler(ADCA_BASE, ADC_CLK_DIV_4_0); // ADCCLK = SYSCLK / 4 (50MHz)
-    AdcSetMode(ADC_ADCA, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+    ADC_setMode(ADCA_BASE, ADC_RESOLUTION_12BIT, ADC_MODE_SINGLE_ENDED);
     ADC_setInterruptPulseMode(ADCA_BASE, ADC_PULSE_END_OF_CONV);
     ADC_enableConverter(ADCA_BASE);
-    DELAY_US(1000); // 아날로그 회로 파워업 대기
+    DEVICE_DELAY_US(1000U); // 아날로그 회로 파워업 대기
 
     // ADCA SOC 매핑 설정
     ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM8_SOCA, ADC_CH_ADCIN2, 14u);  // SOC0: A2 (주기 구동용)
@@ -89,9 +89,9 @@ void InitAdcModules(void)
     // -------------------------------------------------------------------------
     EALLOW;
     ADC_setPrescaler(ADCB_BASE, ADC_CLK_DIV_8_0);
-    AdcSetMode(ADC_ADCB, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+    ADC_setMode(ADCB_BASE, ADC_RESOLUTION_12BIT, ADC_MODE_SINGLE_ENDED);
     ADC_enableConverter(ADCB_BASE);
-    DELAY_US(1000);
+    DEVICE_DELAY_US(1000U);
     EDIS;
 
     // -------------------------------------------------------------------------
@@ -99,7 +99,7 @@ void InitAdcModules(void)
     // -------------------------------------------------------------------------
     EALLOW;
     ADC_setPrescaler(ADCC_BASE, ADC_CLK_DIV_4_0);
-    AdcSetMode(ADC_ADCC, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+    ADC_setMode(ADCC_BASE, ADC_RESOLUTION_12BIT, ADC_MODE_SINGLE_ENDED);
     ADC_enableConverter(ADCC_BASE);
     DEVICE_DELAY_US(1000);
     EDIS;
@@ -109,9 +109,9 @@ void InitAdcModules(void)
     // -------------------------------------------------------------------------
     EALLOW;
     ADC_setPrescaler(ADCD_BASE, ADC_CLK_DIV_4_0);
-    AdcSetMode(ADC_ADCD, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+    ADC_setMode(ADCD_BASE, ADC_RESOLUTION_12BIT, ADC_MODE_SINGLE_ENDED);
     ADC_enableConverter(ADCD_BASE);
-    DELAY_US(1000);
+    DEVICE_DELAY_US(1000U);
 
     ADC_setupSOC(ADCD_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM8_SOCA, ADC_CH_ADCIN4, 14u); // SOC0: D4
     EDIS;

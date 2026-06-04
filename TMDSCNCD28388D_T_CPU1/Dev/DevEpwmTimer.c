@@ -21,8 +21,6 @@
  */
 
 #include "DevEpwmTimer.h"
-#include "DevIPC.h"
-#include "CSU_SCI_PC.h"
 
 /* ISR 정적 선언 */
 static __interrupt void isr_Epwm1Timer2ms(void);

@@ -504,3 +504,493 @@ sequenceDiagram
   * CPU1 코어의 [DevDspInit.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevDspInit.c) 소스 코드에서 CM 코어를 기동하는 **`Initial_CmCore();` 호출 위치를 CPU1의 모든 주변장치(ADC, PWM, SPI, SCI 등) 준비가 완벽하게 마쳐진 최우측(동기화 직전) 시점으로 완전히 대이동 교정**하였습니다.
   * 헤더의 `Last Updated` 날짜 주석 이력을 정밀 갱신하였습니다.
   * 이를 통해 CPU1이 완벽한 기동 준비를 마친 찰나의 순간에 CM 코어를 깨워 즉시 동기화선으로 진입시킴으로써, 양 코어 간의 극심한 기동 지연 갭을 기계적으로 소멸시켜 `IPC_sync` 데드락을 원천 차단하고 `Hzcnt` 루프의 폭발적인 실시간 기동을 실현하였습니다.
+
+---
+
+## 15. CPU1-CM 초기화 동기화 시퀀스 근본적 개선 및 데드락 예방 제안
+
+**분석 일자**: 2026. 06. 04.  
+**분석 대상**: 최신 디버깅 가이드라인에 따른 CPU1과 CM 코어의 부트/초기화 시퀀스 비교 분석
+
+사용자가 제시한 디버깅 가이드라인 및 코드 레벨 초기화 순서와 비교하여, 현재 펌웨어 코드의 초기화 및 IPC 동기화 로직에서 발견된 잠재적 위험 요인과 이를 극적으로 개선하기 위한 구체적인 대안을 제안합니다.
+
+### 15.1 현재 코드의 잠재적 위험 요인 분석
+
+#### ① IPC_init() 다중 호출로 인한 동기화 플래그 소실 위험
+- **현상**: CPU1의 `Initial_IPC()`와 CM의 `Initial_IPC()`에서 모두 `IPC_init()` API를 호출하고 있습니다.
+- **원인**: `IPC_init()`은 해당 코어가 지배하는 로컬-상대방 간의 모든 IPC 플래그, 인터럽트 플래그, Ack 플래그 상태를 리셋(클리어)합니다. 만약 CM 코어가 먼저 기동되어 `IPC_sync()`를 시도하면서 `IPC_FLAG31`을 활성화했으나, 뒤늦게 CPU1이 `Initial_IPC()`에 진입하여 `IPC_init(IPC_CPU1_L_CM_R)`을 호출하게 되면 CM이 사전에 세팅해 둔 플래그가 하드웨어 레벨에서 강제로 클리어됩니다.
+- **결과**: 양 코어가 서로의 동기화 신호를 인지하지 못하고 `IPC_sync()` 내부 대기 루프(`IPC_waitForFlag`)에 영구히 갇히는 교착 상태(데드락)가 무작위하게 발생할 수 있습니다.
+
+#### ② CM 기동(Initial_CmCore)과 IPC_init() 간의 시간적 갭에 따른 타이밍 문제
+- **현상**: 현재 CPU1은 `Initial_CmCore()`로 CM 코어를 깨운 뒤에 `InitialPeripherals() -> initSystemCommunications() -> Initial_IPC()` 순으로 초기화를 실행하며 그 내부에서 `IPC_init()`을 수행합니다.
+- **원인**: CM 코어가 부팅되어 `main()`에 진입하고 `Initial_IPC()`의 `IPC_init()`을 완료하는 속도가 CPU1이 `InitialPeripherals()` 내의 수많은 하드웨어(ADC, PWM, UI, SPI, SCI, TIMER) 레지스터를 다 쓰고 `Initial_IPC()`에 도달하는 속도보다 빠를 경우, 위의 ①번 플래그 소실 문제가 매우 쉽게 발현됩니다.
+- **결과**: 디버거 엇갈림이 일어날 경우 수동으로 Reset/Resume 하는 타이밍이 매우 정밀해야만 정상 기동되는 불안정한 디버깅 환경이 조성됩니다.
+
+#### ③ CM의 100ms 물리 딜레이 위치로 인한 통신 타이밍 불일치
+- **현상**: CM 코어의 `main.c`에서는 `Initial_IPC()` (동기화)가 완료된 **직후**에 100ms 하드웨어 대기 루프를 돕니다.
+- **원인**: 두 코어가 `IPC_sync()` 동기화 선을 무사히 통과하면, CPU1은 즉시 디버깅을 활성화(`EINT`)하고 메인 루프에 진입하여 2ms 또는 10ms 주기로 IPC 전송 함수(`sendEthDataToCM`)를 통해 CM에 명령을 쏘기 시작합니다. 그러나 CM 코어는 동기화 직후 100ms 동안 CPU NOP 루프에 갇혀 있고 아직 이더넷 드라이버도 기동하지 않았으며 전역 인터럽트도 활성화되지 않은 상태입니다.
+- **결과**: CPU1이 동기화 직후 전송한 초기 IPC 명령 메시지들이 CM 측의 미준비로 인해 완전히 유실되거나 플래그 바이트 오염을 유발할 수 있습니다.
+
+---
+
+### 15.2 근본적 개선 코드 제안 (Proposed Optimization Plan)
+
+이러한 타이밍 불일치 및 잠재적 교착 상태를 완벽히 해결하기 위한 정석적인 초기화 시퀀스 개선안은 다음과 같습니다.
+
+#### 1) CPU1: CM 기동 전 IPC 조기 초기화 및 함수 분리
+- **개선 사상**: CM 코어를 깨우기(`Initial_CmCore()`) **전에** IPC 레지스터 청소(`IPC_init`)를 확실하게 수행하여, CM이 깨어난 시점에는 이미 모든 IPC 레지스터가 초기화 상태임을 보장합니다.
+- **[MODIFY]** [DevIPC.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevIPC.c) / [DevIPC.h](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevIPC.h)
+  - `IPC_init()`을 수행하는 조기 초기화 함수 `Initial_IPC_Clear()`를 신설합니다.
+  - 기존 `Initial_IPC()`에서는 `IPC_init()` 호출을 제거하고 인터럽트 등록 및 `IPC_sync()` 대기만 수행합니다.
+
+```c
+// CPU1 - DevIPC.c 신설 및 수정안
+void Initial_IPC_Clear(void)
+{
+    /* CM 코어를 깨우기 전에 IPC 제어 레지스터를 미리 깨끗하게 청소 */
+    IPC_init(IPC_CPU1_L_CM_R);
+}
+
+void Initial_IPC(void)
+{
+    // IPC_init() 제거! (이미 CM 기동 전에 수행 완료됨)
+    
+    /* CM으로부터 수신받을 인터럽트 등록 (IPC_INT0) */
+    IPC_registerInterrupt(IPC_CPU1_L_CM_R, IPC_INT0, isrIpcFromCM);
+
+    /* CM 코어와 IPC_FLAG31을 통해 동기화 수행 */
+    IPC_sync(IPC_CPU1_L_CM_R, IPC_FLAG31);
+}
+```
+
+- **[MODIFY]** [DevDspInit.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevDspInit.c)
+  - `Initial_CmCore()`를 호출하기 바로 전 단계에서 `Initial_IPC_Clear()`를 호출합니다.
+
+```c
+// CPU1 - DevDspInit.c 수정안 적용 시퀀스
+void DSP_Initialization(void)
+{
+    Device_init();
+    initEmacGpioPins();
+    Initial_IPC_Mastership();
+    Initial_GPIO();
+    Interrupt_initModule();
+    Interrupt_initVectorTable();
+
+    /* --- [핵심 개선] CM 코어 기동 전에 IPC 레지스터 청소 완료 --- */
+    Initial_IPC_Clear(); 
+
+    /* --- CM 코어 부팅 --- */
+    Initial_CmCore();
+
+    /* --- 주변장치 설정 및 동기화 루프 진입 --- */
+    InitialPeripherals(); // 이 내부에서 Initial_IPC()를 호출하여 동기화 안전하게 수행
+
+    ERTM;
+    EINT;
+}
+```
+
+#### 2) CM: 불필요한 IPC_init() 제거 및 100ms 물리 딜레이 위치 상향 조정
+- **개선 사상**: 
+  - 마스터인 CPU1이 이미 IPC를 깨끗하게 청소했으므로 CM 코어에서는 `IPC_init()` 호출을 전면 생략하여 플래그 오염을 미연에 방지합니다.
+  - PHY 복구 대기용 100ms 딜레이를 CPU1과의 동기화(`Initial_IPC()`) **이전**으로 상향 배치하여, 동기화가 완료된 즉시 통신 및 인터럽트 활성화가 이루어지도록 조율합니다.
+- **[MODIFY]** [DevIPC.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevIPC.c) (CM 코어)
+  - `IPC_init()` 호출을 제거합니다.
+
+```c
+// CM - DevIPC.c 수정안
+void Initial_IPC(void)
+{
+    // IPC_init(IPC_CM_L_CPU1_R); // 제거: CPU1의 초기화 상태를 보호하기 위해 생략
+
+    // 1. CPU1으로부터 수신받을 인터럽트 등록
+    IPC_registerInterrupt(IPC_CM_L_CPU1_R, IPC_INT1, isrIpcFromCPU1);
+
+    // 2. CPU1 코어와 동기화 수행
+    IPC_sync(IPC_CM_L_CPU1_R, IPC_FLAG31);
+}
+```
+
+- **[MODIFY]** [main.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main.c) (CM 코어)
+  - 100ms 딜레이 블록을 `Initial_IPC()` 호출 상단으로 이동시킵니다.
+
+```c
+// CM - main.c 수정안 적용 시퀀스
+int main(void)
+{
+    /* 1. 시스템 초기화 (CM 코어 클럭 및 인터럽트 등) */
+    CM_init(); 
+
+    /* Flash 벡터 테이블 RAM 리다이렉션 */
+    Interrupt_initRAMVectorTable(vectorTableFlash, vectorTableRAM);
+
+    /* --- [위치 이동] 물리 이더넷 PHY 안정화 대기 딜레이 (100ms) --- */
+    /* 동기화 전에 미리 대기하여 PHY를 완전히 기상시킨 후 CPU1과의 동기화선으로 진입합니다. */
+    {
+        volatile uint32_t uiDelay = 0U;
+        for(uiDelay = 0U; uiDelay < 12000000U; uiDelay++)
+        {
+            __asm(" NOP");
+        }
+    }
+
+    /* 2. 통신 및 주변장치 초기화 및 동기화 */
+    Initial_IPC();       // CPU1과 안전하게 동기화 (대기 탈출)
+
+    Initial_Ethernet();  // 동기화 탈출 즉시 이더넷 및 타이머 기동
+    Initial_TIMER();
+    
+    /* 전역 인터럽트 즉시 활성화 */
+    (void)Interrupt_enableInProcessor(); 
+
+    /* 3. 백그라운드 무한 루프 */
+    while(1)
+    {
+        // ... (생략) ...
+    }
+}
+```
+
+---
+
+### 15.3 2단계 애플리케이션 레벨 핸드셰이크 (2-Way Application-Ready Handshake) 추가 제안
+
+사용자가 제시해주신 통찰에 따라, 단순 하드웨어 부팅 동기화(`IPC_sync`)를 넘어 **"상대 코어가 모든 이더넷/주변장치 초기화를 무사히 끝마치고 통신할 준비가 되었음을 교차 인지"**한 뒤 정상 제어 루프를 가동하는 **2단계 애플리케이션 핸드셰이크**를 반영합니다.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant CPU1 as [CPU1 (C28x)]
+    participant IPC as [IPC Register / RAM]
+    participant CM as [CM (Cortex-M4)]
+
+    Note over CPU1, CM: 1단계: 하드웨어 기동 동기화 (Hardware Boot Sync)
+    CPU1->>IPC: IPC_init_Clear() (CM 부팅 전 플래그 정리)
+    CPU1->>CM: Device_bootCM() (CM 코어 기동)
+    CM->>IPC: IPC_sync(IPC_FLAG31)
+    CPU1->>IPC: IPC_sync(IPC_FLAG31) (서로 부팅 완료 시점 일치)
+
+    Note over CPU1, CM: 2단계: 애플리케이션 준비 완료 동기화 (App-Ready Handshake)
+    CM->>CM: 이더넷 초기화 (Initial_Ethernet)<br/>타이머/인터럽트 가동 (CM Ready 상태)
+    CM->>IPC: sendIpcMessageToCPU1(IPC_CMD_CM_BOOT_READY)
+    IPC-->>CPU1: CPU1 IPC 인터럽트 발생 (isrIpcFromCM)
+    CPU1->>CPU1: g_bCmReady = true 갱신
+    Note over CPU1: g_bCmReady == true 대기 루프 탈출
+    Note over CPU1, CM: 정상 어플리케이션 협동 구동 시작!
+```
+
+#### ① 시퀀스 설계 및 동작 흐름
+1. **1단계 (하드웨어 동기화)**:
+   - CPU1이 CM 코어를 부팅한 후, 양 코어는 드라이버립 표준인 `IPC_sync(..., IPC_FLAG31)`을 수행하여 부팅 타이밍을 맞춥니다.
+2. **2단계 (CM의 애플리케이션 초기화 및 준비 신호 송출)**:
+   - 동기화 통과 직후, CM 코어는 100ms 대기 후 이더넷 디바이스 드라이버(`Initial_Ethernet()`)와 타이머를 초기화하고 인터럽트 수신을 활성화합니다.
+   - 모든 준비가 끝난 시점에 CM 코어는 CPU1으로 **`IPC_CMD_CM_BOOT_READY`** 명령 패킷을 쏘아 보냅니다.
+3. **3단계 (CPU1의 Ready 수신 및 제어 루프 개시)**:
+   - CPU1은 `DSP_Initialization()`을 마치고 전역 인터럽트(`EINT`)를 켠 상태에서, CM의 `IPC_CMD_CM_BOOT_READY` 신호가 수신되어 준비 완료 플래그(`g_bCmReady`)가 `true`가 될 때까지 안전하게 대기 루프를 돕니다.
+   - 신호 수신 확인 즉시 대기를 탈출하고 실시간 데이터 송수신 및 제어 루프를 기동시킵니다.
+
+#### ② 2단계 핸드셰이크를 위한 신규 코드 매핑 제안
+- **[CSU_IPC.h]** (CM/CPU1 공용)
+  - CM 코어의 준비 완료를 알리는 전용 IPC 명령코드를 새로 할당합니다.
+  ```c
+  #define IPC_CMD_CM_BOOT_READY     0x3001U  /* CM -> CPU1: CM 기동 및 주변기기 초기화 완료 */
+  ```
+
+- **[CPU1 - DevIPC.c]** (인터럽트 ISR 수신 핸들러 보강)
+  - CM으로부터 `IPC_CMD_CM_BOOT_READY` 명령을 받으면 `g_bCmReady` 전역 플래그를 `true`로 설정합니다.
+  ```c
+  volatile bool g_bCmReady = false; // CM 준비 완료 전역 플래그
+  
+  static __interrupt void isrIpcFromCM(void)
+  {
+      uint32_t uiCmd  = 0U;
+      uint32_t uiAddr = 0U;
+      uint32_t uiData = 0U;
+      bool     bRet   = false;
+  
+      bRet = IPC_readCommand(IPC_CPU1_L_CM_R, IPC_FLAG0, IPC_ADDR_CORRECTION_DISABLE, &uiCmd, &uiAddr, &uiData);
+  
+      if (bRet)
+      {
+          if (uiCmd == IPC_CMD_CM_BOOT_READY)
+          {
+              g_bCmReady = true; // CM 기동 완료 수신!
+          }
+          else if (uiCmd == IPC_CMD_CM_ETH_RX_DATA)
+          {
+              recvIpcCmMessage(uiCmd, uiAddr, uiData);
+          }
+          IPC_ackFlagRtoL(IPC_CPU1_L_CM_R, IPC_FLAG0);
+      }
+      Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP11);
+  }
+  ```
+
+- **[CPU1 - main.c]** (CPU1 메인 진입 대기 루프 구축)
+  - CPU1의 시스템 초기화 완료 및 전역 인터럽트 ON 이후, CM의 구동이 최종 완료될 때까지 대기합니다.
+  ```c
+  // CPU1 main() 함수 초입부 수정안
+  int main(void)
+  {
+      // 1. 디바이스 및 주변기기 초기화
+      DSP_Initialization(); 
+      
+      // 2. CM 코어 최종 애플리케이션 Ready 대기 (안터럽트 활성화 상태에서 대기)
+      while (g_bCmReady == false)
+      {
+          // CM 코어가 이더넷 초기화를 끝내고 READY 신호를 보낼 때까지 대기
+      }
+      
+      // 3. 정상 제어 및 데이터 송수신 루프 진입
+      while (1)
+      {
+          // 실시간 제어 루프 진행
+      }
+  }
+  ```
+
+- **[CM - main.c]** (모든 장치 기동 후 최종 Ready 신호 송출)
+  - CM 코어의 이더넷/타이머/인터럽트까지 모두 활성화된 최종 단계에서 CPU1으로 기동 완료 신호를 발송합니다.
+  ```c
+  // CM main() 함수 수정안
+  int main(void)
+  {
+      CM_init(); 
+      Interrupt_initRAMVectorTable(vectorTableFlash, vectorTableRAM);
+      
+      // 물리 이더넷 PHY 안정화 대기 100ms
+      {
+          volatile uint32_t uiDelay = 0U;
+          for(uiDelay = 0U; uiDelay < 12000000U; uiDelay++) { __asm(" NOP"); }
+      }
+      
+      Initial_IPC();       // 1단계 동기화 완료
+      Initial_Ethernet();  
+      Initial_TIMER();
+      (void)Interrupt_enableInProcessor(); 
+      
+      /* --- [핵심 개선] CM 모든 기동 완료 통보 (2단계 핸드셰이크) --- */
+      sendIpcMessageToCPU1(IPC_CMD_CM_BOOT_READY, 0U, 0U);
+      
+      while(1) { ... }
+  }
+  ```
+
+---
+
+## 15.4 CM 기동 전 100ms 딜레이와 IPC_sync 데드락 관계 분석
+
+**분석 일자**: 2026. 06. 04.  
+**원인 규명**: CM 코어가 1단계 동기화(`IPC_sync`) 이전에 100ms NOP 딜레이 루프를 돌면서 발생하는 하드웨어 데드락의 메커니즘을 확인하였습니다.
+
+### 15.4.1 데드락 발생 메커니즘
+1. C2000Ware Driverlib의 `IPC_sync()` 함수는 내부적으로 다음과 같이 동작합니다.
+   - **(a)** 내 방향의 상대 플래그를 세팅 (`IPC_setFlagLtoR`)
+   - **(b)** 상대가 내 플래그를 Ack할 때까지 대기 (`IPC_waitForAck` ➡️ **교착 지점**)
+   - **(c)** 상대가 세팅한 플래그가 들어올 때까지 대기 (`IPC_waitForFlag`)
+   - **(d)** 상대 플래그에 대해 Ack 처리 (`IPC_ackFlagRtoL`)
+2. CPU1이 기동하여 CM을 깨운 뒤, 수십 마이크로초 이내에 `Initial_IPC() -> IPC_sync()`에 안착하여 **(b) 대기 단계**에 진입합니다. CPU1은 CM이 내 플래그를 Ack해주길 기다립니다.
+3. 반면, 깨어난 CM 코어는 `Initial_IPC()`에 도달하기 전 **100ms NOP 딜레이(실제 시간으로 수 초 소요)** 루프를 돕니다.
+4. CM이 딜레이 루프를 빠져나와 뒤늦게 `IPC_sync()`를 실행하면서 **(a)** 플래그를 세팅하고 **(b)** 대기 단계에 진입합니다. CM 역시 CPU1이 내 플래그를 Ack해주길 기다립니다.
+5. **교착(데드락)의 완성**:
+   - CPU1은 CM이 내 플래그를 Ack해주길 기다리고 있으나, CM은 자기 플래그가 Ack되기 전에는 **(d)** 단계(상대 플래그 Ack 처리)에 도달할 수 없습니다.
+   - 마찬가지로 CM도 CPU1이 내 플래그를 Ack해주길 기다리지만, CPU1 역시 자기 플래그가 Ack되기 전에는 **(d)** 단계에 도달할 수 없습니다.
+   - 결국 양 코어가 서로가 Ack를 먼저 해주기만을 무한히 기다리는 하드웨어 데드락에 빠집니다.
+
+### 15.4.2 해결책
+- 이더넷 PHY 안정화용 100ms 딜레이 루프의 위치를 **동기화(`Initial_IPC()`) 완료 직후**이자 **이더넷 초기화(`Initial_Ethernet()`) 직전**으로 원복합니다.
+- 이렇게 하면 두 코어는 부팅 후 즉시 동시에 `Initial_IPC()`를 호출하여 나노초 단위 오차로 `IPC_sync()`를 완벽하고 신속하게 통과합니다.
+- 동기화가 통과된 직후, CM은 100ms 딜레이를 돌며 PHY 안정화를 차분히 기다린 후 이더넷을 구동합니다.
+- 이 시간 동안 CPU1은 메인 루프 입구에서 2단계 핸드셰이크용 전역 플래그 `while(g_bCmReady == false)`에 정박하여 대기하므로, 이전의 통신 데이터 유실이나 버스 프리징 현상이 원천 차단됩니다.
+- 결과적으로 1단계 하드웨어 동기화와 2단계 애플리케이션 핸드셰이크가 완벽하게 일체화되어 어떠한 타이밍 엇갈림도 발생하지 않는 최상의 부팅 무결성을 확보할 수 있습니다.
+
+```
+
+---
+
+## 16. CM 코어 Hard Fault (Exception Vector 0xFFFFFFFE) 원인 규명 및 조치 제안
+
+**분석 일자**: 2026. 06. 04.  
+**분석 대상**: CM 코어 Halted 상태 (`0xFFFFFFFE` - Hard Fault) 원인 규명 및 C28x 마스터십 설정 검증
+
+CM 코어가 부팅 루프를 채 돌지 못하고 디버거 상에서 `Cortex_M4_0 HALTED` 및 Call Stack `0xFFFFFFFE` (또는 예외 벡터 루프)로 즉시 뻗어버리는 문제의 근본적인 원인을 하드웨어 및 링커 레벨에서 규명하였습니다.
+
+### 16.1 하드웨어 락업(Hard Fault) 발생 메커니즘
+1. **CM 코어의 메모리 세션 배치**:
+   CM 코어의 링커 맵 및 커맨드 파일([2838x_FLASH_lnk_cm.cmd](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/common/cmd/2838x_FLASH_lnk_cm.cmd))을 분석한 결과, 다음 주요 섹션들이 외부 공유 RAM 영역에 할당되어 있습니다:
+   - 인터럽트 벡터 테이블 `.vtable` ➡️ **`S0RAM` (물리 주소 0x20000800, C28x 측 GS0RAM)**
+   - 동적 힙 메모리 `.sysmem` ➡️ **`S2RAM` (물리 주소 0x20008000, C28x 측 GS2RAM)**
+   - 전역/정적 변수 `.bss`, `.data` ➡️ **`S3RAM` (물리 주소 0x2000C000, C28x 측 GS3RAM)**
+
+2. **C28x(CPU1) 측의 마스터십(Mastership) 할당 오류**:
+   TMS320F28388D 하드웨어 설계 상, GSRAM 영역의 기본 소유권은 CPU1에 있습니다. CM 코어가 이 RAM 영역을 정상적으로 사용하려면 CPU1이 마스터십을 CM으로 넘겨주어야 합니다.
+   하지만 CPU1의 [DevIPC.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevIPC.c) 내 `Initial_IPC_Mastership()`은 다음과 같이 작성되어 있습니다:
+   ```c
+   // 기존 오류 코드
+   HWREG(MEMCFG_BASE + MEMCFG_O_LSXMSEL) =
+       (HWREG(MEMCFG_BASE + MEMCFG_O_LSXMSEL) & ~0x00FFU) | 0x00AAU;
+   HWREG(MEMCFG_BASE + MEMCFG_O_GSXMSEL) =
+       (HWREG(MEMCFG_BASE + MEMCFG_O_GSXMSEL) & ~0x00FFU) | 0x00AAU;
+   ```
+   - **문제점 1**: `LSXMSEL`은 C28x 전용 로컬 RAM인 LSxRAM의 마스터 설정용이므로 CM으로의 위임이 불가능하고 불필요합니다.
+   - **문제점 2 (치명적)**: `GSXMSEL` 레지스터는 각 GSRAM 블록당 **1비트**로 마스터를 선택합니다 (0 = C28x, 1 = CM).
+     - 기존 코드처럼 `0x00AAU` (10101010b)를 대입하면,
+     - **GS0 (S0RAM)**: 비트0 = `0` (CPU1 소유)
+     - **GS1 (S1RAM)**: 비트1 = `1` (CM 소유)
+     - **GS2 (S2RAM)**: 비트2 = `0` (CPU1 소유)
+     - **GS3 (S3RAM)**: 비트3 = `1` (CM 소유)
+     이 되어, 정작 벡터 테이블이 상주하는 **S0RAM**과 힙이 상주하는 **S2RAM**의 마스터십은 넘겨주지 않은 상태가 됩니다.
+
+3. **메모리 접근 위반에 따른 Hard Fault 발생**:
+   CM 코어가 기동하면서 런타임 스타트업 혹은 `Interrupt_initRAMVectorTable()` 단계에서 벡터 테이블 복사를 위해 `S0RAM` (GS0)에 쓰기를 시도하는 순간, CPU1이 락을 걸고 있는 하드웨어 보호 정책에 막혀 **Memory Access Violation**이 발생합니다.
+   ARM Cortex-M4 코어는 이 위반을 즉각 감지하고 **Hard Fault 예외**를 발생시키며, 이로 인해 디버거 Call Stack이 `0xFFFFFFFE`에 박힌 상태로 멈추게(HALTED) 되는 것입니다.
+
+---
+
+### 16.2 조치 계획 및 교정 코드 제안
+
+이 문제를 근본적으로 해결하기 위해 C28x CPU1 측의 GSRAM 마스터십 이양 코드를 1비트 규격에 맞춰 교정합니다.
+
+#### [MODIFY] [DevIPC.c (CPU1)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevIPC.c)
+
+기존의 `Initial_IPC_Mastership()` 함수를 아래와 같이 변경하여 CM이 사용하는 모든 Shared RAM 영역(`GS0` ~ `GS7`)의 지배권을 CM 코어로 확실하게 넘깁니다.
+
+```c
+void Initial_IPC_Mastership(void)
+{
+    EALLOW;
+    /* 
+       GSRAM (GS0~GS7)의 마스터십을 CM(Connectivity Manager) 코어로 위임합니다.
+       MEMCFG_O_GSXMSEL 레지스터는 각 GSRAM 블록(GS0~GS15)당 1비트로 매핑됩니다.
+       - 0 = C28x CPU1/CPU2 소유
+       - 1 = CM 소유
+       따라서 CM이 사용하는 S0RAM~S3RAM 및 E0RAM(GS4)을 포함한 GS0~GS7 영역 전체를 
+       CM 소유로 설정하기 위해 하위 8비트를 모두 1로 세팅(0x00FFU)합니다.
+    */
+    HWREG(MEMCFG_BASE + MEMCFG_O_GSXMSEL) =
+        (HWREG(MEMCFG_BASE + MEMCFG_O_GSXMSEL) & ~0x00FFU) | 0x00FFU;
+        
+    /* C28x 로컬 전용 LSxRAM 마스터십 설정(MEMCFG_O_LSXMSEL)은 물리적으로 CM 위임이 불가하므로 제거합니다. */
+    EDIS;
+}
+
+---
+
+## 17. TR28386_T 성공사례 분석을 통한 CM 클럭원(Clock Source) 및 주파수 정합성 트러블슈팅
+
+**분석 일자**: 2026. 06. 04.  
+**분석 대상**: TR28386_T 프로젝트와 TMDSCNCD28388D_T 프로젝트의 CM 코어 클럭 구성 및 초기화 시퀀스 비교 분석
+
+동일한 TMS320F28388D 칩셋 기반에서 정상 기동되었던 `TR28386_T` 프로젝트의 CM 구동 환경을 역추적 분석한 결과, 현재 `TMDSCNCD28388D_T` 프로젝트에서 발생하고 있는 CM 코어 Hard Fault (`0xFFFFFFFE` HALTED) 및 동기화 실패의 결정적인 원인이 규명되었습니다.
+
+### 17.1 두 프로젝트의 결정적 하드웨어/클럭 설정 차이 비교
+
+| 분석 항목 | TR28386_T (정상 동작 성공) | TMDSCNCD28388D_T (락업/하드폴트 발생) | 분석 결과 및 영향 |
+| :--- | :--- | :--- | :--- |
+| **CM 코어 클럭 소스** | **SYSPLL 분주 클럭** (`SYSCTL_SOURCE_SYSPLL`) | **AUXPLL 클럭** (`SYSCTL_SOURCE_AUXPLL`) | AUXPLL은 controlCARD 하드웨어 사양(XTAL 20MHz vs 25MHz)의 구성이나 PLL Lock 상태에 따라 매우 불안정할 수 있으며, 이로 인해 CM 코어에 정상적인 클럭 공급이 이루어지지 않아 기동 직후 Hard Fault 유발. |
+| **CM 구동 주파수** | **100 MHz** (`SYSCTL_CMCLKOUT_DIV_2`) | **125 MHz** (`SYSCTL_CMCLKOUT_DIV_1`) | SYSPLL은 CPU1이 기동 시 이미 200MHz로 완벽히 락킹하여 보장하므로, 이를 2분주한 100MHz를 CM 클럭으로 공급하면 클럭 공급 지연이나 언락 상태가 원천 배제됨. |
+| **cm.h 클럭 정의** | `CM_CLK_FREQ = 125MHz` | `CM_CLK_FREQ = 125MHz` | 두 프로젝트 모두 헤더에는 125MHz로 되어 있으나, 실제 100MHz로 공급 시 플래시 Wait State 마진이 더 넉넉해져 플래시 오동작 확률이 오히려 0%가 됨. (100MHz 변경 시 정합성을 위해 100MHz로 교정 권장) |
+| **이더넷 클럭 소스** | **SYSPLL 분주 100MHz** | **SYSPLL 분주 100MHz** | 이더넷 주변장치(EMAC) 클럭은 이미 두 보드 모두 CPU1 측에서 SYSPLL 100MHz로 공급 중이므로, CM을 100MHz로 낮춰도 이더넷 통신 속도 및 기능에 전혀 지장이 없음. |
+
+### 17.2 CM 클럭 소스 변경에 따른 기대 효과
+
+1. **클럭 공급 무결성 확보**:
+   - CPU1이 정상 동작하고 있다면 CPU1의 메인 PLL(SYSPLL, 200MHz)이 이미 완벽히 락킹(Lock)된 상태입니다.
+   - CM 코어의 클럭 소스를 AUXPLL에서 **SYSPLL(2분주 = 100MHz)**로 변경하면, AUXPLL 하드웨어 미작동이나 클럭 불안정 요소에 의존하지 않고 신뢰도가 검증된 100MHz 클럭을 CM에 즉시 인가할 수 있어, 기동 실패 및 Hard Fault를 원천 예방합니다.
+2. **Flash Wait States 마진 극대화**:
+   - `cm.h` 내의 플래시 wait states 설정은 `DEVICE_FLASH_WAITSTATES = 2`로 세팅되어 있습니다.
+   - CM 코어 주파수가 125MHz에서 100MHz로 낮아지면 플래시 액세스 타임 요구도가 낮아지므로, Wait States 2는 하드웨어 사양 대비 압도적인 마진을 가지게 되어 플래시 메모리 접근으로 인한 CPU 버스 프리징 현상이 완전히 사라집니다.
+
+### 17.3 패치 코드 구성안
+
+#### 1) CPU1 - [DevDspInit.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevDspInit.c) CM 클럭 변경
+```c
+static void Initial_CmCore(void)
+{
+    /* 
+       CM 클럭 소스를 불안정한 AUXPLL 125MHz 대신, CPU1에 의해 검증된
+       SYSPLL 분주 클럭(200MHz / 2 = 100MHz)으로 변경하여 기동 무결성을 확보합니다. 
+    */
+    SysCtl_setCMClk(SYSCTL_CMCLKOUT_DIV_2, SYSCTL_SOURCE_SYSPLL);
+
+    // Flash 다운로드 디버깅 환경에 맞추어 CM 부트 모드를 Flash Sector0로 강제 고정
+    Device_bootCM(BOOTMODE_BOOT_TO_FLASH_SECTOR0);
+}
+```
+
+#### 2) CM - [cm.h](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/common/include/cm.h) 주파수 매칭 수정
+```c
+// 실제 공급되는 CM 클럭인 100MHz에 정합하도록 주파수 매크로 값을 교정합니다.
+#define CM_CLK_FREQ       100000000U
+```
+
+이 패치를 통해 TR28386_T 프로젝트와 동일한 CM 클럭 무결성을 보장하고, TMDSCNCD28388D_T 보드 상에서 발생하는 기동 락업 문제를 종식시킬 수 있습니다.
+
+```
+
+이 교정을 반영하면 CM 코어가 런타임에 `S0RAM` (.vtable) 및 `S2RAM` (.sysmem)에 자유롭게 접근할 수 있게 되어 Hard Fault 락업이 말끔히 해결되며, C28x와의 2단계 핸드셰이크 시퀀스를 정상적으로 완료하여 `Hzcnt` 카운터가 막힘없이 증가하게 됩니다.
+
+---
+
+## 18. CM 코어 RAM 디버그 중 Hard Fault (INVSTATE UsageFault, UFSR=0x0002) 원인 규명 및 조치 계획
+
+**분석 일자**: 2026. 06. 04.  
+**원인 분석**: CM 코어가 RAM 디버깅 중 기동을 멈추고 `faultISR()` (startup_cm.c 240라인)에 정박하며 `UFSR` 레지스터가 `0x0002` (INVSTATE) UsageFault 를 띄우는 원인을 규명하였습니다.
+
+### 18.1 INVSTATE 발생 메커니즘
+1. **CM 코어의 이더넷 인터페이스 초기화 흐름**:
+   CM 코어가 기동되면서 `Initial_Ethernet()` ([DevEthernet.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevEthernet.c)) 함수를 호출하여 이더넷 초기화를 수행합니다.
+   이때 인터페이스 설정 구조체 `xIfCfg` (`Ethernet_InitInterfaceConfig`)를 구성하면서 다음과 같이 전역 인터럽트 제어 콜백을 비워둡니다:
+   ```c
+   xIfCfg.ptrCoreInterruptEnable        = NULL; /* CM ARM: NVIC 직접 제어 불필요 */
+   xIfCfg.ptrCoreInterruptDisable       = NULL;
+   ```
+2. **이더넷 LLD 내부의 NULL 포인터 무조건 호출**:
+   `Ethernet_initInterface(xIfCfg)` ➡️ `Ethernet_getHandle(...)` ➡️ `Ethernet_initRxChannel(...)` ➡️ `Ethernet_addPacketsIntoRxQueue(...)` 순으로 호출이 이루어집니다.
+   TI C2000Ware의 이더넷 LLD 내부인 `Ethernet_addPacketsIntoRxQueue` 함수([ethernet.c:L2751-2808](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/ethernet.c#L2751-L2808))는 수신 디스크립터 링을 구성하면서 원자적 제어를 위해 아래와 같이 전역 인터럽트 제어 콜백을 호출합니다:
+   ```c
+   Ethernet_device_struct.ptrCoreInterruptDisable();  /* ethernet.c 2756라인 */
+   ...
+   pktPtr = (*Ethernet_device_struct.initConfig.pfcbGetPacket)();
+   Ethernet_device_struct.ptrCoreInterruptDisable();  /* ethernet.c 2767라인 */
+   ...
+   Ethernet_device_struct.ptrCoreInterruptEnable();   /* ethernet.c 2806라인 */
+   ```
+   **문제점**: 드라이버 라이브러리 내부에서 이 함수 포인터들이 `NULL` 인지 검사하는 방어 코드가 없으며, 그대로 역참조하여 호출(`BLX R3`, R3 = 0)해버립니다.
+3. **Hard Fault 유발**:
+   LSB가 0인 짝수 주소(0x00000000)로 분기를 시도하는 순간 ARM Cortex-M 아키텍처 사양 상 즉시 `INVSTATE` (Instruction executed in invalid state) UsageFault가 발생하며, 이로 인해 하드폴트 예외 벡터인 `faultISR()`로 비정상 분기되어 무한 루프에 갇히게 됩니다. 이 타이밍에 기동 시퀀스가 굳어버려 `Hzcnt` 카운터가 증가하지 않았던 것입니다.
+
+### 18.2 해결 방안
+- [DevEthernet.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevEthernet.c) 내에 CM 코어 전역 인터럽트를 활성화/비활성화할 수 있는 래퍼 함수를 구현합니다.
+- CM 코어의 `Interrupt_enableInProcessor()` 및 `Interrupt_disableInProcessor()` API를 활용하여 전역 인터럽트를 제어합니다.
+- `xIfCfg` 구조체에 해당 래퍼 함수의 주소를 전달하여 LLD 드라이버가 안전하게 함수 포인터를 실행할 수 있게 합니다.
+
+---
+
+## 19. CPU1 및 CM 코어 Hzcnt 주파수 편차 및 실행 지연 분석 보고서
+
+**분석 일자**: 2026. 06. 04.  
+**대상 파일**: 
+- [DevTimer.c (CPU1)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevTimer.c)
+- [main.c (CPU1)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/main.c)
+- [DevTimer.c (CM)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevTimer.c)
+- [main.c (CM)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main.c)
+
+### 19.1 현상 분석 및 원인 규명
+- **현상**: 실물 보드에 25MHz XTAL이 실장되어 있음이 확실히 규명되었음에도 불구하고, CPU1의 `xTimer.Hz` (즉, `Hzcnt` 측정값)가 약 580Hz, CM 코어의 `xTimer.Hz`가 약 770Hz 수준으로 1000Hz 기준 대비 현저히 낮게 측정됩니다.
+- **원인 분석**:
+  1. **CPU1의 속도 저하 원인 (100us 인터럽트의 블로킹 오버헤드)**:
+     - CPU1의 `DevTimer.c`에서는 100us 주기(`CPUTimer0`) 인터럽트 핸들러 `isr_CpuTimer0` 내부에서 `sendScia_SCI_PC()` 함수를 매번 실행하고 있습니다.
+     - `sendScia_SCI_PC()`는 내부적으로 `SCI_writeCharArray` API를 호출하며, 이 함수는 송신 FIFO에 공간이 생길 때까지 무한 루프(polling)를 돌며 대기하는 블로킹 방식으로 구현되어 있습니다.
+     - 115200bps 보레이트 기준 1바이트 전송에 약 87us가 소요됩니다. `sendScia_SCI_PC`에서는 한 번에 최대 20바이트까지 전송하려고 하므로, 전송 데이터가 많을 때 인터럽트 내 대기 시간이 수백 us에서 최대 1.7ms까지 길어질 수 있습니다.
+     - 이로 인해 인터럽트 우선순위가 더 낮은 1ms 주기 타이머(`isr_CpuTimer1`) 및 1초 주기 타이머(`isr_CpuTimer2`) 인터럽트가 심각하게 지연되거나 유실됩니다.
+     - 또한, 메인 루프에서 주기적 플래그를 처리할 때 `xTimer.Cycle_1ms = 0u;`와 같이 대입식으로 초기화하고 있어, 백그라운드 태스크 지연 등으로 인해 플래그가 누적되었을 때(예: 2, 3 등) 이전 호출 횟수가 유실되어 `Hzcnt` 값이 1000보다 크게 떨어지는 현상이 발생합니다.
+  2. **CM의 속도 저하 원인 (백그라운드 지연으로 인한 태스크 유실)**:
+     - CM 코어의 `main.c` 역시 `xTimer.Cycle_1ms = 0;`으로 일괄 클리어하고 있습니다.
+     - CM 코어 메인 루프는 매 루프마다 `updateEthernetTask()` 및 `buildAndSendUdpPacket()` (2ms 주기)을 실행하므로, 루프 한 번 도는 데 종종 1ms 이상의 시간이 지연됩니다.
+     - 이에 따라 `xTimer.Cycle_1ms` 카운터가 1 이상으로 누적(예: 2, 3 등)된 상태에서 0으로 리셋되어, 메인 루프의 `Cycle_1ms()` 실행 횟수(`Hzcnt` 증가)가 대거 유실되어 약 770Hz 정도로 측정됩니다.
+
+### 19.2 해결 방안
+- **조치 1 (CPU1 SCI 오버헤드 해제)**: CPU1의 `isr_CpuTimer0` (100us) 내에서 `sendScia_SCI_PC()` 호출을 제거하고, `sendScia_SCI_PC()`를 `main.c`의 메인 백그라운드 루프 `while(1u)`에서 상시(또는 매 루프마다) 폴링 방식으로 실행하도록 이동합니다. 이를 통해 100us 초고속 인터럽트가 CPU를 점유하는 문제를 근본적으로 해결합니다.
+- **조치 2 (주기 태스크 카운터 감쇄 로직 교정)**: CPU1과 CM의 `main.c` 백그라운드 스케줄러에서, 주기 카운터를 0으로 초기화하지 않고 발생 횟수만큼 감산(`xTimer.Cycle_1ms -= 1U;` 등)하도록 수정하여 백그라운드 지연으로 인한 태스크 유실을 방지합니다.

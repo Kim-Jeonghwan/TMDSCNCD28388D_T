@@ -2,14 +2,13 @@
     Nexcom Co., Ltd.
     Filename         : DevEthernet.h
     Description      : Ethernet EMAC 드라이버 계층 헤더 (MII 모드, DP83822 PHY)
-    Last Updated     : 2026. 06. 01. (MII EMAC 초기화 구현)
+    Last Updated     : 2026. 06. 04. (CoreInterruptEnable/Disable 콜백 선언 추가)
 **********************************************************************/
 
 #ifndef DEV_ETHERNET_H
 #define DEV_ETHERNET_H
 
 #include "main.h"
-#include "ethernet.h"
 
 /* ---------------------------------------------------------------
  * EMAC 기본 주소 (hw_memmap.h 정의값 사용)
@@ -43,4 +42,9 @@ Ethernet_Pkt_Desc *App_ethGetPacketBuffer(void);
 Ethernet_Pkt_Desc *App_ethRxCallback(Ethernet_Handle hApp, Ethernet_Pkt_Desc *pPkt);
 void               App_ethTxCallback(Ethernet_Handle hApp, Ethernet_Pkt_Desc *pPkt);
 
+/* LLD 드라이버 내 하드폴트 방지용 인터럽트 제어 콜백 래퍼 */
+void Platform_enableCoreInterrupt(void);
+void Platform_disableCoreInterrupt(void);
+
 #endif /* DEV_ETHERNET_H */
+

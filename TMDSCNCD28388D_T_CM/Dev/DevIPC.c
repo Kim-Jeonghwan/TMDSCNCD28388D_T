@@ -2,12 +2,12 @@
     Nexcom Co., Ltd.
     Filename         : DevIPC.c
     Description      : CM Core IPC Device Driver
-    Last Updated     : 2026. 06. 02. (IPC_init 추가로 레지스터 플래그 초기화 보강)
+    Last Updated     : 2026. 06. 04. (CM용 TI Clang 준수를 위한 DSP 전용 __interrupt 키워드 제거)
 **********************************************************************/
 
 #include "DevIPC.h"
 
-static __interrupt void isrIpcFromCPU1(void);
+static void isrIpcFromCPU1(void);
 
 /*
 @funtion    void Initial_IPC(void)
@@ -19,8 +19,7 @@ static __interrupt void isrIpcFromCPU1(void);
 */
 void Initial_IPC(void)
 {
-    /* IPC 제어 레지스터의 모든 플래그 강제 클리어 (이전 오염 플래그 제거) */
-    IPC_init(IPC_CM_L_CPU1_R);
+    // IPC_init()은 CPU1의 초기화 상태를 보호하기 위해 호출을 생략합니다. (마스터인 CPU1이 부팅 전에 일괄 초기화 수행 완료)
 
     // 1. CPU1으로부터 수신받을 인터럽트 등록
     IPC_registerInterrupt(IPC_CM_L_CPU1_R, IPC_INT1, isrIpcFromCPU1);
@@ -31,14 +30,14 @@ void Initial_IPC(void)
 }
 
 /*
-@funtion    static __interrupt void isrIpcFromCPU1(void)
+@funtion    static void isrIpcFromCPU1(void)
 @brief      CPU1 코어로부터 수신된 IPC 인터럽트 서비스 루틴 (IPC1)
 @param      void
-@return     static __interrupt void
+@return     static void
 @remark
     - CPU1이 보낸 명령과 데이터를 읽어 CSU_IPC 레이어로 처리 요청을 넘기고 수신 플래그를 ack합니다.
 */
-static __interrupt void isrIpcFromCPU1(void)
+static void isrIpcFromCPU1(void)
 {
     uint32_t command, addr, data;
     bool status;

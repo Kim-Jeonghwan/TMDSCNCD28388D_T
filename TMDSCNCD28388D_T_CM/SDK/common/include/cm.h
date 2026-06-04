@@ -42,6 +42,14 @@
 // $
 //#############################################################################
 
+#ifndef __CM_H__
+#define __CM_H__
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 //
 // Included Files
 //
@@ -112,3 +120,9 @@ extern uint16_t RamfuncsRunSize;
 extern void CM_init(void);
 extern void CM_enableAllPeripherals(void);
 extern void __error__(const char *filename, uint32_t line);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // __CM_H__

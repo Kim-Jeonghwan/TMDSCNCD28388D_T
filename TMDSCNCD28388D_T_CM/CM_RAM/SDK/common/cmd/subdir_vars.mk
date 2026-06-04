@@ -6,6 +6,6 @@ SHELL = cmd.exe
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CMD_SRCS += \
-../SDK/common/cmd/2838x_FLASH_lnk_cm.cmd 
+../SDK/common/cmd/2838x_RAM_lnk_cm.cmd 
 
 

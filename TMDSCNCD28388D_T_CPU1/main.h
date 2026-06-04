@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : main.h
     Description      : Core header files inclusion
-    Last Updated     : 2026. 06. 01.
+    Last Updated     : 2026. 06. 04. (easyDSP 호환성 유지: f28x_project.h 복원 / RamfuncsLoad* 심볼 문제는 DevRamfuncs.c로 해결)
 **********************************************************************/
 
 #ifndef MAIN_H
@@ -24,9 +24,8 @@
 #define MEMCFG_GSRAMMASTER_CM    2
 #endif
 
-/* Bit-field 헤더 포함 */
-// f28x_project.h 내부의 Uint16 등과 충돌을 피하기 위해 
-// 프로젝트 전체에서 사용하는 타입을 여기서 정리합니다.
+/* Bit-field 헤더 포함 (구형 easyDSP 등 외부 코드와의 호환성 유지용)
+// Uint16, Uint32 타입 및 비트필드 레지스터 구조체(AdcaRegs, GpioDataRegs 등) 제공 */
 #include "f28x_project.h"
 
 #include "DevCommon.h"
@@ -36,6 +35,8 @@
 #include "DevTimer.h"
 #include "DevAdc.h"
 #include "DevIPC.h"
+#include "DevEpwmTimer.h"    /* EPWM1 기반 2ms 타이머 */
+#include "DevRamfuncs.h"
 
 #include "CSU_SCI_PC.h"
 #include "CSU_LED.h"

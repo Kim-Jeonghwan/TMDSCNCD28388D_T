@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : main.c
     Description      : CM Core Main Entry
-    Last Updated     : 2026. 06. 02. (Flash 벡터 리다이렉션 및 PHY 100ms 안정화 대기 추가)
+    Last Updated     : 2026. 06. 04. (스케줄러 while 루프 교정 및 Hzcnt 750Hz 편차 해결)
 **********************************************************************/
 
 #include "main.h"
@@ -27,13 +27,16 @@ int main(void)
     /* 1. 시스템 초기화 (CM 코어 클럭 및 인터럽트 등) */
     CM_init(); 
 
+#ifdef _FLASH
     /* --- [필수 핵심 패치] Flash 벡터 테이블을 RAM으로 복사 및 하드웨어 매핑 리다이렉션 --- */
     Interrupt_initRAMVectorTable(vectorTableFlash, vectorTableRAM);
+#endif
 
-    /* 2. 통신 및 주변장치 초기화 */
-    Initial_IPC();
+    /* 2. 통신 및 주변장치 초기화 및 동기화 */
+    Initial_IPC();       // CPU1과 안전하게 1단계 하드웨어 동기화 (대기 탈출)
 
     /* --- [물리 이더넷 프리징 예방] PHY 칩 리셋 해제 후 하드웨어 안정화 대기 딜레이 (100ms) --- */
+    /* 동기화를 성공적으로 탈출한 직후, PHY가 기상하는 시간 동안 안전하게 대기합니다. */
     {
         volatile uint32_t uiDelay = 0U;
         for(uiDelay = 0U; uiDelay < 12000000U; uiDelay++)
@@ -42,47 +45,50 @@ int main(void)
         }
     }
 
-    Initial_Ethernet();
+    Initial_Ethernet();  // 딜레이 탈출 즉시 이더넷 및 타이머 기동
     Initial_TIMER();
     
     /* 2.5 전역 인터럽트 활성화 */
     (void)Interrupt_enableInProcessor(); 
 
+    /* --- [핵심 개선] CM 코어의 모든 초기화 완료 및 기동 상태를 CPU1로 최종 통보 (2단계 핸드셰이크) --- */
+    sendIpcMessageToCPU1(IPC_CMD_CM_BOOT_READY, 0U, 0U);
+
     /* 3. 백그라운드 무한 루프 (Background Loop) */
     while(1)
     {
         /* --- 2ms Task: UDP Reflect MSG 송신 --- */
-        if (xTimer.Cycle_2ms >= 1U)
+        while (xTimer.Cycle_2ms >= 1U)
         {
-            xTimer.Cycle_2ms = 0U;
+            xTimer.Cycle_2ms -= 1U;
             Cycle_2ms();
         }
 
         /* --- 1ms Task --- */
-        if (xTimer.Cycle_1ms >= 1U)
+        while (xTimer.Cycle_1ms >= 1U)
         {
-            xTimer.Cycle_1ms = 0;
+            xTimer.Cycle_1ms -= 1U;
             Cycle_1ms();
         }
 
         /* --- 10ms Task --- */
-        if (xTimer.Cycle_10ms >= 10)
+        while (xTimer.Cycle_10ms >= 10u)
         {
-            xTimer.Cycle_10ms = 0;
+            xTimer.Cycle_10ms -= 10u;
             Cycle_10ms();
         }
 
         /* --- 100ms Task --- */
-        if (xTimer.Cycle_100ms >= 100)
+        while (xTimer.Cycle_100ms >= 100u)
         {
-            xTimer.Cycle_100ms = 0;
+            xTimer.Cycle_100ms -= 100u;
             Cycle_100ms();
         }
 
         /* --- 1000ms Task --- */
-        if (xTimer.Cycle_1000ms >= 1000)
+        while (xTimer.Cycle_1000ms >= 1000u)
         {
-            xTimer.Cycle_1000ms = 0;
+            xTimer.Cycle_1000ms -= 1000u;
             Cycle_1000ms();
         }
 

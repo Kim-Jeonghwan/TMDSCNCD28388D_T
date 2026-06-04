@@ -2,36 +2,35 @@
     Nexcom Co., Ltd.
     Filename         : DevEthernet.c
     Description      : EMAC 드라이버 초기화 및 Rx/Tx 콜백 구현 (MII, DP83822)
-    Last Updated     : 2026. 06. 02. (정적 구조체 static xInitCfg 설계를 적용하여 메모리 오염에 따른 CM 하드 폴트 원천 제거)
+    Last Updated     : 2026. 06. 04. (LLD 하드폴트 예방을 위해 CoreInterruptEnable/Disable 콜백 구현 반영)
 **********************************************************************/
 
 /*
  * [회로도 GPIO 핀 매핑] (CPU1 DevDspInit.c 에서 GPIO 핀 MUX 설정)
- *   GPIO44  → ENET_MII_TX_CLK
- *   GPIO118 → ENET_MII_TX_EN
- *   GPIO75  → ENET_MII_TX_DATA0
- *   GPIO122 → ENET_MII_TX_DATA1
- *   GPIO123 → ENET_MII_TX_DATA2
- *   GPIO124 → ENET_MII_TX_DATA3
- *   GPIO111 → ENET_MII_RX_CLK
- *   GPIO112 → ENET_MII_RX_DV
- *   GPIO113 → ENET_MII_RX_ERR
- *   GPIO114 → ENET_MII_RX_DATA0
- *   GPIO115 → ENET_MII_RX_DATA1
- *   GPIO116 → ENET_MII_RX_DATA2
- *   GPIO117 → ENET_MII_RX_DATA3
- *   GPIO105 → ENET_MDIO_CLK
- *   GPIO106 → ENET_MDIO_DATA
+ * GPIO44  → ENET_MII_TX_CLK
+ * GPIO118 → ENET_MII_TX_EN
+ * GPIO75  → ENET_MII_TX_DATA0
+ * GPIO122 → ENET_MII_TX_DATA1
+ * GPIO123 → ENET_MII_TX_DATA2
+ * GPIO124 → ENET_MII_TX_DATA3
+ * GPIO111 → ENET_MII_RX_CLK
+ * GPIO112 → ENET_MII_RX_DV
+ * GPIO113 → ENET_MII_RX_ERR
+ * GPIO114 → ENET_MII_RX_DATA0
+ * GPIO115 → ENET_MII_RX_DATA1
+ * GPIO116 → ENET_MII_RX_DATA2
+ * GPIO117 → ENET_MII_RX_DATA3
+ * GPIO105 → ENET_MDIO_CLK
+ * GPIO106 → ENET_MDIO_DATA
  *
- * [CM 클럭] DevDspInit.c 에서 SYSCTL_CMCLKOUT_DIV_2 → 100 MHz
+ * [CM 클럭] DevDspInit.c 에서 AUXPLL 기반 125 MHz 설정
  *
  * [EMAC 기본 주소]
- *   EMAC_BASE    = 0x400C0000U  (Ethernet MAC 레지스터)
- *   EMAC_SS_BASE = 0x400C2000U  (Ethernet SS Wrapper 레지스터)
+ * EMAC_BASE    = 0x400C0000U  (Ethernet MAC 레지스터)
+ * EMAC_SS_BASE = 0x400C2000U  (Ethernet SS Wrapper 레지스터)
  */
 
 #include "DevEthernet.h"
-#include "CSU_Ethernet.h"
 
 /* ---------------------------------------------------------------
  * 전역 변수
@@ -84,6 +83,31 @@ static void initRxDescriptors(void)
 }
 
 /* ---------------------------------------------------------------
+ * LLD 드라이버 내 하드폴트 방지용 인터럽트 제어 콜백 래퍼 구현
+ * --------------------------------------------------------------- */
+/*
+@funtion    void Platform_enableCoreInterrupt(void)
+@brief      CM 코어의 전역 인터럽트를 활성화합니다.
+@param      void
+@return     void
+*/
+void Platform_enableCoreInterrupt(void)
+{
+    (void)Interrupt_enableInProcessor();
+}
+
+/*
+@funtion    void Platform_disableCoreInterrupt(void)
+@brief      CM 코어의 전역 인터럽트를 비활성화합니다.
+@param      void
+@return     void
+*/
+void Platform_disableCoreInterrupt(void)
+{
+    (void)Interrupt_disableInProcessor();
+}
+
+/* ---------------------------------------------------------------
  * EMAC 초기화
  * --------------------------------------------------------------- */
 /*
@@ -119,10 +143,11 @@ void Initial_Ethernet(void)
     xIfCfg.ptrPlatformPeripheralReset    = &Platform_resetPeripheral;
     xIfCfg.ptrPlatformInterruptEnable    = &Platform_enableInterrupt;
     xIfCfg.ptrPlatformInterruptDisable   = &Platform_disableInterrupt;
-    xIfCfg.ptrCoreInterruptEnable        = NULL; /* CM ARM: NVIC 직접 제어 불필요 */
-    xIfCfg.ptrCoreInterruptDisable       = NULL;
+    xIfCfg.ptrCoreInterruptEnable        = &Platform_enableCoreInterrupt;  /* LLD 하드폴트 방지용 인터럽트 ON 콜백 */
+    xIfCfg.ptrCoreInterruptDisable       = &Platform_disableCoreInterrupt; /* LLD 하드폴트 방지용 인터럽트 OFF 콜백 */
 
     /* EMAC 관련 인터럽트 번호 등록 (CM 인터럽트 벡터 테이블 기준) */
+    /* hw_ints.h 규격에 맞춰 표준 매크로 명칭 유지 */
     xIfCfg.interruptNum[0U] = INT_EMAC;     /* EMAC 일반 인터럽트 */
     xIfCfg.interruptNum[1U] = INT_EMAC_TX0; /* TX Channel 0 완료 인터럽트 */
     xIfCfg.interruptNum[2U] = INT_EMAC_RX0; /* RX Channel 0 완료 인터럽트 */

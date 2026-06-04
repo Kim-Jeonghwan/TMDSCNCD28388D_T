@@ -29,5 +29,9 @@
 			<name>C2000WARE_DLIB_ROOT</name>
 			<value>$%7BCOM_TI_C2000WARE_INSTALL_DIR%7D/driverlib/f2838x/driverlib_cm</value>
 		</variable>
+		<variable>
+			<name>PROJECT_ROOT</name>
+			<value>file:/D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM</value>
+		</variable>
 	</variableList>
 </projectDescription>

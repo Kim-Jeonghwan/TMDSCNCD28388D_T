@@ -6,7 +6,6 @@
 **********************************************************************/
 
 #include "CSU_IPC.h"
-#include "CSU_Ethernet.h"
 
 /* Message RAM 영역에 구조체 포인터 할당 */
 volatile stIpcDataPacket *pxIpcCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_TO_CM_MSGRAM_ADDR;

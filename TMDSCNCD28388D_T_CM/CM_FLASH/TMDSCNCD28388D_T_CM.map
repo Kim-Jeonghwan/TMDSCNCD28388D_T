@@ -1,10 +1,10 @@
 ******************************************************************************
                   TI ARM Linker PC v20.2.7                     
 ******************************************************************************
->> Linked Tue Jun  2 17:34:25 2026
+>> Linked Thu Jun  4 09:40:47 2026
 
 OUTPUT FILE NAME:   <TMDSCNCD28388D_T_CM.out>
-ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 002024ad
+ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 002024b1
 
 
 MEMORY CONFIGURATION
@@ -12,7 +12,7 @@ MEMORY CONFIGURATION
          name            origin    length      used     unused   attr    fill
 ----------------------  --------  ---------  --------  --------  ----  --------
   CMBANK0_RESETISR      00200000   00000008  00000006  00000002  RWIX
-  CMBANK0_SECTOR0       00200008   00003ff8  00002912  000016e6  RWIX
+  CMBANK0_SECTOR0       00200008   00003ff8  00002916  000016e2  RWIX
   CMBANK0_SECTOR1       00204000   00004000  00000000  00004000  RWIX
   CMBANK0_SECTOR2       00208000   00004000  00000000  00004000  RWIX
   CMBANK0_SECTOR3       0020c000   00004000  00000000  00004000  RWIX
@@ -54,11 +54,12 @@ run origin  load origin   length   init length attrs members
   002001b0    002001b0    00000250   00000250    r-x .text.1
 00200400    00200400    00000140   00000000    rw-
   00200400    00200400    00000140   00000000    rw- .vftable
-00200540    00200540    00002388   00002388    r-x
-  00200540    00200540    000022fe   000022fe    r-x .text.2
-  00202840    00202840    00000088   00000088    r-- .const
-002028d0    002028d0    00000068   00000068    r--
-  002028d0    002028d0    00000068   00000068    r-- .cinit
+00200540    00200540    00002302   00002302    r-x
+  00200540    00200540    00002302   00002302    r-x .text.2
+00202850    00202850    00000088   00000088    r--
+  00202850    00202850    00000088   00000088    r-- .const
+002028e0    002028e0    00000068   00000068    r--
+  002028e0    002028e0    00000068   00000068    r-- .cinit
 1fffc000    1fffc000    00000200   00000000    rw-
   1fffc000    1fffc000    00000200   00000000    rw- .stack
 1fffe000    00200010    00000194   00000194    r-x
@@ -95,13 +96,13 @@ section   page    origin      length       input sections
 .vftable   0    00200400    00000140     UNINITIALIZED
                   00200400    00000140     startup_cm.obj (.vftable:retain)
 
-.cinit     0    002028d0    00000068     
-                  002028d0    00000024     (.cinit..vftable.load) [load image, compression = lzss]
-                  002028f4    0000000c     (__TI_handler_table)
-                  00202900    00000008     (.cinit..bss.load) [load image, compression = zero_init]
-                  00202908    00000008     (.cinit..data.load) [load image, compression = lzss]
-                  00202910    00000008     (.cinit..vtable.load) [load image, compression = zero_init]
-                  00202918    00000020     (__TI_cinit_table)
+.cinit     0    002028e0    00000068     
+                  002028e0    00000024     (.cinit..vftable.load) [load image, compression = lzss]
+                  00202904    0000000c     (__TI_handler_table)
+                  00202910    00000008     (.cinit..bss.load) [load image, compression = zero_init]
+                  00202918    00000008     (.cinit..data.load) [load image, compression = lzss]
+                  00202920    00000008     (.cinit..vtable.load) [load image, compression = zero_init]
+                  00202928    00000020     (__TI_cinit_table)
 
 .vtable    0    20000800    00000140     UNINITIALIZED
                   20000800    00000140     interrupt.obj (.vtable)
@@ -152,7 +153,7 @@ __llvm_prf_cnts
                   002001b0    00000224     ethernet.obj (.text:Ethernet_addPacketsIntoTxQueue)
                   002003d4    0000002c     sysctl.obj (.text:SysCtl_enablePeripheral)
 
-.text.2    0    00200540    000022fe     
+.text.2    0    00200540    00002302     
                   00200540    000003e8     ethernet.obj (.text:Ethernet_genericISR)
                   00200928    000002bc     DevTimer.obj (.text:Initial_TIMER)
                   00200be4    0000016c     ethernet.obj (.text:Ethernet_retrieveRxPacket)
@@ -167,115 +168,115 @@ __llvm_prf_cnts
                   002014c8    000000b4     ethernet.obj (.text:Ethernet_initInterface)
                   0020157c    000000ac     ethernet.obj (.text:Ethernet_removePacketsFromRxQueue)
                   00201628    000000a8     CSU_Ethernet.obj (.text:processReceivedEthernetPacket)
-                  002016d0    0000009c     rtsv7M4_T_le_eabi.lib : memcpy_t2.asm.obj (.text)
-                  0020176c    00000094     interrupt.obj (.text:Interrupt_disable)
-                  00201800    00000094     interrupt.obj (.text:Interrupt_enable)
-                  00201894    00000094     main.obj (.text:main)
-                  00201928    00000090     CSU_Ethernet.obj (.text:buildAndSendUdpPacket)
-                  002019b8    00000090     CSU_Ethernet.obj (.text:sendAckResponse)
-                  00201a48    00000088     ethernet.obj (.text:Ethernet_writeTxDMAControl)
-                  00201ad0    00000084     ethernet.obj (.text:Ethernet_addPacketsIntoRxQueue)
-                  00201b54    0000007a     rtsv7M4_T_le_eabi.lib : memset_t2.asm.obj (.text)
-                  00201bce    00000002     DevEthernet.obj (.text:App_ethTxCallback)
-                  00201bd0    00000078     interrupt.obj (.text:Interrupt_registerHandler)
-                  00201c48    00000076     cm.obj (.text:CM_enableAllPeripherals)
-                  00201cbe    00000002     startup_cm.obj (.text:defaultISR)
-                  00201cc0    00000070     ethernet.obj (.text:Ethernet_getOneStepTransmitTimestampPTP)
-                  00201d30    0000006e     ethernet.obj (.text:Ethernet_writePHYRegister)
-                  00201d9e    00000002     startup_cm.obj (.text:faultISR)
-                  00201da0    00000068     interrupt.obj (.text:Interrupt_initRAMVectorTable)
-                  00201e08    00000068     rtsv7M4_T_le_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
-                  00201e70    00000064     startup_cm.obj (.text:nmiISR)
-                  00201ed4    00000060     ethernet.obj (.text:Ethernet_receiveISR)
-                  00201f34    0000005c     ethernet.obj (.text:Ethernet_writeRxDMAControl)
-                  00201f90    00000058     ethernet.obj (.text:Ethernet_transmitISR)
-                  00201fe8    00000058     ipc.obj (.text:IPC_sendCommand)
-                  00202040    00000054     ethernet.obj (.text:Ethernet_submitRxPacket)
-                  00202094    00000054     ipc.obj (.text:IPC_readCommand)
-                  002020e8    00000054     ipc.obj (.text:IPC_registerInterrupt)
-                  0020213c    00000054     CSU_Ethernet.obj (.text:buildIPHeader)
-                  00202190    00000052     ethernet.obj (.text:Ethernet_readPHYRegister)
-                  002021e2    00000002     --HOLE-- [fill = 0]
-                  002021e4    0000004c     cm.obj (.text:CM_init)
-                  00202230    00000008     flash.obj (.tramp.Flash_initModule.1)
-                  00202238    00000048     DevEthernet.obj (.text:App_ethGetPacketBuffer)
-                  00202280    00000044     rtsv7M4_T_le_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit:__TI_auto_init_nobinit_nopinit)
-                  002022c4    0000003c     DevIPC.obj (.text:Initial_IPC)
-                  00202300    0000003c     DevEthernet.obj (.text:initRxDescriptors)
-                  0020233c    00000038     CSU_Ethernet.obj (.text:buildEthernetHeader)
-                  00202374    00000038     DevIPC.obj (.text:isrIpcFromCPU1)
-                  002023ac    00000038     DevTimer.obj (.text:isr_CpuTimer1)
-                  002023e4    00000036     CSU_Ethernet.obj (.text:calcIPChecksum)
-                  0020241a    00000002     --HOLE-- [fill = 0]
-                  0020241c    00000034     sysctl.obj (.text:SysCtl_resetPeripheral)
-                  00202450    00000030     CSU_Ethernet.obj (.text:buildUDPHeader)
-                  00202480    0000002c     CSU_Ethernet.obj (.text:sendEthernetFrame)
-                  002024ac    00000024     rtsv7M4_T_le_eabi.lib : boot_cortex_m.c.obj (.text:_c_int00_noargs:_c_int00_noargs)
-                  002024d0    00000024     DevIPC.obj (.text:sendIpcMessageToCPU1)
-                  002024f4    00000022     ethernet.obj (.text:Ethernet_enableMACRxQ)
-                  00202516    00000002     --HOLE-- [fill = 0]
-                  00202518    00000020     DevTimer.obj (.text:CPUTimer_isBaseValid)
-                  00202538    00000020     ethernet.obj (.text:Ethernet_configureEEEClockGatingControl)
-                  00202558    00000020     DevTimer.obj (.text:isr_CpuTimer0)
-                  00202578    00000020     DevTimer.obj (.text:isr_CpuTimer2)
-                  00202598    0000001e     ethernet.obj (.text:Ethernet_performPushPacketQueueChain)
-                  002025b6    0000001e     CSU_Ethernet.obj (.text:calcUdpMsgChecksum)
-                  002025d4    0000001c     ethernet.obj (.text:Ethernet_isTimestampIntActive)
-                  002025f0    0000001c     ethernet.obj (.text:Ethernet_isTransmitTimestampStatusSet)
-                  0020260c    0000001c     ethernet.obj (.text:Ethernet_performPushOnPacketQueue)
-                  00202628    0000001c     ethernet.obj (.text:Ethernet_setMACAddr)
-                  00202644    0000001c     ethernet.obj (.text:Ethernet_setMTLTxQueueOpMode)
-                  00202660    00000018     CSU_IPC.obj (.text:recvIpcCpu1Message)
-                  00202678    00000016     ethernet.obj (.text:Ethernet_setMTLRxQueueOpMode)
-                  0020268e    00000016     ethernet.obj (.text:Ethernet_setRxDescRingLength)
-                  002026a4    00000016     ethernet.obj (.text:Ethernet_setTxDescRingLength)
-                  002026ba    00000014     DevEthernet.obj (.text:App_ethRxCallback)
-                  002026ce    00000014     ethernet.obj (.text:Ethernet_enableDmaInterrupt)
-                  002026e2    00000014     ethernet.obj (.text:Ethernet_nextDescAvailable)
-                  002026f6    00000002     --HOLE-- [fill = 0]
-                  002026f8    00000014     DevEthernet.obj (.text:updateEthernetTask)
-                  0020270c    00000012     ethernet.obj (.text:Ethernet_enableRxDMAReception)
-                  0020271e    00000012     ethernet.obj (.text:Ethernet_getRxERICount)
-                  00202730    00000012     ethernet.obj (.text:Ethernet_performPopOnPacketQueue)
-                  00202742    00000002     --HOLE-- [fill = 0]
-                  00202744    00000010     main.obj (.text:Cycle_1ms)
-                  00202754    00000010     ethernet.obj (.text:Ethernet_configureMDIO)
-                  00202764    00000010     ethernet.obj (.text:Ethernet_resetModule)
-                  00202774    0000000e     ethernet.obj (.text:Ethernet_disableTxEEEMode)
-                  00202782    0000000e     rtsv7M4_T_le_eabi.lib : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
-                  00202790    0000000c     ethernet.obj (.text:Ethernet_clearDMAChannelInterrupt)
-                  0020279c    0000000c     ethernet.obj (.text:Ethernet_configureRevMIIAddress)
-                  002027a8    0000000c     ethernet.obj (.text:Ethernet_setMTLOpmode)
-                  002027b4    0000000c     ethernet.obj (.text:Ethernet_writeRxDescListAddress)
-                  002027c0    0000000c     ethernet.obj (.text:Ethernet_writeRxDescTailPointer)
-                  002027cc    0000000c     ethernet.obj (.text:Ethernet_writeTxDescListAddress)
-                  002027d8    0000000c     ethernet.obj (.text:Ethernet_writeTxDescTailPointer)
-                  002027e4    0000000c     rtsv7M4_T_le_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init)
-                  002027f0    0000000a     ethernet.obj (.text:Ethernet_getPHYMode)
-                  002027fa    00000008     ethernet.obj (.text:Ethernet_configurePHYAddress)
-                  00202802    00000008     ethernet.obj (.text:Ethernet_setDMAMode)
-                  0020280a    00000008     ethernet.obj (.text:Ethernet_setMACConfiguration)
-                  00202812    00000008     ethernet.obj (.text:Ethernet_setMACPacketFilter)
-                  0020281a    00000006     platform_port.obj (.text:Platform_enablePeripheral)
-                  00202820    00000006     platform_port.obj (.text:Platform_resetPeripheral)
-                  00202826    00000004     main.obj (.text:Cycle_2ms)
-                  0020282a    00000004     ethernet.obj (.text:Ethernet_HW_descQueueGetCount)
-                  0020282e    00000004     ethernet.obj (.text:Ethernet_returnTopOfPacketQueue)
-                  00202832    00000004     cm.obj (.text:__error__)
-                  00202836    00000004     rtsv7M4_T_le_eabi.lib : pre_init.c.obj (.text:_system_pre_init)
-                  0020283a    00000004                           : exit.c.obj (.text:abort:abort)
+                  002016d0    000000a0     main.obj (.text:main)
+                  00201770    0000009c     rtsv7M4_T_le_eabi.lib : memcpy_t2.asm.obj (.text)
+                  0020180c    00000094     interrupt.obj (.text:Interrupt_disable)
+                  002018a0    00000094     interrupt.obj (.text:Interrupt_enable)
+                  00201934    00000090     CSU_Ethernet.obj (.text:buildAndSendUdpPacket)
+                  002019c4    00000090     CSU_Ethernet.obj (.text:sendAckResponse)
+                  00201a54    00000088     ethernet.obj (.text:Ethernet_writeTxDMAControl)
+                  00201adc    00000084     ethernet.obj (.text:Ethernet_addPacketsIntoRxQueue)
+                  00201b60    0000007a     rtsv7M4_T_le_eabi.lib : memset_t2.asm.obj (.text)
+                  00201bda    00000002     DevEthernet.obj (.text:App_ethTxCallback)
+                  00201bdc    00000078     interrupt.obj (.text:Interrupt_registerHandler)
+                  00201c54    00000076     cm.obj (.text:CM_enableAllPeripherals)
+                  00201cca    00000002     startup_cm.obj (.text:defaultISR)
+                  00201ccc    00000070     ethernet.obj (.text:Ethernet_getOneStepTransmitTimestampPTP)
+                  00201d3c    0000006e     ethernet.obj (.text:Ethernet_writePHYRegister)
+                  00201daa    00000002     startup_cm.obj (.text:faultISR)
+                  00201dac    00000068     interrupt.obj (.text:Interrupt_initRAMVectorTable)
+                  00201e14    00000068     rtsv7M4_T_le_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
+                  00201e7c    00000064     startup_cm.obj (.text:nmiISR)
+                  00201ee0    00000060     ethernet.obj (.text:Ethernet_receiveISR)
+                  00201f40    0000005c     ethernet.obj (.text:Ethernet_writeRxDMAControl)
+                  00201f9c    00000058     ethernet.obj (.text:Ethernet_transmitISR)
+                  00201ff4    00000058     ipc.obj (.text:IPC_sendCommand)
+                  0020204c    00000054     ethernet.obj (.text:Ethernet_submitRxPacket)
+                  002020a0    00000054     ipc.obj (.text:IPC_readCommand)
+                  002020f4    00000054     ipc.obj (.text:IPC_registerInterrupt)
+                  00202148    00000054     CSU_Ethernet.obj (.text:buildIPHeader)
+                  0020219c    00000052     ethernet.obj (.text:Ethernet_readPHYRegister)
+                  002021ee    00000002     --HOLE-- [fill = 0]
+                  002021f0    0000004c     cm.obj (.text:CM_init)
+                  0020223c    00000008     flash.obj (.tramp.Flash_initModule.1)
+                  00202244    00000048     DevEthernet.obj (.text:App_ethGetPacketBuffer)
+                  0020228c    00000044     rtsv7M4_T_le_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit:__TI_auto_init_nobinit_nopinit)
+                  002022d0    0000003c     DevEthernet.obj (.text:initRxDescriptors)
+                  0020230c    00000038     CSU_Ethernet.obj (.text:buildEthernetHeader)
+                  00202344    00000038     DevIPC.obj (.text:isrIpcFromCPU1)
+                  0020237c    00000038     DevTimer.obj (.text:isr_CpuTimer1)
+                  002023b4    00000036     CSU_Ethernet.obj (.text:calcIPChecksum)
+                  002023ea    00000002     --HOLE-- [fill = 0]
+                  002023ec    00000034     DevIPC.obj (.text:Initial_IPC)
+                  00202420    00000034     sysctl.obj (.text:SysCtl_resetPeripheral)
+                  00202454    00000030     CSU_Ethernet.obj (.text:buildUDPHeader)
+                  00202484    0000002c     CSU_Ethernet.obj (.text:sendEthernetFrame)
+                  002024b0    00000024     rtsv7M4_T_le_eabi.lib : boot_cortex_m.c.obj (.text:_c_int00_noargs:_c_int00_noargs)
+                  002024d4    00000024     DevIPC.obj (.text:sendIpcMessageToCPU1)
+                  002024f8    00000022     ethernet.obj (.text:Ethernet_enableMACRxQ)
+                  0020251a    00000002     --HOLE-- [fill = 0]
+                  0020251c    00000020     DevTimer.obj (.text:CPUTimer_isBaseValid)
+                  0020253c    00000020     ethernet.obj (.text:Ethernet_configureEEEClockGatingControl)
+                  0020255c    00000020     DevTimer.obj (.text:isr_CpuTimer0)
+                  0020257c    00000020     DevTimer.obj (.text:isr_CpuTimer2)
+                  0020259c    0000001e     ethernet.obj (.text:Ethernet_performPushPacketQueueChain)
+                  002025ba    0000001e     CSU_Ethernet.obj (.text:calcUdpMsgChecksum)
+                  002025d8    0000001c     ethernet.obj (.text:Ethernet_isTimestampIntActive)
+                  002025f4    0000001c     ethernet.obj (.text:Ethernet_isTransmitTimestampStatusSet)
+                  00202610    0000001c     ethernet.obj (.text:Ethernet_performPushOnPacketQueue)
+                  0020262c    0000001c     ethernet.obj (.text:Ethernet_setMACAddr)
+                  00202648    0000001c     ethernet.obj (.text:Ethernet_setMTLTxQueueOpMode)
+                  00202664    00000018     CSU_IPC.obj (.text:recvIpcCpu1Message)
+                  0020267c    00000016     ethernet.obj (.text:Ethernet_setMTLRxQueueOpMode)
+                  00202692    00000016     ethernet.obj (.text:Ethernet_setRxDescRingLength)
+                  002026a8    00000016     ethernet.obj (.text:Ethernet_setTxDescRingLength)
+                  002026be    00000014     DevEthernet.obj (.text:App_ethRxCallback)
+                  002026d2    00000014     ethernet.obj (.text:Ethernet_enableDmaInterrupt)
+                  002026e6    00000014     ethernet.obj (.text:Ethernet_nextDescAvailable)
+                  002026fa    00000002     --HOLE-- [fill = 0]
+                  002026fc    00000014     DevEthernet.obj (.text:updateEthernetTask)
+                  00202710    00000012     ethernet.obj (.text:Ethernet_enableRxDMAReception)
+                  00202722    00000012     ethernet.obj (.text:Ethernet_getRxERICount)
+                  00202734    00000012     ethernet.obj (.text:Ethernet_performPopOnPacketQueue)
+                  00202746    00000002     --HOLE-- [fill = 0]
+                  00202748    00000010     main.obj (.text:Cycle_1ms)
+                  00202758    00000010     ethernet.obj (.text:Ethernet_configureMDIO)
+                  00202768    00000010     ethernet.obj (.text:Ethernet_resetModule)
+                  00202778    0000000e     ethernet.obj (.text:Ethernet_disableTxEEEMode)
+                  00202786    0000000e     rtsv7M4_T_le_eabi.lib : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
+                  00202794    0000000c     ethernet.obj (.text:Ethernet_clearDMAChannelInterrupt)
+                  002027a0    0000000c     ethernet.obj (.text:Ethernet_configureRevMIIAddress)
+                  002027ac    0000000c     ethernet.obj (.text:Ethernet_setMTLOpmode)
+                  002027b8    0000000c     ethernet.obj (.text:Ethernet_writeRxDescListAddress)
+                  002027c4    0000000c     ethernet.obj (.text:Ethernet_writeRxDescTailPointer)
+                  002027d0    0000000c     ethernet.obj (.text:Ethernet_writeTxDescListAddress)
+                  002027dc    0000000c     ethernet.obj (.text:Ethernet_writeTxDescTailPointer)
+                  002027e8    0000000c     rtsv7M4_T_le_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init)
+                  002027f4    0000000a     ethernet.obj (.text:Ethernet_getPHYMode)
+                  002027fe    00000008     ethernet.obj (.text:Ethernet_configurePHYAddress)
+                  00202806    00000008     ethernet.obj (.text:Ethernet_setDMAMode)
+                  0020280e    00000008     ethernet.obj (.text:Ethernet_setMACConfiguration)
+                  00202816    00000008     ethernet.obj (.text:Ethernet_setMACPacketFilter)
+                  0020281e    00000006     platform_port.obj (.text:Platform_enablePeripheral)
+                  00202824    00000006     platform_port.obj (.text:Platform_resetPeripheral)
+                  0020282a    00000004     main.obj (.text:Cycle_2ms)
+                  0020282e    00000004     ethernet.obj (.text:Ethernet_HW_descQueueGetCount)
+                  00202832    00000004     ethernet.obj (.text:Ethernet_returnTopOfPacketQueue)
+                  00202836    00000004     cm.obj (.text:__error__)
+                  0020283a    00000004     rtsv7M4_T_le_eabi.lib : pre_init.c.obj (.text:_system_pre_init)
+                  0020283e    00000004                           : exit.c.obj (.text:abort:abort)
 
-.const     0    00202840    00000088     
-                  00202840    00000088     ipc.obj (.const:IPC_Instance)
+.const     0    00202850    00000088     
+                  00202850    00000088     ipc.obj (.const:IPC_Instance)
 
 MODULE SUMMARY
 
        Module                       code    ro data   rw data
        ------                       ----    -------   -------
     .\
-       main.obj                     168     0         0      
+       main.obj                     180     0         0      
     +--+----------------------------+-------+---------+---------+
-       Total:                       168     0         0      
+       Total:                       180     0         0      
                                                              
     .\CSU\
        CSU_Ethernet.obj             772     0         144    
@@ -286,9 +287,9 @@ MODULE SUMMARY
     .\Dev\
        DevEthernet.obj              498     0         5441   
        DevTimer.obj                 1056    0         14     
-       DevIPC.obj                   152     0         0      
+       DevIPC.obj                   144     0         0      
     +--+----------------------------+-------+---------+---------+
-       Total:                       1706    0         5455   
+       Total:                       1698    0         5455   
                                                              
     .\SDK\common\source\
        startup_cm.obj               110     0         320    
@@ -322,21 +323,21 @@ MODULE SUMMARY
        Stack:                       0       0         512    
        Linker Generated:            0       104       0      
     +--+----------------------------+-------+---------+---------+
-       Grand Total:                 10354   240       9055   
+       Grand Total:                 10358   240       9055   
 
 
 LINKER GENERATED COPY TABLES
 
-__TI_cinit_table @ 00202918 records: 4, size/record: 8, table size: 32
-	.vftable: load addr=002028d0, load size=00000024 bytes, run addr=00200400, run size=00000140 bytes, compression=lzss
-	.bss: load addr=00202900, load size=00000008 bytes, run addr=2000c000, run size=00001a32 bytes, compression=zero_init
-	.data: load addr=00202908, load size=00000008 bytes, run addr=2000da34, run size=0000006e bytes, compression=lzss
-	.vtable: load addr=00202910, load size=00000008 bytes, run addr=20000800, run size=00000140 bytes, compression=zero_init
+__TI_cinit_table @ 00202928 records: 4, size/record: 8, table size: 32
+	.vftable: load addr=002028e0, load size=00000024 bytes, run addr=00200400, run size=00000140 bytes, compression=lzss
+	.bss: load addr=00202910, load size=00000008 bytes, run addr=2000c000, run size=00001a32 bytes, compression=zero_init
+	.data: load addr=00202918, load size=00000008 bytes, run addr=2000da34, run size=0000006e bytes, compression=lzss
+	.vtable: load addr=00202920, load size=00000008 bytes, run addr=20000800, run size=00000140 bytes, compression=zero_init
 
 
 LINKER GENERATED HANDLER TABLE
 
-__TI_handler_table @ 002028f4 records: 3, size/record: 4, table size: 12
+__TI_handler_table @ 00202904 records: 3, size/record: 4, table size: 12
 	index: 0, handler: __TI_decompress_lzss
 	index: 1, handler: __TI_decompress_none
 	index: 2, handler: __TI_zero_init
@@ -348,9 +349,9 @@ callee name               trampoline name
    callee addr  tramp addr   call addr  call info
 --------------  -----------  ---------  ----------------
 Flash_initModule          $Tramp$TT$L$PI$$Flash_initModule
-   1fffe001     00202230     00202200   cm.obj (.text:CM_init)
+   1fffe001     0020223c     0020220c   cm.obj (.text:CM_init)
 __error__                 $Tramp$TT$L$PI$$__error__
-   00202833     1fffe18c     1fffe016   flash.obj (.TI.ramfunc:Flash_initModule)
+   00202837     1fffe18c     1fffe016   flash.obj (.TI.ramfunc:Flash_initModule)
                              1fffe024   flash.obj (.TI.ramfunc:Flash_initModule)
                              1fffe032   flash.obj (.TI.ramfunc:Flash_initModule)
                              1fffe044   flash.obj (.TI.ramfunc:Flash_initModule)
@@ -373,58 +374,58 @@ GLOBAL SYMBOLS: SORTED ALPHABETICALLY BY Name
 
 address   name                                      
 -------   ----                                      
-00202239  App_ethGetPacketBuffer                    
-002026bb  App_ethRxCallback                         
-00201bcf  App_ethTxCallback                         
-0020283b  C$$EXIT                                   
-00201c49  CM_enableAllPeripherals                   
-002021e5  CM_init                                   
-0020282b  Ethernet_HW_descQueueGetCount             
-00201ad1  Ethernet_addPacketsIntoRxQueue            
+00202245  App_ethGetPacketBuffer                    
+002026bf  App_ethRxCallback                         
+00201bdb  App_ethTxCallback                         
+0020283f  C$$EXIT                                   
+00201c55  CM_enableAllPeripherals                   
+002021f1  CM_init                                   
+0020282f  Ethernet_HW_descQueueGetCount             
+00201add  Ethernet_addPacketsIntoRxQueue            
 002001b1  Ethernet_addPacketsIntoTxQueue            
-00202791  Ethernet_clearDMAChannelInterrupt         
-00202539  Ethernet_configureEEEClockGatingControl   
-00202755  Ethernet_configureMDIO                    
-002027fb  Ethernet_configurePHYAddress              
-0020279d  Ethernet_configureRevMIIAddress           
+00202795  Ethernet_clearDMAChannelInterrupt         
+0020253d  Ethernet_configureEEEClockGatingControl   
+00202759  Ethernet_configureMDIO                    
+002027ff  Ethernet_configurePHYAddress              
+002027a1  Ethernet_configureRevMIIAddress           
 2000d464  Ethernet_descArray                        
 2000d200  Ethernet_device_struct                    
-00202775  Ethernet_disableTxEEEMode                 
+00202779  Ethernet_disableTxEEEMode                 
 2000da50  Ethernet_earlyRxInterruptCount            
 2000da54  Ethernet_earlyTxInterruptCount            
 2000da6c  Ethernet_eeeRxLPIEntryCount               
 2000da70  Ethernet_eeeRxLPIExitCount                
 2000da64  Ethernet_eeeTxLPIEntryCount               
 2000da68  Ethernet_eeeTxLPIExitCount                
-002026cf  Ethernet_enableDmaInterrupt               
-002024f5  Ethernet_enableMACRxQ                     
-0020270d  Ethernet_enableRxDMAReception             
+002026d3  Ethernet_enableDmaInterrupt               
+002024f9  Ethernet_enableMACRxQ                     
+00202711  Ethernet_enableRxDMAReception             
 00200541  Ethernet_genericISR                       
 2000da4c  Ethernet_genericInterruptCount            
 2000da58  Ethernet_genericRxCompletionInterruptCount
 00200d51  Ethernet_getHandle                        
 00201355  Ethernet_getInitConfig                    
-00201cc1  Ethernet_getOneStepTransmitTimestampPTP   
-002027f1  Ethernet_getPHYMode                       
-0020271f  Ethernet_getRxERICount                    
+00201ccd  Ethernet_getOneStepTransmitTimestampPTP   
+002027f5  Ethernet_getPHYMode                       
+00202723  Ethernet_getRxERICount                    
 002014c9  Ethernet_initInterface                    
 002011b1  Ethernet_initRxChannel                    
-002025d5  Ethernet_isTimestampIntActive             
-002025f1  Ethernet_isTransmitTimestampStatusSet     
+002025d9  Ethernet_isTimestampIntActive             
+002025f5  Ethernet_isTransmitTimestampStatusSet     
 2000da78  Ethernet_magicPktReceivedCount            
-002026e3  Ethernet_nextDescAvailable                
+002026e7  Ethernet_nextDescAvailable                
 2000da3c  Ethernet_numGetPacketBufferCallback       
 2000da38  Ethernet_numRxCallback                    
 2000da34  Ethernet_numTxPktFreeCallback             
-00202731  Ethernet_performPopOnPacketQueue          
-0020260d  Ethernet_performPushOnPacketQueue         
+00202735  Ethernet_performPopOnPacketQueue          
+00202611  Ethernet_performPushOnPacketQueue         
 2000da5c  Ethernet_phyLinkStatusChangeInterruptCount
 2000da74  Ethernet_pmtInterruptCount                
-00202191  Ethernet_readPHYRegister                  
-00201ed5  Ethernet_receiveISR                       
+0020219d  Ethernet_readPHYRegister                  
+00201ee1  Ethernet_receiveISR                       
 0020157d  Ethernet_removePacketsFromRxQueue         
 00200fdd  Ethernet_removePacketsFromTxQueue         
-00202765  Ethernet_resetModule                      
+00202769  Ethernet_resetModule                      
 00200be5  Ethernet_retrieveRxPacket                 
 2000da7c  Ethernet_rwakeupPktReceivedCount          
 2000da84  Ethernet_rxChan0BufUnavail                
@@ -433,47 +434,47 @@ address   name
 2000da44  Ethernet_rxInterruptCount                 
 2000da60  Ethernet_rxReplacementFailedCount         
 002010d5  Ethernet_sendPacket                       
-00202803  Ethernet_setDMAMode                       
-00202629  Ethernet_setMACAddr                       
-0020280b  Ethernet_setMACConfiguration              
-00202813  Ethernet_setMACPacketFilter               
-002027a9  Ethernet_setMTLOpmode                     
-00202679  Ethernet_setMTLRxQueueOpMode              
-00202645  Ethernet_setMTLTxQueueOpMode              
-0020268f  Ethernet_setRxDescRingLength              
-002026a5  Ethernet_setTxDescRingLength              
-00202041  Ethernet_submitRxPacket                   
-00201f91  Ethernet_transmitISR                      
+00202807  Ethernet_setDMAMode                       
+0020262d  Ethernet_setMACAddr                       
+0020280f  Ethernet_setMACConfiguration              
+00202817  Ethernet_setMACPacketFilter               
+002027ad  Ethernet_setMTLOpmode                     
+0020267d  Ethernet_setMTLRxQueueOpMode              
+00202649  Ethernet_setMTLTxQueueOpMode              
+00202693  Ethernet_setRxDescRingLength              
+002026a9  Ethernet_setTxDescRingLength              
+0020204d  Ethernet_submitRxPacket                   
+00201f9d  Ethernet_transmitISR                      
 2000da80  Ethernet_txChan0BufUnavail                
 2000da88  Ethernet_txChan1BufUnavail                
 2000da40  Ethernet_txInterruptCount                 
-00201d31  Ethernet_writePHYRegister                 
-00201f35  Ethernet_writeRxDMAControl                
-002027b5  Ethernet_writeRxDescListAddress           
-002027c1  Ethernet_writeRxDescTailPointer           
-00201a49  Ethernet_writeTxDMAControl                
-002027cd  Ethernet_writeTxDescListAddress           
-002027d9  Ethernet_writeTxDescTailPointer           
+00201d3d  Ethernet_writePHYRegister                 
+00201f41  Ethernet_writeRxDMAControl                
+002027b9  Ethernet_writeRxDescListAddress           
+002027c5  Ethernet_writeRxDescTailPointer           
+00201a55  Ethernet_writeTxDMAControl                
+002027d1  Ethernet_writeTxDescListAddress           
+002027dd  Ethernet_writeTxDescTailPointer           
 1fffe001  Flash_initModule                          
 20080000  IPC_CM_To_CPU1_GetBuffer                  
 20082000  IPC_CM_To_CPU1_PutBuffer                  
 20084000  IPC_CM_To_CPU2_GetBuffer                  
 20086000  IPC_CM_To_CPU2_PutBuffer                  
-00202840  IPC_Instance                              
-00202095  IPC_readCommand                           
-002020e9  IPC_registerInterrupt                     
-00201fe9  IPC_sendCommand                           
+00202850  IPC_Instance                              
+002020a1  IPC_readCommand                           
+002020f5  IPC_registerInterrupt                     
+00201ff5  IPC_sendCommand                           
 00200e99  Initial_Ethernet                          
-002022c5  Initial_IPC                               
+002023ed  Initial_IPC                               
 00200929  Initial_TIMER                             
-0020176d  Interrupt_disable                         
-00201801  Interrupt_enable                          
-00201da1  Interrupt_initRAMVectorTable              
-00201bd1  Interrupt_registerHandler                 
-0020176d  Platform_disableInterrupt                 
-00201801  Platform_enableInterrupt                  
-0020281b  Platform_enablePeripheral                 
-00202821  Platform_resetPeripheral                  
+0020180d  Interrupt_disable                         
+002018a1  Interrupt_enable                          
+00201dad  Interrupt_initRAMVectorTable              
+00201bdd  Interrupt_registerHandler                 
+0020180d  Platform_disableInterrupt                 
+002018a1  Platform_enableInterrupt                  
+0020281f  Platform_enablePeripheral                 
+00202825  Platform_resetPeripheral                  
 002001a4  RamfuncsLoadEnd                           
 00000194  RamfuncsLoadSize                          
 00200010  RamfuncsLoadStart                         
@@ -481,59 +482,59 @@ address   name
 00000194  RamfuncsRunSize                           
 1fffe000  RamfuncsRunStart                          
 002003d5  SysCtl_enablePeripheral                   
-0020241d  SysCtl_resetPeripheral                    
+00202421  SysCtl_resetPeripheral                    
 1fffc200  __STACK_END                               
 00000200  __STACK_SIZE                              
-00202918  __TI_CINIT_Base                           
-00202938  __TI_CINIT_Limit                          
-002028f4  __TI_Handler_Table_Base                   
-00202900  __TI_Handler_Table_Limit                  
-00202281  __TI_auto_init_nobinit_nopinit            
-00201e09  __TI_decompress_lzss                      
-00202783  __TI_decompress_none                      
+00202928  __TI_CINIT_Base                           
+00202948  __TI_CINIT_Limit                          
+00202904  __TI_Handler_Table_Base                   
+00202910  __TI_Handler_Table_Limit                  
+0020228d  __TI_auto_init_nobinit_nopinit            
+00201e15  __TI_decompress_lzss                      
+00202787  __TI_decompress_none                      
 ffffffff  __TI_pprof_out_hndl                       
 ffffffff  __TI_prof_data_size                       
 ffffffff  __TI_prof_data_start                      
-002028d0  __TI_static_base__                        
-002027e5  __TI_zero_init                            
-00201b55  __aeabi_memclr                            
-00201b55  __aeabi_memclr4                           
-00201b55  __aeabi_memclr8                           
-002016d1  __aeabi_memcpy                            
-002016d1  __aeabi_memcpy4                           
-002016d1  __aeabi_memcpy8                           
-00201b57  __aeabi_memset                            
-00201b57  __aeabi_memset4                           
-00201b57  __aeabi_memset8                           
+002028e0  __TI_static_base__                        
+002027e9  __TI_zero_init                            
+00201b61  __aeabi_memclr                            
+00201b61  __aeabi_memclr4                           
+00201b61  __aeabi_memclr8                           
+00201771  __aeabi_memcpy                            
+00201771  __aeabi_memcpy4                           
+00201771  __aeabi_memcpy8                           
+00201b63  __aeabi_memset                            
+00201b63  __aeabi_memset4                           
+00201b63  __aeabi_memset8                           
 ffffffff  __binit__                                 
 ffffffff  __c_args__                                
-00202833  __error__                                 
+00202837  __error__                                 
 UNDEFED   __mpu_init                                
 1fffc000  __stack                                   
 2000c000  __start___llvm_prf_cnts                   
 2000c000  __stop___llvm_prf_cnts                    
-002024ad  _c_int00_noargs                           
+002024b1  _c_int00_noargs                           
 UNDEFED   _system_post_cinit                        
-00202837  _system_pre_init                          
-0020283b  abort                                     
+0020283b  _system_pre_init                          
+0020283f  abort                                     
 ffffffff  binit                                     
-00201929  buildAndSendUdpPacket                     
+00201935  buildAndSendUdpPacket                     
 2000da90  g_hEMAC                                   
 2000d76c  g_ucTxBuf                                 
 2000da94  g_uiEthInitRet                            
 2000da9a  g_xEthRxData                              
 2000da9e  g_xEthTxData                              
-00202559  isr_CpuTimer0                             
-002023ad  isr_CpuTimer1                             
-00202579  isr_CpuTimer2                             
-00201895  main                                      
-002016d1  memcpy                                    
-00201b5d  memset                                    
+0020255d  isr_CpuTimer0                             
+0020237d  isr_CpuTimer1                             
+0020257d  isr_CpuTimer2                             
+002016d1  main                                      
+00201771  memcpy                                    
+00201b69  memset                                    
 00201629  processReceivedEthernetPacket             
-00202661  recvIpcCpu1Message                        
-002019b9  sendAckResponse                           
-002024d1  sendIpcMessageToCPU1                      
-002026f9  updateEthernetTask                        
+00202665  recvIpcCpu1Message                        
+002019c5  sendAckResponse                           
+002024d5  sendIpcMessageToCPU1                      
+002026fd  updateEthernetTask                        
 00200400  vectorTableFlash                          
 20000800  vectorTableRAM                            
 2000da24  xTimer                                    
@@ -563,99 +564,99 @@ address   name
 002014c9  Ethernet_initInterface                    
 0020157d  Ethernet_removePacketsFromRxQueue         
 00201629  processReceivedEthernetPacket             
-002016d1  __aeabi_memcpy                            
-002016d1  __aeabi_memcpy4                           
-002016d1  __aeabi_memcpy8                           
-002016d1  memcpy                                    
-0020176d  Interrupt_disable                         
-0020176d  Platform_disableInterrupt                 
-00201801  Interrupt_enable                          
-00201801  Platform_enableInterrupt                  
-00201895  main                                      
-00201929  buildAndSendUdpPacket                     
-002019b9  sendAckResponse                           
-00201a49  Ethernet_writeTxDMAControl                
-00201ad1  Ethernet_addPacketsIntoRxQueue            
-00201b55  __aeabi_memclr                            
-00201b55  __aeabi_memclr4                           
-00201b55  __aeabi_memclr8                           
-00201b57  __aeabi_memset                            
-00201b57  __aeabi_memset4                           
-00201b57  __aeabi_memset8                           
-00201b5d  memset                                    
-00201bcf  App_ethTxCallback                         
-00201bd1  Interrupt_registerHandler                 
-00201c49  CM_enableAllPeripherals                   
-00201cc1  Ethernet_getOneStepTransmitTimestampPTP   
-00201d31  Ethernet_writePHYRegister                 
-00201da1  Interrupt_initRAMVectorTable              
-00201e09  __TI_decompress_lzss                      
-00201ed5  Ethernet_receiveISR                       
-00201f35  Ethernet_writeRxDMAControl                
-00201f91  Ethernet_transmitISR                      
-00201fe9  IPC_sendCommand                           
-00202041  Ethernet_submitRxPacket                   
-00202095  IPC_readCommand                           
-002020e9  IPC_registerInterrupt                     
-00202191  Ethernet_readPHYRegister                  
-002021e5  CM_init                                   
-00202239  App_ethGetPacketBuffer                    
-00202281  __TI_auto_init_nobinit_nopinit            
-002022c5  Initial_IPC                               
-002023ad  isr_CpuTimer1                             
-0020241d  SysCtl_resetPeripheral                    
-002024ad  _c_int00_noargs                           
-002024d1  sendIpcMessageToCPU1                      
-002024f5  Ethernet_enableMACRxQ                     
-00202539  Ethernet_configureEEEClockGatingControl   
-00202559  isr_CpuTimer0                             
-00202579  isr_CpuTimer2                             
-002025d5  Ethernet_isTimestampIntActive             
-002025f1  Ethernet_isTransmitTimestampStatusSet     
-0020260d  Ethernet_performPushOnPacketQueue         
-00202629  Ethernet_setMACAddr                       
-00202645  Ethernet_setMTLTxQueueOpMode              
-00202661  recvIpcCpu1Message                        
-00202679  Ethernet_setMTLRxQueueOpMode              
-0020268f  Ethernet_setRxDescRingLength              
-002026a5  Ethernet_setTxDescRingLength              
-002026bb  App_ethRxCallback                         
-002026cf  Ethernet_enableDmaInterrupt               
-002026e3  Ethernet_nextDescAvailable                
-002026f9  updateEthernetTask                        
-0020270d  Ethernet_enableRxDMAReception             
-0020271f  Ethernet_getRxERICount                    
-00202731  Ethernet_performPopOnPacketQueue          
-00202755  Ethernet_configureMDIO                    
-00202765  Ethernet_resetModule                      
-00202775  Ethernet_disableTxEEEMode                 
-00202783  __TI_decompress_none                      
-00202791  Ethernet_clearDMAChannelInterrupt         
-0020279d  Ethernet_configureRevMIIAddress           
-002027a9  Ethernet_setMTLOpmode                     
-002027b5  Ethernet_writeRxDescListAddress           
-002027c1  Ethernet_writeRxDescTailPointer           
-002027cd  Ethernet_writeTxDescListAddress           
-002027d9  Ethernet_writeTxDescTailPointer           
-002027e5  __TI_zero_init                            
-002027f1  Ethernet_getPHYMode                       
-002027fb  Ethernet_configurePHYAddress              
-00202803  Ethernet_setDMAMode                       
-0020280b  Ethernet_setMACConfiguration              
-00202813  Ethernet_setMACPacketFilter               
-0020281b  Platform_enablePeripheral                 
-00202821  Platform_resetPeripheral                  
-0020282b  Ethernet_HW_descQueueGetCount             
-00202833  __error__                                 
-00202837  _system_pre_init                          
-0020283b  C$$EXIT                                   
-0020283b  abort                                     
-00202840  IPC_Instance                              
-002028d0  __TI_static_base__                        
-002028f4  __TI_Handler_Table_Base                   
-00202900  __TI_Handler_Table_Limit                  
-00202918  __TI_CINIT_Base                           
-00202938  __TI_CINIT_Limit                          
+002016d1  main                                      
+00201771  __aeabi_memcpy                            
+00201771  __aeabi_memcpy4                           
+00201771  __aeabi_memcpy8                           
+00201771  memcpy                                    
+0020180d  Interrupt_disable                         
+0020180d  Platform_disableInterrupt                 
+002018a1  Interrupt_enable                          
+002018a1  Platform_enableInterrupt                  
+00201935  buildAndSendUdpPacket                     
+002019c5  sendAckResponse                           
+00201a55  Ethernet_writeTxDMAControl                
+00201add  Ethernet_addPacketsIntoRxQueue            
+00201b61  __aeabi_memclr                            
+00201b61  __aeabi_memclr4                           
+00201b61  __aeabi_memclr8                           
+00201b63  __aeabi_memset                            
+00201b63  __aeabi_memset4                           
+00201b63  __aeabi_memset8                           
+00201b69  memset                                    
+00201bdb  App_ethTxCallback                         
+00201bdd  Interrupt_registerHandler                 
+00201c55  CM_enableAllPeripherals                   
+00201ccd  Ethernet_getOneStepTransmitTimestampPTP   
+00201d3d  Ethernet_writePHYRegister                 
+00201dad  Interrupt_initRAMVectorTable              
+00201e15  __TI_decompress_lzss                      
+00201ee1  Ethernet_receiveISR                       
+00201f41  Ethernet_writeRxDMAControl                
+00201f9d  Ethernet_transmitISR                      
+00201ff5  IPC_sendCommand                           
+0020204d  Ethernet_submitRxPacket                   
+002020a1  IPC_readCommand                           
+002020f5  IPC_registerInterrupt                     
+0020219d  Ethernet_readPHYRegister                  
+002021f1  CM_init                                   
+00202245  App_ethGetPacketBuffer                    
+0020228d  __TI_auto_init_nobinit_nopinit            
+0020237d  isr_CpuTimer1                             
+002023ed  Initial_IPC                               
+00202421  SysCtl_resetPeripheral                    
+002024b1  _c_int00_noargs                           
+002024d5  sendIpcMessageToCPU1                      
+002024f9  Ethernet_enableMACRxQ                     
+0020253d  Ethernet_configureEEEClockGatingControl   
+0020255d  isr_CpuTimer0                             
+0020257d  isr_CpuTimer2                             
+002025d9  Ethernet_isTimestampIntActive             
+002025f5  Ethernet_isTransmitTimestampStatusSet     
+00202611  Ethernet_performPushOnPacketQueue         
+0020262d  Ethernet_setMACAddr                       
+00202649  Ethernet_setMTLTxQueueOpMode              
+00202665  recvIpcCpu1Message                        
+0020267d  Ethernet_setMTLRxQueueOpMode              
+00202693  Ethernet_setRxDescRingLength              
+002026a9  Ethernet_setTxDescRingLength              
+002026bf  App_ethRxCallback                         
+002026d3  Ethernet_enableDmaInterrupt               
+002026e7  Ethernet_nextDescAvailable                
+002026fd  updateEthernetTask                        
+00202711  Ethernet_enableRxDMAReception             
+00202723  Ethernet_getRxERICount                    
+00202735  Ethernet_performPopOnPacketQueue          
+00202759  Ethernet_configureMDIO                    
+00202769  Ethernet_resetModule                      
+00202779  Ethernet_disableTxEEEMode                 
+00202787  __TI_decompress_none                      
+00202795  Ethernet_clearDMAChannelInterrupt         
+002027a1  Ethernet_configureRevMIIAddress           
+002027ad  Ethernet_setMTLOpmode                     
+002027b9  Ethernet_writeRxDescListAddress           
+002027c5  Ethernet_writeRxDescTailPointer           
+002027d1  Ethernet_writeTxDescListAddress           
+002027dd  Ethernet_writeTxDescTailPointer           
+002027e9  __TI_zero_init                            
+002027f5  Ethernet_getPHYMode                       
+002027ff  Ethernet_configurePHYAddress              
+00202807  Ethernet_setDMAMode                       
+0020280f  Ethernet_setMACConfiguration              
+00202817  Ethernet_setMACPacketFilter               
+0020281f  Platform_enablePeripheral                 
+00202825  Platform_resetPeripheral                  
+0020282f  Ethernet_HW_descQueueGetCount             
+00202837  __error__                                 
+0020283b  _system_pre_init                          
+0020283f  C$$EXIT                                   
+0020283f  abort                                     
+00202850  IPC_Instance                              
+002028e0  __TI_static_base__                        
+00202904  __TI_Handler_Table_Base                   
+00202910  __TI_Handler_Table_Limit                  
+00202928  __TI_CINIT_Base                           
+00202948  __TI_CINIT_Limit                          
 1fffc000  __stack                                   
 1fffc200  __STACK_END                               
 1fffe000  RamfuncsRunStart                          

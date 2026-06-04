@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_IPC.h
     Description      : IPC Protocol (CM to CPU1) 및 이더넷 공유 메모리(GS0/GS1) 설정
-    Last Updated     : 2026. 06. 01. (ETH TX/RX IPC 명령어 추가)
+    Last Updated     : 2026. 06. 04. (CM 기동 완료 READY 명령어 추가)
 **********************************************************************/
 
 #ifndef CSU_IPC_H
@@ -45,6 +45,7 @@ typedef struct {
 #define IPC_CMD_ETH_XMT_REQUEST   0x1002U  /* CPU1 -> CM: 패킷 송신 요청 */
 #define IPC_CMD_CPU1_ETH_TX_DATA  0x2001U  /* CPU1 -> CM: 온도+시퀀스 전달 */
 #define IPC_CMD_CM_ETH_RX_DATA    0x2002U  /* CM -> CPU1: 수신 SeqNum/Cmd 전달 */
+#define IPC_CMD_CM_BOOT_READY     0x3001U  /* CM -> CPU1: CM 기동 및 주변기기 초기화 완료 */
 
 extern volatile stIpcDataPacket *pxIpcCpu1ToCm;
 extern volatile stIpcDataPacket *pxIpcCmToCpu1;

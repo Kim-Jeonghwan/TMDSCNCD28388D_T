@@ -8,14 +8,14 @@
 	Description		: 
 	Tracebility		: 
 	Programmer	    :
-	Last Updated	: 2026. 05. 29. (정적 시험 기준 준수 및 함수 주석 보강)
+	Last Updated	: 2026. 06. 04. (100us CPUTimer0 인터럽트 내 SCI 블로킹 송신 제거)
 
 **********************************************************************/
 
 /*
  * 수정 이력
  * --------------------
- * 
+ * 2026. 06. 04. - 100us CPUTimer0 인터럽트 내 SCI 블로킹 송신(sendScia_SCI_PC) 제거
  * 
 */
 
@@ -192,8 +192,6 @@ __interrupt void isr_CpuTimer0(void)
     // Group 1 인터럽트를 다시 받기 위해 ACK를 승인합니다.
     //
 
-    sendScia_SCI_PC();
-    
     Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
 }
 

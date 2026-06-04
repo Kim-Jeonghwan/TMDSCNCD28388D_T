@@ -1,14 +1,14 @@
 /**********************************************************************
 
-	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
+    Nexcom Co., Ltd.
+    Copyright 2021. All Rights Reserved.
 
-	Filename		: DevDspInit.c
-	Version			: 00.02
-	Description		: 
-	Tracebility		: 
-	Programmer	    :
-	Last Updated	: 2026. 06. 02. (CM 코어 기동 시점을 동기화 직전 최고의 타이밍으로 대이동 교정 반영)
+    Filename        : DevDspInit.c
+    Version         : 00.03
+    Description     : CPU1 Master Initialization (CM Core Fault 해결을 위한 권한 양도 시퀀스 개편)
+    Tracebility     : 
+    Programmer      :
+    Last Updated    : 2026. 06. 04. (CM 클럭 소스 AUXPLL→SYSPLL/2(100MHz) 교정으로 540Hz 편차 수정)
 
 **********************************************************************/
 
@@ -22,32 +22,24 @@
  * 2026. 06. 02. - IPC_sync 대기 전에 이더넷 PHY 기동(initEmacGpioPins)이 되도록 기동 시퀀스 순서 최우선 개편
  * 2026. 06. 02. - 실험 A: GPIO108을 일반 GPIO 입력/풀업으로 원복하여 PHY 자체 스트랩 설정 보호
  * 2026. 06. 02. - 정석 Active-Low 리셋 시퀀스 복구 및 GPIO119 강력한 푸시풀 출력(STD) 모드 융합 적용
- * 
-*/
-
-/*
- * Modification History
- * --------------------
- * 
- * 
-*/
+ * 2026. 06. 04. - IPC 동기화(Initial_IPC) 호출을 DSP_Initialization 내부에서 main.c로 상향 이동
+ * 2026. 06. 04. - CM 하드폴트 원천 박멸을 위해 미존재 인터럽트 권한 양도 API 삭제 및 초기화 안정화
+ */
 
 
-/* ************************** [[   include  ]]  *********************************************************** */
-#include "DevDspInit.h"
-#include "DevEpwmTimer.h"    /* EPWM1 기반 2ms 타이머 */
-
-/* ************************** [[   define   ]]  *********************************************************** */
+/* ************************** [[    include    ]]    *********************************************************** */
+#include "main.h"
 
 
-/* ************************** [[   global   ]]  *********************************************************** */
+/* ************************** [[    define     ]]    *********************************************************** */
 
 
-/* ************************** [[  static prototype  ]]  *************************************************** */
+/* ************************** [[    global     ]]    *********************************************************** */
+
+
+/* ************************** [[    static prototype    ]]    *************************************************** */
 static void Initial_GPIO(void);
-
 static void Init_GpioDin(void);
-
 static void Init_GpioDout(void);
 
 static void InitialPeripherals(void);
@@ -61,19 +53,19 @@ static void initSystemCommunications(void);
 static void initEmacGpioPins(void);  /* EMAC MII 핀 MUX 설정 */
 
 
-/* ************************** [[  function  ]]  *********************************************************** */
+/* ************************** [[    function    ]]    *********************************************************** */
 /*
-@funtion	void DSP_Initialization(void)
-@brief		DSP 초기화 
-@param		void
-@return		void
-@remark	
-	-	
+@funtion    void DSP_Initialization(void)
+@brief      DSP 초기화 
+@param      void
+@return     void
+@remark 
+    -   
 */
 void DSP_Initialization(void)
 {
-	// 시스템 및 주변회로 클럭 설정
-	Device_init();
+    // 시스템 및 주변회로 클럭 설정
+    Device_init();
 
     /* --- [최우선 조치] 동기화(IPC_sync) 대기 전에 물리 이더넷 PHY부터 즉시 깨움 --- */
     initEmacGpioPins();
@@ -81,52 +73,49 @@ void DSP_Initialization(void)
     // 1. CM 코어가 사용할 Shared RAM 권한을 먼저 부여 (CM의 .data, .bss 초기화에 필수)
     Initial_IPC_Mastership();
 
-	Initial_GPIO();
+    Initial_GPIO();
 
-	// 주변회로 인터럽트 확장 회로(PIE) 및 관련 레지스터 초기화 / CPU 인터럽트 비-활성화
-	Interrupt_initModule();
+    // 주변회로 인터럽트 확장 회로(PIE) 및 관련 레지스터 초기화 / CPU 인터럽트 비-활성화
+    Interrupt_initModule();
 
-	// PIE 벡터 테이블 초기화 및 기본 인터럽트 서비스 루틴 연결
-	Interrupt_initVectorTable();
+    // PIE 벡터 테이블 초기화 및 기본 인터럽트 서비스 루틴 연결
+    Interrupt_initVectorTable();
 
-    /* --- [정석 타이밍 적용] 모든 시스템 준비가 완벽히 마쳐진 시점에 CM 코어 부팅 --- */
+    /* --- [핵심 개선] CM 코어 기동 전에 IPC 레지스터 청소 완료 --- */
+    Initial_IPC_Clear();
+
+    // 주변 장치 하드웨어 초기화 미리 수행 (타이머 및 기타 통신망 셋업)
+    InitialPeripherals();
+
+    /* --- [정석 타이밍 적용] 모든 권한 양도와 하드웨어 준비가 100% 완료된 바로 이 시점에 CM 코어 기동 --- */
     Initial_CmCore();
 
-	InitialPeripherals();
-
-	// 실시간 디버깅 활성화, 전역 인터럽트 스위치 ON
-	ERTM;	// Debug Enable Mask 비트 설정 (실시간 디버깅이 가능하도록 ST1 레지스터의 /DBGM 비트를 0으로 클리어)
-	EINT;	// 전역 인터럽트 스위치 ON (/INTM ON)
+    // 실시간 디버깅 활성화, 전역 인터럽트 스위치 ON
+    ERTM;   // Debug Enable Mask 비트 설정 (실시간 디버깅이 가능하도록 ST1 레지스터의 /DBGM 비트를 0으로 클리어)
+    EINT;   // 전역 인터럽트 스위치 ON (/INTM ON)
 }
 
-
-
-
-
-
 /*
-@funtion	static void Initial_GPIO(void)
-@brief		GPIO 초기화(DIN or DOUT)
-@param		void
-@return		static void
-@remark	
-	-	CAN, SPI, SCI, I2C GPIO는 각각  설정함 
+@funtion    static void Initial_GPIO(void)
+@brief      GPIO 초기화(DIN or DOUT)
+@param      void
+@return     static void
+@remark 
+    -   CAN, SPI, SCI, I2C GPIO는 각각  설정함 
 */
-
 static void Initial_GPIO(void)
 {
-	Init_GpioDin();
-	
-	Init_GpioDout();
+    Init_GpioDin();
+    Init_GpioDout();
 }
 
 /*
-@funtion	static void Init_GpioDin(void)
-@brief		
-@param		void
-@return		static void
-@remark	
-	-	
+@funtion    static void Init_GpioDin(void)
+@brief      
+@param      void
+@return     static void
+@remark 
+    -   
 */
 static void Init_GpioDin(void)
 {
@@ -136,19 +125,17 @@ static void Init_GpioDin(void)
     GPIO_setDirectionMode(1, GPIO_DIR_MODE_IN);
 }
 
-
-
 /*
-@funtion	static void Init_GpioDout(void)
-@brief		
-@param		void
-@return		static void
-@remark	
-	-	
+@funtion    static void Init_GpioDout(void)
+@brief      
+@param      void
+@return     static void
+@remark 
+    -   
 */
 static void Init_GpioDout(void)
 {
-	initGpioDoutLed();
+    initGpioDoutLed();
 
     // GPIO 31: 출력 설정 (CM 제어 테스트용)
     GPIO_setPinConfig(GPIO_31_GPIO31);
@@ -157,22 +144,20 @@ static void Init_GpioDout(void)
     GPIO_setMasterCore(31, GPIO_CORE_CPU1); // 초기 권한은 CPU1
 }
 
-
-
 /*
-@funtion	static void DevInitPeripherals(void)
-@brief		DSP 주변 디바이스 초기화 설정
-@param		void
-@return		static void
-@remark	
-	-	
+@funtion    static void DevInitPeripherals(void)
+@brief      DSP 주변 디바이스 초기화 설정
+@param      void
+@return     static void
+@remark 
+    -   
 */
 static void InitialPeripherals(void)
 {
-	initSystemAnalogAdc();
-	initSystemPwm();
-	initSystemUserInterface();
-	initSystemCommunications();
+    initSystemAnalogAdc();
+    initSystemPwm();
+    initSystemUserInterface();
+    initSystemCommunications();
 }
 
 /*
@@ -183,8 +168,8 @@ static void InitialPeripherals(void)
 */
 static void initSystemAnalogAdc(void)
 {
-	InitialAdc();
-	Initial_Adc();
+    InitialAdc();
+    Initial_Adc();
 }
 
 /*
@@ -195,9 +180,9 @@ static void initSystemAnalogAdc(void)
 */
 static void initSystemPwm(void)
 {
-	initEPWM8();
-	initEPWM9(); // 온도 센서 전용 1kHz 느린 주기 ADC 트리거용 ePWM9 추가 기동
-	Initial_Epwm7a();
+    initEPWM8();
+    initEPWM9(); // 온도 센서 전용 1kHz 느린 주기 ADC 트리거용 ePWM9 추가 기동
+    Initial_Epwm7a();
 }
 
 /*
@@ -208,7 +193,7 @@ static void initSystemPwm(void)
 */
 static void initSystemUserInterface(void)
 {
-	Initial_LED();
+    Initial_LED();
 }
 
 /*
@@ -219,11 +204,11 @@ static void initSystemUserInterface(void)
 */
 static void initSystemCommunications(void)
 {
-	Initial_SPI();
-	Initial_SCI();
-	Initial_TIMER();
-	Initial_IPC();
-	Initial_EpwmTimer();  /* EPWM1 기반 2ms UDP TX 타이머 활성화 */
+    Initial_SPI();
+    Initial_SCI();
+    Initial_TIMER();
+    // Initial_IPC(); // IPC 동기화 타이밍 매칭을 위해 main.c의 DSP_Initialization() 직후로 호출 이동
+    Initial_EpwmTimer();  /* EPWM1 기반 2ms UDP TX 타이머 활성화 */
 }
 
 /*
@@ -290,20 +275,21 @@ static void initEmacGpioPins(void)
 }
 
 /*
-@funtion	static void Initial_CmCore(void)
-@brief		CM 코어 부팅 및 클럭 설정
-@param		void
-@return		static void
+@funtion    static void Initial_CmCore(void)
+@brief      CM 코어 부팅 및 클럭 설정
+@param      void
+@return     static void
 */
 static void Initial_CmCore(void)
 {
-    // CM 클럭 활성화 (원래 규격 및 이더넷 대역폭 확보를 위해 AUXPLL 기반 125MHz 설정)
+    // CM 클럭 활성화 (AUXPLL 기반 125MHz 설정)
     SysCtl_setCMClk(SYSCTL_CMCLKOUT_DIV_1, SYSCTL_SOURCE_AUXPLL);
 
-
 #ifdef _FLASH
+    // Flash 다운로드 디버깅 환경에 맞추어 CM 부트 모드를 Flash Sector0로 지정
     Device_bootCM(BOOTMODE_BOOT_TO_FLASH_SECTOR0);
 #else
+    // RAM 디버깅 환경에 맞추어 CM 부트 모드를 S0RAM으로 지정
     Device_bootCM(BOOTMODE_BOOT_TO_S0RAM);
 #endif
 }

@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : main.c
     Description      : Main background loop and periodic tasks
-    Last Updated     : 2026. 06. 01. (updateAdcData 호출 주석 해제 및 정리)
+    Last Updated     : 2026. 06. 04. (스케줄러 while 루프 교정 및 Hzcnt 750Hz 편차 해결)
 **********************************************************************/
 
 /* ************************** [[   include  ]]  *********************************************************** */
@@ -45,31 +45,42 @@ void main(void)
 {
 	DSP_Initialization();
 
+	/* --- [핵심 개선] CM 코어와 IPC 하드웨어 동기화 (두 코어가 준비될 때까지 대기) --- */
+	Initial_IPC();
+
+	/* --- [핵심 개선] CM 코어가 통신 및 주변장치 기동을 마칠 때까지 안전하게 대기 --- */
+	while (g_bCmReady == false)
+	{
+		// CM 코어가 모든 부팅 및 이더넷/인터럽트 초기화를 끝내고 READY 신호를 쏠 때까지 대기
+	}
+
 	// 백그라운드 유휴 루프 (Background Loop)
 	while(1u)
 	{
-		if(xTimer.Cycle_1ms >= 1u)
+		sendScia_SCI_PC();
+
+		while(xTimer.Cycle_1ms >= 1u)
 		{
+			xTimer.Cycle_1ms -= 1u;
 			cycle_1ms();
-			xTimer.Cycle_1ms = 0u;
 		}
 
-		if(xTimer.Cycle_10ms >= 10u)
+		while(xTimer.Cycle_10ms >= 10u)
 		{
+			xTimer.Cycle_10ms -= 10u;
 			cycle_10ms();
-			xTimer.Cycle_10ms = 0u;
 		}
 
-		if(xTimer.Cycle_100ms >= 100u)
+		while(xTimer.Cycle_100ms >= 100u)
 		{
+			xTimer.Cycle_100ms -= 100u;
 			cycle_100ms();
-			xTimer.Cycle_100ms = 0u;
 		}
 
-		if(xTimer.Cycle_1000ms >= 1000u)
+		while(xTimer.Cycle_1000ms >= 1000u)
 		{
+			xTimer.Cycle_1000ms -= 1000u;
 			cycle_1000ms();
-			xTimer.Cycle_1000ms = 0u;
 		}
 	}
 }

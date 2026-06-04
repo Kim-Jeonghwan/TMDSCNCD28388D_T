@@ -2,35 +2,18 @@
     Nexcom Co., Ltd.
     Filename         : DevTimer.c
     Description      : CM Core CPU 타이머 소스
-    Last Updated     : 2026. 06. 01. (125MHz 기준 수정, Timer0=2ms UDP전용, Cycle_2ms 추가)
+    Last Updated     : 2026. 06. 04. (CM 클럭 AUXPLL 125MHz로 복원)
 **********************************************************************/
 
 #include "DevTimer.h"
 
-/*
- * CM 클럭: DevDspInit.c 에서 SYSCTL_CMCLKOUT_DIV 설정 변경 → 125MHz
- * Timer 주기 = 125,000,000 / 주파수(Hz)
- * Timer0: 2ms  = 125,000,000 / 500   = 250,000U
- * Timer1: 1ms  = 125,000,000 / 1000  = 125,000U
- * Timer2: 1s   = 125,000,000 / 1     = 125,000,000U
- */
-
-#define CM_CLK_HZ          125000000U   /* 실제 CM 클럭: 125 MHz */
+#define CM_CLK_HZ          125000000U   /* 실제 CM 클럭: AUXPLL = 125 MHz */
 #define TIMER0_PERIOD_2MS  (CM_CLK_HZ / 500U)     /* 250,000: 2ms 주기 */
 #define TIMER1_PERIOD_1MS  (CM_CLK_HZ / 1000U)    /* 125,000: 1ms 주기 */
 #define TIMER2_PERIOD_1S   (CM_CLK_HZ / 1U)       /* 125,000,000: 1s 주기 */
 
 stTimer xTimer;
 
-/*
-@funtion    void Initial_TIMER(void)
-@brief      CM 코어의 CPU 타이머 0, 1, 2 모듈 초기화 및 인터럽트 활성화
-@param      void
-@return     void
-@remark
-    - 타이머 0(2ms, UDP 이더넷 송신), 타이머 1(1ms, 주기 스케줄러), 타이머 2(1s, Hz 측정)
-    - CM 클럭 100MHz 기준으로 주기 설정
-*/
 void Initial_TIMER(void)
 {
     /* 타이머 변수 초기화 */
@@ -41,6 +24,8 @@ void Initial_TIMER(void)
     CPUTimer_setPreScaler(CPUTIMER0_BASE, 0U);
     CPUTimer_stopTimer(CPUTIMER0_BASE);
     CPUTimer_reloadTimerCounter(CPUTIMER0_BASE);
+    
+    // hw_ints.h 규격에 맞게 표준 매크로(INT_TIMER0) 사용
     Interrupt_registerHandler(INT_TIMER0, isr_CpuTimer0);
     CPUTimer_enableInterrupt(CPUTIMER0_BASE);
     CPUTimer_startTimer(CPUTIMER0_BASE);
@@ -51,6 +36,8 @@ void Initial_TIMER(void)
     CPUTimer_setPreScaler(CPUTIMER1_BASE, 0U);
     CPUTimer_stopTimer(CPUTIMER1_BASE);
     CPUTimer_reloadTimerCounter(CPUTIMER1_BASE);
+    
+    // hw_ints.h 규격에 맞게 표준 매크로(INT_TIMER1) 사용
     Interrupt_registerHandler(INT_TIMER1, isr_CpuTimer1);
     CPUTimer_enableInterrupt(CPUTIMER1_BASE);
     CPUTimer_startTimer(CPUTIMER1_BASE);
@@ -61,53 +48,30 @@ void Initial_TIMER(void)
     CPUTimer_setPreScaler(CPUTIMER2_BASE, 0U);
     CPUTimer_stopTimer(CPUTIMER2_BASE);
     CPUTimer_reloadTimerCounter(CPUTIMER2_BASE);
+    
+    // hw_ints.h 규격에 맞게 표준 매크로(INT_TIMER2) 사용
     Interrupt_registerHandler(INT_TIMER2, isr_CpuTimer2);
     CPUTimer_enableInterrupt(CPUTIMER2_BASE);
     CPUTimer_startTimer(CPUTIMER2_BASE);
     Interrupt_enable(INT_TIMER2);
 }
 
-/*
-@funtion    void isr_CpuTimer0(void)
-@brief      CPU 타이머 0 인터럽트 서비스 루틴 (2ms - UDP 이더넷 송신 전용)
-@param      void
-@return     void
-@remark
-    - 2ms 마다 xTimer.Cycle_2ms 를 증가시켜 main loop 의 Cycle_2ms 태스크를 트리거합니다.
-*/
 void isr_CpuTimer0(void)
 {
     xTimer.Cycle_2ms++;
     CPUTimer_clearOverflowFlag(CPUTIMER0_BASE);
 }
 
-/*
-@funtion    void isr_CpuTimer1(void)
-@brief      CPU 타이머 1 인터럽트 서비스 루틴 (1ms - 주기 스케줄러)
-@param      void
-@return     void
-@remark
-    - 소프트웨어 스케줄링용 카운터(1ms, 10ms, 100ms, 1000ms)를 누적 증가시킵니다.
-*/
 void isr_CpuTimer1(void)
 {
     xTimer.Cycle_1ms++;
     xTimer.Cycle_10ms++;
     xTimer.Cycle_100ms++;
     xTimer.Cycle_1000ms++;
-    xTimer.Hzcnt++;
 
     CPUTimer_clearOverflowFlag(CPUTIMER1_BASE);
 }
 
-/*
-@funtion    void isr_CpuTimer2(void)
-@brief      CPU 타이머 2 인터럽트 서비스 루틴 (1000ms = 1s - Hz 측정)
-@param      void
-@return     void
-@remark
-    - 1초 간 누적된 Hzcnt 를 Hz 값으로 이전하고 Hzcnt 를 리셋합니다.
-*/
 void isr_CpuTimer2(void)
 {
     xTimer.Hz = xTimer.Hzcnt;

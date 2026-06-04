@@ -59,9 +59,9 @@
                                     <listOptionValue value="CPU1"/>
                                     <listOptionValue value="_DUAL_HEADERS"/>
                                     <listOptionValue value="DONT_DECLARE_IFR_IER"/>
-                                    <listOptionValue value="_FLASH"/>
+                                    <listOptionValue value="_RAM"/>
                                 </option>
-                                <option id="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.OPT_LEVEL.328714504" superClass="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.OPT_LEVEL" value="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.OPT_LEVEL.off" valueType="enumerated"/>
+                                <option id="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.OPT_LEVEL.328714504" superClass="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.OPT_LEVEL" value="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.OPT_LEVEL.1" valueType="enumerated"/>
                                 <option id="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.DIAG_SUPPRESS.2040432630" superClass="com.ti.ccstudio.buildDefinitions.C2000_22.6.compilerID.DIAG_SUPPRESS" valueType="stringList">
                                     <listOptionValue value="10063"/>
                                 </option>
@@ -88,7 +88,7 @@
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry excluding="SDK/headers/cmd/f2838x_headers_nonBIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu1.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu2.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu1.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu2.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="SDK/common/cmd/2838x_FLASH_lnk_cpu1.cmd|SDK/headers/cmd/f2838x_headers_nonBIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu1.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu2.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu2.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>
@@ -180,7 +180,7 @@
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry excluding="SDK/headers/cmd/f2838x_headers_BIOS_cpu1.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_nonBIOS_cpu2.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu2.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu1.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu2.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="SDK/common/cmd/2838x_FLASH_lnk_cpu1.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu1.cmd|SDK/headers/cmd/f2838x_headers_BIOS_cpu2.cmd|SDK/headers/cmd/f2838x_headers_nonBIOS_cpu2.cmd|SDK/common/cmd/2838x_FLASH_lnk_cpu2.cmd|SDK/common/cmd/2838x_RAM_lnk_cpu2.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>

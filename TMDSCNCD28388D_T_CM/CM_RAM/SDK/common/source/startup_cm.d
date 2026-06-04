@@ -1,9 +1,13 @@
 # FIXED
 
 SDK/common/source/startup_cm.obj: ../SDK/common/source/startup_cm.c
-SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdint.h
+SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/common/include/driverlib_cm.h
+SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/inc/hw_memmap.h
+SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/aes.h
+SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdbool.h
 SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/_ti_config.h
 SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/linkage.h
+SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdint.h
 SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/_stdint40.h
 SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/sys/stdint.h
 SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/sys/cdefs.h
@@ -11,10 +15,6 @@ SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/sys/_types
 SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/machine/_types.h
 SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/machine/_stdint.h
 SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/sys/_stdint.h
-SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/common/include/driverlib_cm.h
-SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/inc/hw_memmap.h
-SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/aes.h
-SDK/common/source/startup_cm.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdbool.h
 SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/debug.h
 SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/interrupt.h
 SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/cpu.h
@@ -68,11 +68,19 @@ SDK/common/source/startup_cm.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCN
 
 ../SDK/common/source/startup_cm.c:
 
-C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdint.h:
+D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/common/include/driverlib_cm.h:
+
+D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/inc/hw_memmap.h:
+
+D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/aes.h:
+
+C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdbool.h:
 
 C:/ti/ti-cgt-arm_20.2.7.LTS/include/_ti_config.h:
 
 C:/ti/ti-cgt-arm_20.2.7.LTS/include/linkage.h:
+
+C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdint.h:
 
 C:/ti/ti-cgt-arm_20.2.7.LTS/include/_stdint40.h:
 
@@ -87,14 +95,6 @@ C:/ti/ti-cgt-arm_20.2.7.LTS/include/machine/_types.h:
 C:/ti/ti-cgt-arm_20.2.7.LTS/include/machine/_stdint.h:
 
 C:/ti/ti-cgt-arm_20.2.7.LTS/include/sys/_stdint.h:
-
-D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/common/include/driverlib_cm.h:
-
-D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/inc/hw_memmap.h:
-
-D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/aes.h:
-
-C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdbool.h:
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/debug.h:
 

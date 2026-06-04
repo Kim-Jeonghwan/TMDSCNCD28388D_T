@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_Ethernet.c
     Description      : UDP 프로토콜 처리 - Payload/ACK MSG 조립/파싱 (규격서 준수)
-    Last Updated     : 2026. 06. 02. (s_xTxPktDesc 선언 추가 및 dataLength를 validLength로 수정)
+    Last Updated     : 2026. 06. 04. (s_xTxPktDesc 선언 추가 및 dataLength를 validLength로 수정 및 검증 완료)
 **********************************************************************/
 
 /*
@@ -26,8 +26,6 @@
  */
 
 #include "CSU_Ethernet.h"
-#include "DevEthernet.h"
-#include "DevIPC.h"
 
 /* 전송용 패킷 디스크립터 구조체 (Persistent 유지) */
 static Ethernet_Pkt_Desc s_xTxPktDesc;
@@ -91,7 +89,7 @@ static uint16_t calcIPChecksum(const uint8_t *pIPHdr)
 {
     uint32_t uiSum   = 0U;
     uint16_t uiWord  = 0U;
-    uint8_t  i       = 0U;
+    uint8_t   i       = 0U;
     uint16_t uiRet   = 0U;
 
     if (pIPHdr == NULL)
@@ -186,7 +184,7 @@ static void buildIPHeader(uint8_t *pFrame, uint16_t udpPayloadLen)
 {
     uint8_t  *pIP       = pFrame + ETH_HDR_SIZE;
     uint16_t  uiTotalLen = (uint16_t)IP_HDR_SIZE + (uint16_t)UDP_HDR_SIZE + udpPayloadLen;
-    uint16_t  uiChksum  = 0U;
+    uint16_t  uiChksum   = 0U;
 
     /* Version=4, IHL=5 */
     pIP[0U]  = IP_HDR_VER_IHL;
@@ -297,8 +295,8 @@ static bool sendEthernetFrame(uint8_t *pFrame, uint16_t frameSize)
 */
 void buildAndSendUdpPacket(void)
 {
-    uint8_t  *pPayload  = g_ucTxBuf + PAYLOAD_OFFSET;
-    uint16_t  uiChksum  = 0U;
+    uint8_t  *pPayload   = g_ucTxBuf + PAYLOAD_OFFSET;
+    uint16_t  uiChksum   = 0U;
     uint16_t  uiChksumLen = 0U;
 
     /* ---- MSG Header (12B) ---- */
@@ -356,11 +354,11 @@ void buildAndSendUdpPacket(void)
 */
 void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
 {
-    uint8_t  *pPayload  = NULL;
+    uint8_t  *pPayload   = NULL;
     uint16_t  uiRxCalcChk  = 0U;
     uint16_t  uiRxRecvChk  = 0U;
     uint16_t  uiPayloadChkLen = 0U;
-    uint16_t  uiDstPort  = 0U;
+    uint16_t  uiDstPort    = 0U;
     uint32_t  uiTimestamp = 0U;
     uint8_t   ucCode      = 0U;
 

@@ -5,6 +5,7 @@
             <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.ti.ccstudio.buildDefinitions.TMS470.Default.1214657332" moduleId="org.eclipse.cdt.core.settings" name="CM_RAM">
                 <macros>
                     <stringMacro name="C2000WARE_DLIB_ROOT" type="VALUE_PATH_ANY" value="${COM_TI_C2000WARE_INSTALL_DIR}/driverlib/f2838x/driverlib_cm/"/>
+                    <stringMacro name="PROJECT_ROOT" type="VALUE_PATH_DIR" value="D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM"/>
                 </macros>
                 <externalSettings/>
                 <extensions>
@@ -81,7 +82,7 @@
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry excluding="SDK/common/cmd/2838x_flash_api_lnk_cm.cmd|SDK/common/cmd/2838x_FLASH_combined_sxram_lnk_cm.cmd|SDK/common/cmd/2838x_FLASH_lnk_shared_cm.cmd|SDK/common/cmd/2838x_FLASH_secure_boot_lnk_cm.cmd|SDK/common/cmd/2838x_RAM_combined_lnk_cm.cmd|SDK/common/cmd/2838x_RAM_lnk_cm.cmd|SDK/common/cmd/F2838x_RAM_sci_flash_kernel_cm.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="SDK/common/cmd/2838x_FLASH_lnk_cm.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>
@@ -166,7 +167,7 @@
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry excluding="SDK/common/cmd/2838x_flash_api_lnk_cm.cmd|SDK/common/cmd/2838x_FLASH_combined_sxram_lnk_cm.cmd|SDK/common/cmd/2838x_FLASH_lnk_shared_cm.cmd|SDK/common/cmd/2838x_FLASH_secure_boot_lnk_cm.cmd|SDK/common/cmd/2838x_RAM_combined_lnk_cm.cmd|SDK/common/cmd/F2838x_RAM_sci_flash_kernel_cm.cmd|SDK/common/cmd/2838x_RAM_lnk_cm.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="SDK/common/cmd/2838x_FLASH_lnk_cm.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>

@@ -42,7 +42,7 @@ ORDERED_OBJS += \
 "./SDK/driverlib_cm/udma.obj" \
 "./SDK/driverlib_cm/usb.obj" \
 "C:/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2838x/driverlib_cm/ccs/Debug/driverlib_cm.lib" \
-"../SDK/common/cmd/2838x_FLASH_lnk_cm.cmd" \
+"../SDK/common/cmd/2838x_RAM_lnk_cm.cmd" \
 "../SDK/driverlib_cm/ccs/Debug/driverlib_cm.lib" \
 "../SDK/driverlib_cm/ccs/Release/driverlib_cm.lib" \
 $(GEN_CMDS__FLAG) \
