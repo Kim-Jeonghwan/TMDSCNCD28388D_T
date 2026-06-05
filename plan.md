@@ -1,159 +1,81 @@
-# 📋 IPC / Ethernet UDP 통신 장애 수정 계획서
+# 📋 정적 분석 및 리팩토링 계획서 (Static Analysis & Refactoring Plan)
 
 **작성 일자**: 2026. 06. 05.  
-**이전 단계 결과**: SOP/EOP 플래그 수정 완료, 진단 카운터 삽입 완료  
-**현재 상태**: TX 전부 실패 (`g_uiTxOkCnt=0`), IPC ISR 미호출 (`g_uiIpcIsr1Cnt=0`)  
-**근거 문서**: [research.md §20](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/research.md) 참조
+**현재 단계**: Phase 2 - 소스코드 정적 분석 및 취약점 방어 코딩 적용  
+**대상 코어**: CPU1 Core 및 CM Core (`main.c`, `CSU`, `Dev` 폴더 전체)  
 
 ---
 
-## 1. 장애 원인 요약 및 수정 우선순위
-
-| 순위 | 원인 | 영향도 | 상태 |
-|------|------|--------|------|
-| 1 | **SOP/EOP 플래그 누락** — `Ethernet_sendPacket` 즉시 거부 | TX 전면 실패 | ✅ 수정 완료 |
-| 2 | **IPC ISR Race Condition** — EPWM ISR이 CM보다 먼저 FLAG1 점유 | IPC 데이터 전달 불가 | ⬜ 수정 예정 |
-| 3 | **DevEthernet.c 미사용 `s_xTxPktDesc` 제거** — 코드 정리 | 동작 영향 없음 | ⬜ 수정 예정 |
+## 1. 개요 및 목표 (Goal Description)
+사용자 정의 규칙에 따라 현재 구현된 모든 소스 코드를 대상으로 **DAPA SCR-G (무기체계 코딩규칙), 소스코드 품질 메트릭, CWE 보안 취약점 표준**을 전수 검사하고, 규격에 미달하는 코드를 리팩토링합니다. 기존의 동작 로직은 **절대 변경하지 않으며**, 오직 코드의 구조적 안정성과 방어력만 끌어올리는 것이 목표입니다.
 
 ---
 
-## 2. 수정 계획 (Proposed Changes)
+## 2. 점검 및 조치 기준 (Verification Metrics & Targets)
 
-### [STEP 1] CM `Initial_IPC()` — 잔류 FLAG1 강제 ACK (★ 핵심 수정)
+### A. 무기체계 소프트웨어 코딩규칙 (DAPA SCR-G)
+- **단일 종료점 (Single Exit Point)**: 함수 내의 `return` 문은 오직 맨 마지막에 1개만 허용됩니다. (중간 return 불가)
+- **예외 방어 블록 필수화**: 모든 `switch` 문에는 `default:` 블록을, 모든 `if ... else if` 문에는 `else` 블록을 명시적으로 작성하여 예기치 않은 상태를 방어합니다.
+- **초기화 강제**: 모든 지역 변수는 선언과 동시에 명시적 초기값(0, NULL, false 등)을 할당받아야 합니다.
 
-> **목적**: CM이 IPC_INT1 핸들러를 등록한 직후, CPU1이 이미 설정해놓은 FLAG1의 잔류 상태를 강제 클리어하여 다음 IPC_sendCommand에서 새로운 rising edge가 발생하도록 보장합니다.
+### B. 소스코드 품질 메트릭 (복잡도/신뢰성 제한)
+- **순환 복잡도 (Cyclomatic Complexity)**: `<= 20` (분기문 갯수 제한)
+- **함수 호출 최대 깊이 (Call Levels)**: `<= 6` (중첩 호출 제한)
+- **함수 매개변수 수 (Parameters)**: `<= 8`
+- **호출/피호출 수 (Fan-in / Fan-out)**: Fan-in `<= 8`, Fan-out `<= 10`
+- **실행 가능 코드 라인 수**: `<= 200` 라인 (선언부 제외)
 
-#### [MODIFY] [DevIPC.c (CM)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevIPC.c)
-
-- `Initial_IPC()` 함수에 잔류 FLAG1 ACK 로직 추가
-- `Last Updated` 헤더 날짜를 `2026. 06. 05.` 로 갱신
-
-```diff
- void Initial_IPC(void)
- {
--    // IPC_init()은 CPU1의 초기화 상태를 보호하기 위해 호출을 생략합니다.
--
-     // 1. CPU1으로부터 수신받을 인터럽트 등록
-     IPC_registerInterrupt(IPC_CM_L_CPU1_R, IPC_INT1, isrIpcFromCPU1);
- 
-+    // 2. [핵심 수정] 등록 전에 CPU1이 이미 설정한 FLAG1 잔류 플래그 강제 ACK
-+    //    (EPWM ISR Race Condition으로 인해 CM 등록 전에 FLAG1이 SET될 수 있음)
-+    //    ACK 후 다음 IPC_sendCommand에서 새로운 rising edge → ISR 정상 트리거
-+    if (IPC_isFlagBusyRtoL(IPC_CM_L_CPU1_R, IPC_FLAG1))
-+    {
-+        IPC_ackFlagRtoL(IPC_CM_L_CPU1_R, IPC_FLAG1);
-+    }
-+
--    // 2. CPU1 코어와 동기화 수행
-+    // 3. CPU1 코어와 동기화 수행
-     IPC_sync(IPC_CM_L_CPU1_R, IPC_FLAG31);
- }
-```
-
-**왜 이 위치인가?**:
-- `IPC_registerInterrupt` → ISR 핸들러 등록 + NVIC 인터럽트 활성화
-- 바로 직후에 잔류 FLAG1을 ACK하면, FLAG1이 LOW로 떨어짐
-- 이후 CPU1이 다음 2ms에 `IPC_sendCommand(FLAG1)`을 호출하면 LOW→HIGH 전이 발생
-- NVIC가 rising edge를 감지 → ISR 정상 트리거!
+### C. CWE-658 / 659 보안 취약점 점검
+- **CWE-120 (Buffer Overflow)**: 배열 인덱스/포인터 연산 전 범위 초과 여부 검사.
+- **CWE-476 (Null Pointer Deref.)**: 포인터 사용 전 반드시 `NULL` 체크 적용.
+- **CWE-369 (Divide by Zero)**: 나눗셈 연산 전 분모가 `0`인지 확인하는 방어 분기 추가.
+- **CWE-457 (Uninitialized Var)**: 변수 선언 시 쓰레기값 방어용 초기화.
+- **CWE-190 (Integer Overflow)**: 변수 자료형 범위를 초과하는 누적/곱셈 연산 방어.
+- **상수 타입 명시화 (MISRA / DAPA)**: Unsigned 변수 연산이나 할당에 사용되는 모든 상수 리터럴에는 반드시 `u` 또는 `U` 접미사를 강제하여 암시적 형변환(Implicit Conversion) 오류를 원천 차단합니다. (예: `1000` ➡️ `1000u`)
 
 ---
 
-### [STEP 2] CPU1 `sendEthDataToCM()` — 방어적 busy 체크 추가 (안전성 강화)
+## 3. 리팩토링 수행 계획 (Proposed Changes)
 
-> **목적**: ISR 컨텍스트에서 호출되는 `sendEthDataToCM`이 FLAG1 busy 상태를 명시적으로 스킵하도록 하여, SDK `IPC_sendCommand`의 반환값 무시 문제를 방어합니다.
+검토 후 규격을 위반한 함수가 발견되면 다음과 같은 순서로 리팩토링을 수행합니다.
 
-#### [MODIFY] [DevIPC.c (CPU1)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevIPC.c)
+### 1단계: CPU1 코어 (Control Core) 전수 검증 및 리팩토링
+#### [MODIFY] `main.c` (CPU1)
+- 메인 루프(`for(;;)`) 및 타이머 백그라운드 태스크 내부의 제어 흐름 복잡도 점검.
+- 누락된 `else` 블록에 방어 주석 추가.
 
-- `sendEthDataToCM()` 함수에 FLAG1 busy 체크 guard 추가
-- `Last Updated` 헤더 날짜를 `2026. 06. 05.` 로 갱신
-
-```diff
- void sendEthDataToCM(uint16_t dspTemp, uint8_t seqNum, uint8_t status)
- {
-+    /* CM이 이전 메시지를 아직 ACK하지 않았으면 스킵 (2ms 후 재시도) */
-+    if (IPC_isFlagBusyLtoR(IPC_CPU1_L_CM_R, IPC_FLAG1))
-+    {
-+        return;
-+    }
-+
-     uint32_t uiAddr = (uint32_t)dspTemp;
-     uint32_t uiData = ((uint32_t)status << 8U) | (uint32_t)seqNum;
-     IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE,
-                     (uint32_t)IPC_CMD_CPU1_ETH_TX_DATA, uiAddr, uiData);
- }
-```
-
-**설계 이유**:
-- SDK의 `IPC_sendCommand` 내부에도 busy 체크가 있지만, 반환값을 무시하면 **명령 레지스터에 데이터를 쓰지 않은 채** 함수가 종료되므로, 상위 레이어에서 명시적으로 guard하는 것이 안전합니다.
-- ISR 컨텍스트에서 블로킹 대기는 불가하므로, busy이면 즉시 return하고 다음 2ms 주기에서 재시도합니다.
-- **주의**: TI Clang에서 지역변수 선언 전 return문은 C99 이상에서 허용되지만, 코딩 규칙 상 함수 선두에 모든 변수 선언 후 로직이 필요할 경우 구조를 조정할 수 있습니다.
+#### [MODIFY] `CSU/*` 및 `Dev/*` (CPU1)
+- 예: `CSU_SCI_PC.c` 등에서 중간 `return`이 발견되면 결과값을 저장하는 지역 변수(`ret` 또는 `result`)를 도입하고 마지막에 `return ret;` 하도록 구조 변경.
+- 나눗셈/모듈러 연산(`%`) 사용 시 0 나누기 방어 코드 삽입.
 
 ---
 
-### [STEP 3] DevEthernet.c — 미사용 `s_xTxPktDesc` 제거 (코드 정리)
+### 2단계: CM 코어 (Connectivity Core) 전수 검증 및 리팩토링
+#### [MODIFY] `main.c` (CM)
+- 이더넷 폴링 루프 등 통신 처리 루프의 복잡도 및 Array Bounds 체크 확인.
 
-> **목적**: CSU_Ethernet.c에 이미 동일 이름의 `static` 변수가 있으므로, DevEthernet.c의 것은 불필요합니다.
-
-#### [MODIFY] [DevEthernet.c (CM)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevEthernet.c)
-
-- L51: `static Ethernet_Pkt_Desc s_xTxPktDesc;` 삭제
-- L128: `(void)memset(&s_xTxPktDesc, 0, sizeof(s_xTxPktDesc));` 삭제
-- `Last Updated` 헤더 날짜를 `2026. 06. 05.` 로 갱신
-
-```diff
- static uint8_t           s_ucRxBuf[ETH_RX_NUM_PKT_DESC][ETH_RX_BUF_SIZE];
- static Ethernet_Pkt_Desc s_xRxPktDesc[ETH_RX_NUM_PKT_DESC];
--static Ethernet_Pkt_Desc s_xTxPktDesc;
- 
- ...
- 
-     initRxDescriptors();
-     (void)memset(g_ucTxBuf, 0, ETH_TX_BUF_SIZE);
--    (void)memset(&s_xTxPktDesc, 0, sizeof(s_xTxPktDesc));
-```
+#### [MODIFY] `CSU/*` 및 `Dev/*` (CM)
+- CM용 Driverlib API 및 8비트 주소 체계 호환성 확인.
+- `CSU_Ethernet.c` 내의 포인터 파라미터(`uint8_t *` 등) 역참조 전 `if (ptr != NULL)` 방어 코드 강제 적용.
+- 멀티플 `return`을 단일 `return`으로 통일.
 
 ---
 
-## 3. 옵션: 진단 카운터 제거 여부
+## 4. 사용자 피드백 요청 (User Review Required)
 
-현재 `CSU_Ethernet.c`와 `DevIPC.c (CM)`에 진단용 `volatile` 카운터 변수가 추가되어 있습니다:
-- `g_uiTxOkCnt`, `g_uiTxFailCnt` (CSU_Ethernet.c)
-- `g_uiIpcIsr1Cnt` (DevIPC.c)
-
-**옵션 A (권장)**: 통신이 정상 동작함이 확인될 때까지 유지 → 향후 제거
-**옵션 B**: 이번 수정과 함께 제거
-
-> 현재는 디버깅 과정이므로 **옵션 A (유지)**를 권장합니다.
+> [!IMPORTANT]
+> - 코어 로직 자체는 변경되지 않지만, 단일 `return` 원칙과 방어적 `else`/`default` 추가로 인해 코드 라인수가 다소 증가하고 변수 선언 구조가 바뀔 수 있습니다. 
+> - 이 계획에 승인(Approval)해 주시면, 바로 CPU1 코어의 파일들부터 스캐닝 및 코드 갱신 작업을 시작하고 진행률을 `task.md`를 통해 추적하겠습니다.
+> - 계획서(`plan.md`)에 추가하고 싶으신 메모나 제약 조건이 있다면 자유롭게 적어주세요.
 
 ---
 
-## 4. 수정 파일 요약
+## 5. 최종 검증 계획 (Verification Plan)
 
-| 프로젝트 | 파일 | 수정 내용 |
-|----------|------|-----------|
-| **CM** | `Dev/DevIPC.c` | `Initial_IPC()`에 잔류 FLAG1 ACK 로직 추가 |
-| **CPU1** | `Dev/DevIPC.c` | `sendEthDataToCM()`에 FLAG1 busy 체크 guard 추가 |
-| **CM** | `Dev/DevEthernet.c` | 미사용 `s_xTxPktDesc` 변수 및 memset 제거 |
+### 정적 검증 (자체 검사)
+- 리팩토링 후 각 함수의 순환 복잡도를 역산하여 20 이하인지 확인.
+- 모든 파일에서 중간 `return`이 남아있지 않은지 `grep` 스캔 확인.
 
----
-
-## 5. 검증 계획 (Verification Plan)
-
-| 단계 | 확인 항목 |
-|------|-----------|
-| 1 | CPU1 프로젝트 빌드 (에러/경고 없음) |
-| 2 | CM 프로젝트 빌드 (에러/경고 없음) |
-| 3 | CCS Expressions 창에서 `g_uiIpcIsr1Cnt` → **0보다 크게 증가** 확인 |
-| 4 | CCS Expressions 창에서 `g_xEthTxData.SeqNum` → **증가** 확인 |
-| 5 | CCS Expressions 창에서 `g_uiTxOkCnt` → **증가**, `g_uiTxFailCnt` → **0 유지** 확인 |
-| 6 | PC 네트워크 상태 → **수신 바이트 증가** 확인 |
-| 7 | PC 앱에서 UDP 패킷 정상 수신 확인 |
-
----
-
-## 6. 빌드 안내
-
-수정 완료 후 아래 순서로 CCS IDE에서 직접 빌드해주십시오:
-
-1. **CPU1 프로젝트** (`TMDSCNCD28388D_T_CPU1`) 빌드
-2. **CM 프로젝트** (`TMDSCNCD28388D_T_CM`) 빌드
+### 컴파일 및 동적 검증 (사용자 수행)
+- CPU1 및 CM 코어 전체 빌드(Build) 수행 시 문법 에러 유무 확인.
+- 통신(Ethernet, IPC, SCI) 및 센서 획득(ADC) 동작이 기존과 동일하게 무결하게 동작하는지 테스트.

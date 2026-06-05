@@ -8,7 +8,7 @@
 	Description		: 
 	Tracebility		: 
 	Programmer	    :
-	Last Updated	: 2026. 05. 29. (정적 시험 기준 준수 및 보안 취약점 보완)
+	Last Updated	: 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 
 **********************************************************************/
 
@@ -50,12 +50,12 @@ static uint16_t dequeueSci(stQsci *pstQ, uint16_t *pData);
 
 /* ************************** [[  function  ]]  *********************************************************** */
 /*
-@funtion	void Initial_SCI(void)
-@brief		
-@param		void
-@return		void
-@remark	
-	-	
+@funtion    void Initial_SCI(void)
+@brief      SCI PC 통신 드라이버 초기화
+@param      void
+@return     void
+@remark 
+    - 큐 초기화 및 하드웨어, GPIO 설정을 일괄 수행합니다.
 */
 void Initial_SCI(void)
 {
@@ -66,12 +66,10 @@ void Initial_SCI(void)
 
 
 /*
-@funtion	static void initScia_SCI_PC(void)
-@brief		
-@param		void
-@return		static void
-@remark	
-	-	
+@funtion    static void initScia_SCI_PC(void)
+@brief      SCIA 포트 디바이스 내부 초기화 호출
+@param      void
+@return     static void
 */
 static void initScia_SCI_PC(void)
 {
@@ -168,12 +166,12 @@ static void setupSciaPC_HW(void)
 
 
 /*
-@funtion	static interrupt void isrScia_SCI_PC(void)
-@brief		
-@param		void
-@return		[ static interrupt void ]	
-@remark	
-	-	
+@funtion    __interrupt void isrScia_SCI_PC(void)
+@brief      SCIA 수신 인터럽트 서비스 루틴
+@param      void
+@return     __interrupt void
+@remark 
+    - FIFO에서 1바이트씩 데이터를 읽어 패킷 조립(Frame 상태머신)을 수행합니다.
 */
 __interrupt void isrScia_SCI_PC(void)
 {
@@ -264,13 +262,13 @@ __interrupt void isrScia_SCI_PC(void)
 
 
 /*
-@funtion	void xmtScia_SCI_PC(uint16_t data[], uint16_t len)
-@brief		
-@param		[ uint16_t data[] ]	
-@param		[ uint16_t len ]	
-@return		void
-@remark	
-	-	
+@funtion    void xmtScia_SCI_PC(uint16_t data[], uint16_t len)
+@brief      SCI 송신 큐에 데이터 삽입
+@param      data[]: 송신할 데이터 배열
+@param      len: 전송 길이
+@return     void
+@remark 
+    - 즉시 전송하지 않고 송신 큐(enqueueSci)에 적재하여 백그라운드 태스크에서 비동기로 전송합니다.
 */
 void xmtScia_SCI_PC(uint16_t data[], uint16_t len)
 {
@@ -289,12 +287,12 @@ void xmtScia_SCI_PC(uint16_t data[], uint16_t len)
 
 
 /*
-@funtion	void sendScia_SCI_PC(void)
-@brief		100 us  ?         
-@param		void
-@return		void
-@remark	
-	-	ref isr_CpuTimer0()
+@funtion    void sendScia_SCI_PC(void)
+@brief      비동기 SCI 데이터 송신 처리 (백그라운드 루프 폴링)
+@param      void
+@return     void
+@remark 
+    - 큐에서 데이터를 하나씩 꺼내어 SCIA TX 버퍼의 여유가 있을 때마다 물리적 전송을 수행합니다.
 */
 void sendScia_SCI_PC(void)
 {
@@ -321,13 +319,13 @@ void sendScia_SCI_PC(void)
 
 
 /*
-@funtion	static void enqueueSci(stQsci *pstQ, uint16_t Data)
-@brief		
-@param		[ stQsci *pstQ ]	
-@param		[ uint16_t Data ]	
-@return		static void
-@remark	
-	-	
+@funtion    static void enqueueSci(stQsci *pstQ, uint16_t Data)
+@brief      SCI 송신 큐(원형 버퍼)에 1바이트 데이터 삽입
+@param      pstQ: 대상 큐 구조체 포인터
+@param      Data: 삽입할 1바이트 데이터
+@return     static void
+@remark 
+    - 큐가 가득 차지 않았을 경우에만 데이터를 삽입하고 Rear 포인터를 증가시킵니다.
 */
 static void enqueueSci(stQsci *pstQ, uint16_t Data)
 {
@@ -352,13 +350,13 @@ static void enqueueSci(stQsci *pstQ, uint16_t Data)
 
 
 /*
-@funtion	static uint16_t dequeueSci(stQsci *pstQ, uint16_t *pData)
-@brief		
-@param		[ stQsci *pstQ ]	
-@param		[ uint16_t *pData ]	
-@return		static uint16_t
-@remark	
-	-	
+@funtion    static uint16_t dequeueSci(stQsci *pstQ, uint16_t *pData)
+@brief      SCI 송신 큐(원형 버퍼)에서 1바이트 데이터 추출
+@param      pstQ: 대상 큐 구조체 포인터
+@param      pData: 추출된 데이터를 담을 포인터
+@return     static uint16_t (1: 성공, 0: 실패)
+@remark 
+    - 큐가 비어있지 않을 경우 데이터를 반환하고 Front 포인터를 증가시킵니다.
 */
 static uint16_t dequeueSci(stQsci *pstQ, uint16_t *pData)
 {

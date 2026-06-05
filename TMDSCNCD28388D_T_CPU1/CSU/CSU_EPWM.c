@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_EPWM.c
     Description      : EPWM 7A Control (Initialization skeleton)
-    Last Updated     : 2026. 06. 01. (빌드 오류 방지를 위한 제거된 구조체 멤버 참조 코드 삭제)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 /* ************************** [[   include  ]]  *********************************************************** */
@@ -17,9 +17,14 @@
 
 /* ************************** [[  function  ]]  *********************************************************** */
 
-/**
- * @brief EPWM7A(GPIO12) 핀 설정
- */
+/*
+@funtion    static void initEpwm7aGpio(void)
+@brief      EPWM7A(GPIO12) 핀 설정
+@param      void
+@return     static void
+@remark
+    - GPIO 12번 핀을 EPWM7A 출력으로 할당합니다.
+*/
 static void initEpwm7aGpio(void)
 {
     EALLOW;
@@ -29,9 +34,14 @@ static void initEpwm7aGpio(void)
     EDIS;
 }
 
-/**
- * @brief EPWM7A 초기화 (기본: 100Hz, 50% Duty, 출력 정지)
- */
+/*
+@funtion    void Initial_Epwm7a(void)
+@brief      EPWM7A 모듈 초기화
+@param      void
+@return     void
+@remark
+    - 기본 설정: 100Hz, 50% Duty 로 구성하되, 최초 기동 시에는 출력 정지(Force Low) 상태로 설정합니다.
+*/
 void Initial_Epwm7a(void)
 {
     initEpwm7aGpio();

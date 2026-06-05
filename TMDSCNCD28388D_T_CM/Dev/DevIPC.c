@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevIPC.c
     Description      : CM Core IPC Device Driver
-    Last Updated     : 2026. 06. 05. (IPC ISR Race Condition 해결: 잔류 FLAG1 강제 ACK 추가)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #include "DevIPC.h"
@@ -10,7 +10,6 @@
 static void isrIpcFromCPU1(void);
 
 /* IPC ISR 호출 진단 카운터 (CCS Expressions 사용에서 확인) */
-volatile uint32_t g_uiIpcIsr1Cnt = 0U;
 
 /*
 @funtion    void Initial_IPC(void)
@@ -49,8 +48,6 @@ static void isrIpcFromCPU1(void)
 {
     uint32_t command, addr, data;
     bool status;
-
-    g_uiIpcIsr1Cnt++;  /* IPC ISR 호출 횟수 카운터 */
 
     status = IPC_readCommand(IPC_CM_L_CPU1_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, &command, &addr, &data);
 

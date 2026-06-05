@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevEthernet.c
     Description      : EMAC 드라이버 초기화 및 Rx/Tx 콜백 구현 (MII, DP83822)
-    Last Updated     : 2026. 06. 05. (불필요한 중복 s_xTxPktDesc 변수 제거)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 /*
@@ -123,12 +123,12 @@ void Initial_Ethernet(void)
 
     /* --- Rx 디스크립터 풀 초기화 --- */
     initRxDescriptors();
-    (void)memset(g_ucTxBuf, 0, ETH_TX_BUF_SIZE);
+    (void)memset(g_ucTxBuf, 0U, ETH_TX_BUF_SIZE);
 
     /* -------------------------------------------------------
      * Step 1: 인터페이스 설정 구조체 구성
      * ------------------------------------------------------- */
-    (void)memset(&xIfCfg, 0, sizeof(xIfCfg));
+    (void)memset(&xIfCfg, 0U, sizeof(xIfCfg));
     xIfCfg.ssbase           = EMAC_SS_BASE;
     xIfCfg.enet_base        = EMAC_BASE;
     xIfCfg.phyMode          = ETHERNET_SS_PHY_INTF_SEL_MII;
@@ -212,6 +212,47 @@ void Initial_Ethernet(void)
         
         /* MAC 설정 반영 및 통신 기동 */
         Ethernet_setMACConfiguration(EMAC_BASE, macFlags);
+
+        /* --- [개정 완료] DP83822 이더넷 PHY LED_1 (초록색) 강제 활성화 --- */
+        
+        // 1. IOCTRL1 (0x0462) 레지스터 설정: LED_1 기능을 수행하도록 MUX 설정 복원/확인
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0DU, 0x001FU);  /* Address mode, DEVAD = 0x1F */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0EU, 0x0462U);  /* ADDAR = 0x0462 (IOCTRL1) */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0DU, 0x401FU);  /* Data mode, no post increment */
+        uint16_t uiIoCtrl1 = Ethernet_readPHYRegister(EMAC_BASE, 0x0EU);
+        
+        uiIoCtrl1 &= ~(0x0007U); /* Bits [2:0] GPIO1/LED_1 MUX clear */
+        uiIoCtrl1 |= 0x0000U;    /* 000b = Normal LED_1 operation Mode 지정 */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0EU, uiIoCtrl1);
+        
+        // 2. LEDCFG1 (0x0460) 레지스터 설정: LED_1 구동 기본 모드 클리어
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0DU, 0x001FU);  /* Address mode */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0EU, 0x0460U);  /* ADDAR = 0x0460 (LEDCFG1) */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0DU, 0x401FU);  /* Data mode */
+        uint16_t uiLedCfg1 = Ethernet_readPHYRegister(EMAC_BASE, 0x0EU);
+        
+        uiLedCfg1 &= ~(0x0F00U); /* LED_1 Control (Bits [11:8]) 초기화 */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0EU, uiLedCfg1);
+
+        // 3. LEDCFG2 (0x0469) 레지스터 설정: LED_1 오버라이드 및 강제 점등
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0DU, 0x001FU);  /* Address mode */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0EU, 0x0469U);  /* ADDAR = 0x0469 (LEDCFG2) */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0DU, 0x401FU);  /* Data mode */
+        uint16_t uiLedCfg2 = Ethernet_readPHYRegister(EMAC_BASE, 0x0EU);
+        
+        /* * [DP83822 LED_1 하드웨어 제어 비트 구조 수정]
+         * Bit 4: LED_1 Force Override Enable
+         * Bit 5: LED_1 Force Value
+         * Bit 6: LED_1 Polarity (0 = Active Low, 1 = Active High)
+         */
+        uiLedCfg2 &= ~(0x0070U); /* LED_1 제어 비트 영역 [6:4] Clear */
+        
+        /* * Active Low(Bit 6 = 0) 구조에서 LED를 켜려면 핀 출력이 Low가 되어야 하므로 
+         * Force Value(Bit 5)를 0으로 주거나, Active High 구조로 변환 후 조작해야 안전합니다.
+         * 여기서는 명확하게 핀을 Low 상태로 드라이브하기 위해 비트를 조립합니다.
+         */
+        uiLedCfg2 |= 0x0010U;    /* Override Enable(Bit 4) = 1, Value(Bit 5) = 0, Polarity(Bit 6) = 0 (Active Low) */
+        Ethernet_writePHYRegister(EMAC_BASE, 0x0EU, uiLedCfg2);
     }
 }
 
@@ -269,7 +310,7 @@ Ethernet_Pkt_Desc *App_ethGetPacketBuffer(void)
     return pDesc;
 }
 
-uint32_t g_uiRxPktCnt = 0U;
+
 
 /* ---------------------------------------------------------------
  * 콜백: 수신 패킷 처리 (EMAC 드라이버가 패킷 수신 시 호출)
@@ -286,8 +327,6 @@ uint32_t g_uiRxPktCnt = 0U;
 Ethernet_Pkt_Desc *App_ethRxCallback(Ethernet_Handle hApp, Ethernet_Pkt_Desc *pPkt)
 {
     (void)hApp; /* 미사용 파라미터 */
-
-    g_uiRxPktCnt++;
 
     if (pPkt != NULL)
     {

@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_IPC.h
     Description      : CM Core IPC 통신 프로토콜 정의
-    Last Updated     : 2026. 06. 04. (CM 기동 완료 READY 명령어 추가)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #ifndef CSU_IPC_H

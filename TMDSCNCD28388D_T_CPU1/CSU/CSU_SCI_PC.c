@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_SCI_PC.c
     Description      : PC Interface Communication (SCI_PC) Protocol Definition
-    Last Updated     : 2026. 06. 01. (소수점 정밀 연산 및 반올림 연산 반영)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 ***********************************************************************/
 
 /* ************************** [[   include  ]]  *********************************************************** */
@@ -24,12 +24,15 @@ stXmtSciPcMsg1	xXmtSciPcMsg1;
 
 /* ************************** [[  function  ]]  *********************************************************** */
 
-/**
- * @brief PC로부터 수신된 SCI_PC 메시지 해석 및 구조체 업데이트
- * @details ID 0x10 패킷을 수신하여 시퀀스 번호 및 제어 명령(Command)을 파싱합니다.
- * @param ID 수신된 메시지의 식별 번호 (0x10u)
- * @param Data[] 수신된 데이터 배열 (바이트 단위)
- */
+/*
+@funtion    void recvSciPcMessage(uint16_t ID, uint16_t Data[])
+@brief      PC로부터 수신된 SCI_PC 메시지 해석 및 구조체 업데이트
+@param      ID: 수신된 메시지의 식별 번호 (0x10u)
+@param      Data: 수신된 데이터 배열 (바이트 단위)
+@return     void
+@remark
+    - ID 0x10 패킷을 수신하여 시퀀스 번호 및 제어 명령(Command)을 파싱합니다.
+*/
 void recvSciPcMessage(uint16_t ID, uint16_t Data[])
 {
     volatile uint16_t pos = 0u;
@@ -49,11 +52,15 @@ void recvSciPcMessage(uint16_t ID, uint16_t Data[])
     }
 }
 
-/**
- * @brief 엔코더 상태 및 데이터를 PC로 전송 (10ms 주기)
- * @details 전체 9바이트 패킷을 구성하며, Length 필드와 실효 데이터 영역(IncNumber, Status, DspTemp)의 총합은 5바이트입니다.
- * 패킷 구조: SOF(1) + ID(1) + LEN(1) + DATA(4) + Checksum(1) + EOT(1)
- */
+/*
+@funtion    void sendSciPcMessage1(void)
+@brief      엔코더 상태 및 데이터를 PC로 전송 (10ms 주기)
+@param      void
+@return     void
+@remark
+    - 전체 9바이트 패킷을 구성하며, Length 필드와 실효 데이터 영역의 총합은 5바이트입니다.
+    - 패킷 구조: SOF(1) + ID(1) + LEN(1) + DATA(4) + Checksum(1) + EOT(1)
+*/
 void sendSciPcMessage1(void)
 {
     volatile uint16_t pos = 0u;

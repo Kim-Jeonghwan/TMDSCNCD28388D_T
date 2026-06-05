@@ -473,8 +473,15 @@ namespace TMDSCNCD28388D_T_PC
             }
         }
 
+        private DateTime _lastRxLogTime = DateTime.MinValue;
+
         private void OnRawRxReceived(byte[] packet)
         {
+            // 초당 500번(2ms 주기) 들어오는 Reflect 패킷으로 인한 C# UI 뻗음(Freeze) 완벽 방지
+            // 100ms 이하 간격의 원시 로그는 UI에 그리지 않고 스킵합니다. (데이터 처리는 정상 동작함)
+            if ((DateTime.Now - _lastRxLogTime).TotalMilliseconds < 100) return;
+            _lastRxLogTime = DateTime.Now;
+
             BeginInvoke((Action)(() =>
             {
                 string hex = BitConverter.ToString(packet).Replace("-", " ");

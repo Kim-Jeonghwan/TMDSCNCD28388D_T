@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_LED.h
     Description      : System Status LED Control (Green / Orange)
-    Last Updated     : 2026. 06. 01. (GPIO LED 정의 추가)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #ifndef CSU_LED_H

@@ -8,7 +8,7 @@
     Description     : CPU1 Master Initialization (CM Core Fault 해결을 위한 권한 양도 시퀀스 개편)
     Tracebility     : 
     Programmer      :
-    Last Updated    : 2026. 06. 04. (CM 클럭 소스 AUXPLL→SYSPLL/2(100MHz) 교정으로 540Hz 편차 수정)
+    Last Updated    : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 
 **********************************************************************/
 
@@ -56,11 +56,11 @@ static void initEmacGpioPins(void);  /* EMAC MII 핀 MUX 설정 */
 /* ************************** [[    function    ]]    *********************************************************** */
 /*
 @funtion    void DSP_Initialization(void)
-@brief      DSP 초기화 
+@brief      DSP 초기화 수행의 진입점
 @param      void
 @return     void
 @remark 
-    -   
+    - CM 코어와 IPC 하드웨어를 동기화시키고 각종 페리페럴을 초기화합니다.
 */
 void DSP_Initialization(void)
 {
@@ -97,11 +97,11 @@ void DSP_Initialization(void)
 
 /*
 @funtion    static void Initial_GPIO(void)
-@brief      GPIO 초기화(DIN or DOUT)
+@brief      GPIO 초기화 (DIN / DOUT)
 @param      void
 @return     static void
 @remark 
-    -   CAN, SPI, SCI, I2C GPIO는 각각  설정함 
+    - GPIO 입력 및 출력을 개별 단위로 나누어 초기화합니다.
 */
 static void Initial_GPIO(void)
 {
@@ -111,27 +111,27 @@ static void Initial_GPIO(void)
 
 /*
 @funtion    static void Init_GpioDin(void)
-@brief      
+@brief      디지털 입력 GPIO 설정
 @param      void
 @return     static void
 @remark 
-    -   
+    - 특정 핀을 풀업(Pull-up) 입력 모드로 구성합니다.
 */
 static void Init_GpioDin(void)
 {
     // GPIO 1: 입력 설정 (GND 체크용)
     GPIO_setPinConfig(GPIO_1_GPIO1);
-    GPIO_setPadConfig(1, GPIO_PIN_TYPE_PULLUP);
-    GPIO_setDirectionMode(1, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(1u, GPIO_PIN_TYPE_PULLUP);
+    GPIO_setDirectionMode(1u, GPIO_DIR_MODE_IN);
 }
 
 /*
 @funtion    static void Init_GpioDout(void)
-@brief      
+@brief      디지털 출력 GPIO 설정
 @param      void
 @return     static void
 @remark 
-    -   
+    - 보드 내 상태 표시용 LED 등을 제어하기 위한 출력 핀을 초기화합니다.
 */
 static void Init_GpioDout(void)
 {
@@ -139,18 +139,18 @@ static void Init_GpioDout(void)
 
     // GPIO 31: 출력 설정 (CM 제어 테스트용)
     GPIO_setPinConfig(GPIO_31_GPIO31);
-    GPIO_setPadConfig(31, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(31, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(31, GPIO_CORE_CPU1); // 초기 권한은 CPU1
+    GPIO_setPadConfig(31u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(31u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(31u, GPIO_CORE_CPU1); // 초기 권한은 CPU1
 }
 
 /*
-@funtion    static void DevInitPeripherals(void)
-@brief      DSP 주변 디바이스 초기화 설정
+@funtion    static void InitialPeripherals(void)
+@brief      DSP 주변 디바이스 초기화
 @param      void
 @return     static void
 @remark 
-    -   
+    - ADC, PWM, UI, 통신 채널 등을 일괄 초기화하는 래퍼 함수입니다.
 */
 static void InitialPeripherals(void)
 {
@@ -162,7 +162,7 @@ static void InitialPeripherals(void)
 
 /*
 @funtion    static void initSystemAnalogAdc(void)
-@brief      ADC 등 아날로그 입력 하드웨어 초기화 묶음
+@brief      ADC 등 아날로그 입력 하드웨어 초기화
 @param      void
 @return     static void
 */
@@ -174,7 +174,7 @@ static void initSystemAnalogAdc(void)
 
 /*
 @funtion    static void initSystemPwm(void)
-@brief      EPWM 등 펄스 폭 변조 제어 하드웨어 초기화 묶음
+@brief      EPWM 등 펄스 폭 변조 제어 하드웨어 초기화
 @param      void
 @return     static void
 */
@@ -187,7 +187,7 @@ static void initSystemPwm(void)
 
 /*
 @funtion    static void initSystemUserInterface(void)
-@brief      LED, Tact, EQEP 등 사용자 인터페이스 및 입력장치 초기화 묶음
+@brief      사용자 인터페이스 장치(LED 등) 초기화
 @param      void
 @return     static void
 */
@@ -198,7 +198,7 @@ static void initSystemUserInterface(void)
 
 /*
 @funtion    static void initSystemCommunications(void)
-@brief      SPI, SCI, Timer, CAN, IPC 등 통신 및 코어 연동 초기화 묶음
+@brief      SPI, SCI, Timer 등 시스템 통신 초기화
 @param      void
 @return     static void
 */

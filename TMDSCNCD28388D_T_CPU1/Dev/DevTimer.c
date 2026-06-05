@@ -39,12 +39,12 @@ static void configCPUTimer(uint32_t cpuTimer, float32_t freq, float32_t period);
 
 /* ************************** [[  function  ]]  *********************************************************** */
 /*
-@funtion	void Initial_TIMER(void)
-@brief		
-@param		void
-@return		void
-@remark	
-	-	
+@funtion    void Initial_TIMER(void)
+@brief      CPU1 코어의 하드웨어 타이머 초기화 (0, 1, 2)
+@param      void
+@return     void
+@remark 
+    - 인터럽트 매핑 후 타이머 주기(100us, 1ms, 1s)를 설정하고 카운트를 시작합니다.
 */
 void Initial_TIMER(void)
 {
@@ -63,9 +63,9 @@ void Initial_TIMER(void)
 	//
 	// CPU 타이머 0, 1, 2가 각각 100us, 1ms, 1000ms 주기로 인터럽트를 발생하도록 구성합니다.
 	//
-	configCPUTimer(CPUTIMER0_BASE, DEVICE_SYSCLK_FREQ, 100);	 	// 100 us
-	configCPUTimer(CPUTIMER1_BASE, DEVICE_SYSCLK_FREQ, 1000);		// 1 ms
-	configCPUTimer(CPUTIMER2_BASE, DEVICE_SYSCLK_FREQ, 1000000);	// 1000 ms
+	configCPUTimer(CPUTIMER0_BASE, DEVICE_SYSCLK_FREQ, 100.0f);	 	// 100 us
+	configCPUTimer(CPUTIMER1_BASE, DEVICE_SYSCLK_FREQ, 1000.0f);		// 1 ms
+	configCPUTimer(CPUTIMER2_BASE, DEVICE_SYSCLK_FREQ, 1000000.0f);	// 1000 ms
 
 
 	//
@@ -109,9 +109,9 @@ static void initCPUTimers(void)
     //
     // 프리스케일 카운터를 1분주(SYSCLKOUT)로 초기화
     //
-    CPUTimer_setPreScaler(CPUTIMER0_BASE, 0);
-    CPUTimer_setPreScaler(CPUTIMER1_BASE, 0);
-    CPUTimer_setPreScaler(CPUTIMER2_BASE, 0);
+    CPUTimer_setPreScaler(CPUTIMER0_BASE, 0u);
+    CPUTimer_setPreScaler(CPUTIMER1_BASE, 0u);
+    CPUTimer_setPreScaler(CPUTIMER2_BASE, 0u);
 
     //
     // 타이머가 정지된 상태인지 확인
@@ -130,7 +130,7 @@ static void initCPUTimers(void)
     //
     // 인터럽트 카운터 및 구조체 리셋
     //
-	(void)memset(&xTimer, 	0, sizeof(xTimer));		//  타이머 변수 초기화
+	(void)memset(&xTimer, 	0u, sizeof(xTimer));		//  타이머 변수 초기화
 }
 
 
@@ -155,13 +155,13 @@ static void configCPUTimer(uint32_t cpuTimer, float32_t freq, float32_t period)
     //
     // 타이머 주기 초기화:
     //
-    temp = (uint32_t)((freq / 1000000) * period);
-    CPUTimer_setPeriod(cpuTimer, temp - 1);
+    temp = (uint32_t)((freq / 1000000.0f) * period);
+    CPUTimer_setPeriod(cpuTimer, temp - 1u);
 
     //
     // 프리스케일 카운터를 1분주(SYSCLKOUT)로 설정:
     //
-    CPUTimer_setPreScaler(cpuTimer, 0);
+    CPUTimer_setPreScaler(cpuTimer, 0u);
 
     //
     // 타이머 제어 레지스터를 초기화합니다. 타이머를 정지 및 재로드하고,
@@ -179,12 +179,12 @@ static void configCPUTimer(uint32_t cpuTimer, float32_t freq, float32_t period)
 
 
 /*
-@funtion	__interrupt void isr_CpuTimer0(void)
-@brief		100 us
-@param		void
-@return		__interrupt void
-@remark	
-	-	
+@funtion    __interrupt void isr_CpuTimer0(void)
+@brief      CPU 타이머 0 인터럽트 서비스 루틴 (100us)
+@param      void
+@return     __interrupt void
+@remark 
+    - 초고속 처리가 필요한 100us 주기의 작업을 예약하기 위한 필드입니다.
 */
 __interrupt void isr_CpuTimer0(void)
 {
@@ -197,12 +197,12 @@ __interrupt void isr_CpuTimer0(void)
 
 
 /*
-@funtion	__interrupt void isr_CpuTimer1(void)
-@brief		1 ms
-@param		void
-@return		__interrupt void
-@remark	
-	-	
+@funtion    __interrupt void isr_CpuTimer1(void)
+@brief      CPU 타이머 1 인터럽트 서비스 루틴 (1ms)
+@param      void
+@return     __interrupt void
+@remark 
+    - 백그라운드 태스크 스케줄링을 위한 1ms, 10ms, 100ms, 1000ms 계수 카운트를 증가시킵니다.
 */
 __interrupt void isr_CpuTimer1(void)
 {
@@ -217,12 +217,12 @@ __interrupt void isr_CpuTimer1(void)
 
 
 /*
-@funtion	__interrupt void isr_CpuTimer2(void)
-@brief		1000 ms
-@param		void
-@return		__interrupt void
-@remark	
-	-	
+@funtion    __interrupt void isr_CpuTimer2(void)
+@brief      CPU 타이머 2 인터럽트 서비스 루틴 (1000ms = 1s)
+@param      void
+@return     __interrupt void
+@remark 
+    - 시스템 디버깅용 동작 주파수(Hz)를 측정합니다.
 */
 __interrupt void isr_CpuTimer2(void)
 {

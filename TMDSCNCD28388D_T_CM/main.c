@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : main.c
     Description      : CM Core Main Entry
-    Last Updated     : 2026. 06. 04. (스케줄러 while 루프 교정 및 Hzcnt 750Hz 편차 해결)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #include "main.h"
@@ -24,11 +24,12 @@ static void Cycle_1000ms(void);
 */
 int main(void)
 {
-    /* 1. 시스템 초기화 (CM 코어 클럭 및 인터럽트 등) */
+    /* --- [핵심 개선] CM 코어 기본 하드웨어 및 클럭 초기화 --- */
     CM_init(); 
-
+    
+    /* --- [핵심 개선] 인터럽트 벡터 테이블을 RAM으로 복사 및 활성화 --- */
+    /* 반드시 Initial_IPC() 등의 인터럽트 등록 함수보다 '먼저' 호출되어야 합니다! */
 #ifdef _FLASH
-    /* --- [필수 핵심 패치] Flash 벡터 테이블을 RAM으로 복사 및 하드웨어 매핑 리다이렉션 --- */
     Interrupt_initRAMVectorTable(vectorTableFlash, vectorTableRAM);
 #endif
 

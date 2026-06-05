@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "D:\\Nexcom\\Firmware\\01_Project\\02_Tester\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T_PC\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Nexcom\\Firmware\\01_Project\\02_Tester\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T_PC\\MainForm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:MainForm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Nexcom\\Firmware\\01_Project\\02_Tester\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T_PC\\TMDSCNCD28388D_T_PC.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:TMDSCNCD28388D_T_PC.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
     }
@@ -19,6 +23,19 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "MainForm.cs",
+              "DocumentMoniker": "D:\\Nexcom\\Firmware\\01_Project\\02_Tester\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T_PC\\MainForm.cs",
+              "RelativeDocumentMoniker": "MainForm.cs",
+              "ToolTip": "D:\\Nexcom\\Firmware\\01_Project\\02_Tester\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T_PC\\MainForm.cs",
+              "RelativeToolTip": "MainForm.cs",
+              "ViewState": "AgIAALsBAAAAAAAAAAAAALsBAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-05T08:17:02.348Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "TMDSCNCD28388D_T_PC.csproj",
               "DocumentMoniker": "D:\\Nexcom\\Firmware\\01_Project\\02_Tester\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T\\TMDSCNCD28388D_T_PC\\TMDSCNCD28388D_T_PC.csproj",
               "RelativeDocumentMoniker": "TMDSCNCD28388D_T_PC.csproj",

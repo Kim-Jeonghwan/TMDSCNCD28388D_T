@@ -8,7 +8,7 @@
 	Description		: 
 	Tracebility		: 
 	Programmer		: 
-	Last Updated	: 2026. 06. 02. (온도 센서 전용 1kHz 느린 트리거용 ePWM9 함수 전역 선언 추가)
+	Last Updated	: 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 
 	Function List	:	
 						

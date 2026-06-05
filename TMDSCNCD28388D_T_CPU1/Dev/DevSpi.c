@@ -8,7 +8,7 @@
 	Description		: SPI Driver for SSI Encoder
 	Tracebility		: 
 	Programmer		: 
-	Last Updated	: 2026. 06. 01. (불필요한 공백 및 InitSpib 찌꺼기 주석 정리)
+	Last Updated	: 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 
 	Function List	:	
 						
@@ -51,13 +51,12 @@ static void InitSpic(void);
 
 /* ************************** [[  function  ]]  *********************************************************** */
 /*
-@funtion	void Initial_SPI(void)
-@brief		SPI 초기화 
-@param		void
-@return		void
-@remark	
-	-	ProtoType 은 DSP2833x_GlobalPrototypes.h 정의
-	-	DevDspInit.c의 DevInitPeripherals() 호출 
+@funtion    void Initial_SPI(void)
+@brief      SPI 드라이버 초기화
+@param      void
+@return     void
+@remark 
+    - SSI 엔코더용 SPI-C 모듈 초기화를 호출합니다.
 */
 void Initial_SPI(void)
 {

@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevIPC.h
     Description      : CM Core IPC Device Driver Header
-    Last Updated     : 2026. 06. 04. (Initial_IPC_Clear 및 g_bCmReady 전역변수 추가)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #ifndef DEV_IPC_H

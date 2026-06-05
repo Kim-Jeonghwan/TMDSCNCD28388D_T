@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : main.c
     Description      : Main background loop and periodic tasks
-    Last Updated     : 2026. 06. 04. (스케줄러 while 루프 교정 및 Hzcnt 750Hz 편차 해결)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 /* ************************** [[   include  ]]  *********************************************************** */
@@ -35,11 +35,11 @@ static void cycle_1000ms(void);
 /* ************************** [[  function  ]]  *********************************************************** */
 /*
 @funtion	void main(void)
-@brief		
+@brief		CPU1 코어 메인 엔트리 포인트 및 백그라운드 태스크 스케줄러
 @param		void
 @return		void
 @remark	
-	-	
+	- 시스템 초기화 및 CM 코어와의 동기화를 수행한 후, 주기에 맞춰 태스크를 실행합니다.
 */
 void main(void)
 {
@@ -89,11 +89,11 @@ void main(void)
 
 /*
 @funtion	static void cycle_1ms(void)
-@brief		1ms 마다 수행 하는 동작 
+@brief		1ms 주기로 실행되는 주기 Task
 @param		void
 @return		static void
 @remark	
-	-	
+	- 시스템 클럭 계수(Hzcnt)를 증가시키는 등 고속 모니터링 작업을 실시간 처리합니다.
 */
 static void cycle_1ms(void)
 {
@@ -105,11 +105,11 @@ static void cycle_1ms(void)
 
 /*
 @funtion	static void cycle_10ms(void)
-@brief		10ms 마다 수행 하는 동작 
+@brief		10ms 주기로 실행되는 주기 Task
 @param		void
 @return		static void
 @remark	
-	-	
+	- ADC 센서 데이터를 갱신하고 PC로 보낼 통신 메시지를 처리합니다.
 */
 static void cycle_10ms(void)
 {
@@ -122,11 +122,11 @@ static void cycle_10ms(void)
 
 /*
 @funtion	static void cycle_100ms(void)
-@brief		100ms 마다 수행 하는 동작 
+@brief		100ms 주기로 실행되는 주기 Task
 @param		void
 @return		static void
 @remark	
-	-	
+	- 시스템 상태 모니터링 및 LED 상태를 갱신합니다.
 */
 static void cycle_100ms(void)
 {
@@ -138,11 +138,11 @@ static void cycle_100ms(void)
 
 /*
 @funtion	static void cycle_1000ms(void)
-@brief		1000ms 마다 수행 하는 동작 
+@brief		1000ms(1초) 주기로 실행되는 주기 Task
 @param		void
 @return		static void
 @remark	
-	-	
+	- 디바이스 상태 및 저속 이벤트 처리를 위한 예약 필드입니다.
 */
 static void cycle_1000ms(void)
 {

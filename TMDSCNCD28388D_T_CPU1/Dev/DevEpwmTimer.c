@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevEpwmTimer.c
     Description      : EPWM1 기반 2ms 하드웨어 타이머 구현 (UDP 이더넷 TX 트리거용)
-    Last Updated     : 2026. 06. 01. (신규 작성)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 /*
@@ -71,9 +71,11 @@ void Initial_EpwmTimer(void)
     - xXmtSciPcMsg1 (CSU_SCI_PC.h) 에서 온도/시퀀스 데이터를 읽어 CM으로 IPC 전송합니다.
     - CM은 수신 즉시 UDP Reflect 패킷을 PC로 송신합니다.
 */
+extern float32_t currentTemperatureC; // ADC 최신 온도 공유 변수
+
 static __interrupt void isr_Epwm1Timer2ms(void)
 {
-    /* CM 코어에 온도 + 시퀀스 + 상태 데이터 IPC 전송 */
+    /* CM 코어에 현재 최신 10ms 주기의 온도 + 시퀀스 + 상태 데이터만 순수하게 IPC 전송 */
     sendEthDataToCM(xXmtSciPcMsg1.DspTemp,
                     (uint8_t)xXmtSciPcMsg1.IncNumber,
                     (uint8_t)xXmtSciPcMsg1.Status);

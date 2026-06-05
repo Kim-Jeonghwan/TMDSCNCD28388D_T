@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevTimer.h
     Description      : CM Core SysTick 타이머 헤더
-    Last Updated     : 2026. 06. 04. (stTimer 구조체 필드 순서 Cycle_2ms→Cycle_1ms 순서 일치 교정)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 #ifndef DEVTIMER_H
 #define DEVTIMER_H

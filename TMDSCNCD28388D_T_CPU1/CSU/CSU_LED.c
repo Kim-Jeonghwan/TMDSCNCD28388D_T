@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_LED.c
     Description      : System Status LED Control (Green / Orange)
-    Last Updated     : 2026. 06. 01. (LEDError 추가 및 빌드 경고/오류 핫픽스)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 /* ************************** [[   include  ]]  *********************************************************** */
@@ -32,80 +32,89 @@ static void HW_toggleLedPin(uint16_t Index);
 
 /* ************************** [[  function  ]]  *********************************************************** */
 
-/**
- * @brief LED 관련 GPIO 초기화
- */
+/*
+@funtion    void initGpioDoutLed(void)
+@brief      LED 관련 GPIO 초기화
+@param      void
+@return     void
+@remark
+    - 보드의 각 LED 핀들을 CPU1 소유의 출력 핀으로 설정합니다.
+*/
 void initGpioDoutLed(void)
 {
     EALLOW;
     
     // RUN LED (GPIO145)
     GPIO_setPinConfig(GPIO_145_GPIO145);
-    GPIO_setPadConfig(145, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(145, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(145, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(145u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(145u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(145u, GPIO_CORE_CPU1);
 
     // ERROR LED (GPIO146)
     GPIO_setPinConfig(GPIO_146_GPIO146);
-    GPIO_setPadConfig(146, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(146, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(146, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(146u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(146u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(146u, GPIO_CORE_CPU1);
 
     // LED 01 (GPIO31)
     GPIO_setPinConfig(GPIO_31_GPIO31);
-    GPIO_setPadConfig(31, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(31, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(31, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(31u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(31u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(31u, GPIO_CORE_CPU1);
     
     // LED 02 (GPIO32)
     GPIO_setPinConfig(GPIO_32_GPIO32);
-    GPIO_setPadConfig(32, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(32, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(32, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(32u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(32u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(32u, GPIO_CORE_CPU1);
 
     // LED 03 (GPIO33)
     GPIO_setPinConfig(GPIO_33_GPIO33);
-    GPIO_setPadConfig(33, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(33, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(33, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(33u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(33u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(33u, GPIO_CORE_CPU1);
 
     // LED 04 (GPIO34)
     GPIO_setPinConfig(GPIO_34_GPIO34);
-    GPIO_setPadConfig(34, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(34, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(34, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(34u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(34u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(34u, GPIO_CORE_CPU1);
 
     // LED 05 (GPIO35)
     GPIO_setPinConfig(GPIO_35_GPIO35);
-    GPIO_setPadConfig(35, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(35, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(35, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(35u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(35u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(35u, GPIO_CORE_CPU1);
 
     // LED 06 (GPIO36)
     GPIO_setPinConfig(GPIO_36_GPIO36);
-    GPIO_setPadConfig(36, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(36, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(36, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(36u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(36u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(36u, GPIO_CORE_CPU1);
 
     // LED 07 (GPIO37)
     GPIO_setPinConfig(GPIO_37_GPIO37);
-    GPIO_setPadConfig(37, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(37, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(37, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(37u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(37u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(37u, GPIO_CORE_CPU1);
 
     // LED 08 (GPIO38)
     GPIO_setPinConfig(GPIO_38_GPIO38);
-    GPIO_setPadConfig(38, GPIO_PIN_TYPE_STD);
-    GPIO_setDirectionMode(38, GPIO_DIR_MODE_OUT);
-    GPIO_setMasterCore(38, GPIO_CORE_CPU1);
+    GPIO_setPadConfig(38u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(38u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(38u, GPIO_CORE_CPU1);
     
     EDIS;
 }
 
-/**
- * @brief LED 초기값 설정
- * @details Green LED는 시스템 정상 동작 확인용으로 1초 토글 설정을 기본으로 합니다.
- */
+/*
+@funtion    void Initial_LED(void)
+@brief      LED 모드 초기값 설정
+@param      void
+@return     void
+@remark
+    - RUN LED는 1초 토글, ERROR LED 및 기타 LED는 기본 OFF 상태로 초기화합니다.
+*/
 void Initial_LED(void)
 {
     // RUN LED (GPIO145) 설정
@@ -160,10 +169,15 @@ void Initial_LED(void)
 
 }
 
-/**
- * @brief LED 상태 머신 업데이트
- * @details 100ms 주기로 호출되어 토글 카운트를 관리하거나 On/Off 상태를 유지합니다.
- */
+/*
+@funtion    void updateLedStatus(void)
+@brief      LED 상태 머신 업데이트
+@param      void
+@return     void
+@remark
+    - 100ms 주기로 호출되며 각 LED의 토글 카운트를 갱신하고 물리 핀 출력을 제어합니다.
+    - 내부 온도 센서 값이 LIMIT_TEMP_ERROR를 초과하면 ERROR LED를 점등합니다.
+*/
 void updateLedStatus(void)
 {
     uint16_t i = 0u;
@@ -217,11 +231,13 @@ void updateLedStatus(void)
 }
 
 
-/**
- * @brief LED 강제 점등/소등 설정
- * @param pLed 대상 LED 구조체 포인터
- * @param State LED_ON(1) 또는 LED_OFF(0)
- */
+/*
+@funtion    void setLedStatus(stLed *pLed, bool State)
+@brief      개별 LED 상태(점등/소등) 강제 설정
+@param      pLed: 대상 LED 구조체 포인터
+@param      State: LED_ON(1) 또는 LED_OFF(0)
+@return     void
+*/
 void setLedStatus(stLed *pLed, bool State)
 {
     if(pLed != NULL)
@@ -236,11 +252,14 @@ void setLedStatus(stLed *pLed, bool State)
 }
 
 
-/**
- * @brief LED 토글 동작 설정
- * @param State LED_TOGGLE(1) 또는 LED_NONE(0)
- * @param Time 토글 주기 카운트
- */
+/*
+@funtion    void setLedModeToggle(stLed *pLed, bool State, uint16_t Time)
+@brief      LED 토글 모드 설정
+@param      pLed: 대상 LED 구조체 포인터
+@param      State: LED_TOGGLE(1) 또는 LED_NONE(0)
+@param      Time: 토글 유지 카운트 (100ms 단위)
+@return     void
+*/
 void setLedModeToggle(stLed *pLed, bool State, uint16_t Time)
 {
     if(pLed != NULL)
@@ -253,9 +272,13 @@ void setLedModeToggle(stLed *pLed, bool State, uint16_t Time)
 
 
 
-/**
- * @brief 하드웨어 GPIO 핀 직접 제어 (eLed enum 및 Driverlib 적용)
- */
+/*
+@funtion    static void HW_writeLedPin(uint16_t Index, bool State)
+@brief      물리 GPIO 핀 상태 출력 (Write)
+@param      Index: LED 식별 인덱스
+@param      State: 출력 상태
+@return     static void
+*/
 static void HW_writeLedPin(uint16_t Index, bool State)
 {
 	switch(Index)
@@ -306,9 +329,12 @@ static void HW_writeLedPin(uint16_t Index, bool State)
 	}
 }
 
-/**
- * @brief 하드웨어 GPIO 핀 토글 제어 (eLed enum 및 Driverlib 적용)
- */
+/*
+@funtion    static void HW_toggleLedPin(uint16_t Index)
+@brief      물리 GPIO 핀 상태 반전 (Toggle)
+@param      Index: LED 식별 인덱스
+@return     static void
+*/
 static void HW_toggleLedPin(uint16_t Index)
 {
 	switch(Index)

@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevIPC.c
     Description      : CM Core IPC Device Driver 및 공유 메모리 설정
-    Last Updated     : 2026. 06. 05. (sendEthDataToCM 내 FLAG1 busy 방어 로직 추가)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #include "DevIPC.h"
@@ -97,15 +97,13 @@ void Initial_IPC(void)
 void sendEthDataToCM(uint16_t dspTemp, uint8_t seqNum, uint8_t status)
 {
     /* CM이 이전 메시지를 아직 ACK하지 않았으면 스킵 (2ms 후 재시도) */
-    if (IPC_isFlagBusyLtoR(IPC_CPU1_L_CM_R, IPC_FLAG1))
+    if (!IPC_isFlagBusyLtoR(IPC_CPU1_L_CM_R, IPC_FLAG1))
     {
-        return;
+        uint32_t uiAddr = (uint32_t)dspTemp;
+        uint32_t uiData = ((uint32_t)status << 8U) | (uint32_t)seqNum;
+
+        IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, (uint32_t)IPC_CMD_CPU1_ETH_TX_DATA, uiAddr, uiData);
     }
-
-    uint32_t uiAddr = (uint32_t)dspTemp;
-    uint32_t uiData = ((uint32_t)status << 8U) | (uint32_t)seqNum;
-
-    IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, (uint32_t)IPC_CMD_CPU1_ETH_TX_DATA, uiAddr, uiData);
 }
 
 /* ---------------------------------------------------------------
@@ -116,7 +114,7 @@ void sendEthDataToCM(uint16_t dspTemp, uint8_t seqNum, uint8_t status)
 @brief      CM 코어로부터 수신된 IPC 인터럽트 서비스 루틴 (IPC_INT0)
 @param      void
 @return     static __interrupt void
-@remarkt
+@remark
     - CM에서 IPC_CMD_CM_ETH_RX_DATA 명령 수신 시 공유 수신 버퍼(xRcvEthMsg) 갱신
 */
 static __interrupt void isrIpcFromCM(void)

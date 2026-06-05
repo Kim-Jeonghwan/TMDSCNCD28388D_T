@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_IPC.h
     Description      : IPC Protocol (CM to CPU1) 및 이더넷 공유 메모리(GS0/GS1) 설정
-    Last Updated     : 2026. 06. 04. (CM 기동 완료 READY 명령어 추가)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #ifndef CSU_IPC_H

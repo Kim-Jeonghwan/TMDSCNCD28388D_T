@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevTimer.c
     Description      : CM Core CPU 타이머 소스
-    Last Updated     : 2026. 06. 04. (CM 클럭 AUXPLL 125MHz로 복원)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #include "DevTimer.h"
@@ -14,10 +14,20 @@
 
 stTimer xTimer;
 
+/*
+@funtion    void Initial_TIMER(void)
+@brief      CM 코어의 CPU 타이머(0, 1, 2)를 초기화합니다.
+@param      void
+@return     void
+@remark
+    - 타이머 0: 2ms 주기, UDP 이더넷 송신 주기 생성용
+    - 타이머 1: 1ms 주기, 백그라운드 태스크 스케줄링용
+    - 타이머 2: 1s 주기, 디버깅용 Hz 계수
+*/
 void Initial_TIMER(void)
 {
     /* 타이머 변수 초기화 */
-    (void)memset(&xTimer, 0, sizeof(xTimer));
+    (void)memset(&xTimer, 0U, sizeof(xTimer));
 
     /* --- CPU 타이머 0: UDP 이더넷 송신 전용 (2ms) --- */
     CPUTimer_setPeriod(CPUTIMER0_BASE, TIMER0_PERIOD_2MS - 1U);
@@ -56,12 +66,24 @@ void Initial_TIMER(void)
     Interrupt_enable(INT_TIMER2);
 }
 
+/*
+@funtion    void isr_CpuTimer0(void)
+@brief      타이머 0 인터럽트 서비스 루틴 (2ms)
+@param      void
+@return     void
+*/
 void isr_CpuTimer0(void)
 {
     xTimer.Cycle_2ms++;
     CPUTimer_clearOverflowFlag(CPUTIMER0_BASE);
 }
 
+/*
+@funtion    void isr_CpuTimer1(void)
+@brief      타이머 1 인터럽트 서비스 루틴 (1ms)
+@param      void
+@return     void
+*/
 void isr_CpuTimer1(void)
 {
     xTimer.Cycle_1ms++;
@@ -72,6 +94,12 @@ void isr_CpuTimer1(void)
     CPUTimer_clearOverflowFlag(CPUTIMER1_BASE);
 }
 
+/*
+@funtion    void isr_CpuTimer2(void)
+@brief      타이머 2 인터럽트 서비스 루틴 (1s)
+@param      void
+@return     void
+*/
 void isr_CpuTimer2(void)
 {
     xTimer.Hz = xTimer.Hzcnt;

@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevEpwmTimer.h
     Description      : EPWM1 기반 2ms 하드웨어 타이머 헤더
-    Last Updated     : 2026. 06. 01. (신규 작성 - UDP 이더넷 TX 트리거용)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #ifndef DEV_EPWM_TIMER_H

@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevEthernet.h
     Description      : Ethernet EMAC 드라이버 계층 헤더 (MII 모드, DP83822 PHY)
-    Last Updated     : 2026. 06. 04. (CoreInterruptEnable/Disable 콜백 선언 추가)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #ifndef DEV_ETHERNET_H

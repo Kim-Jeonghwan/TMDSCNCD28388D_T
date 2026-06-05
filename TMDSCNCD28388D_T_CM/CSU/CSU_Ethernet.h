@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_Ethernet.h
     Description      : UDP 프로토콜 처리 계층 (규격서 Payload/ACK MSG Format 준수)
-    Last Updated     : 2026. 06. 02. (PC 수신 포트를 50002로 변경하여 포트 충돌 방지)
+    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
 #ifndef CSU_ETHERNET_H
