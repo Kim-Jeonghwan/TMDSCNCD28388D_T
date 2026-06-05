@@ -32,16 +32,16 @@
 /* ---------------------------------------------------------------
  * 네트워크 설정 (고정 IP, ARP 없음)
  * --------------------------------------------------------------- */
-/* DSP IP: 192.168.100.10 */
+/* DSP IP: 192.168.200.10 */
 #define ETH_DSP_IP0  (192U)
 #define ETH_DSP_IP1  (168U)
-#define ETH_DSP_IP2  (100U)
+#define ETH_DSP_IP2  (200U)
 #define ETH_DSP_IP3  (10U)
 
-/* PC IP: 192.168.100.100 */
+/* PC IP: 192.168.200.100 */
 #define ETH_PC_IP0   (192U)
 #define ETH_PC_IP1   (168U)
-#define ETH_PC_IP2   (100U)
+#define ETH_PC_IP2   (200U)
 #define ETH_PC_IP3   (100U)
 
 /* DSP MAC: A8:63:F2:00:38:88 */
@@ -62,7 +62,7 @@
 
 /* UDP 포트 */
 #define ETH_DSP_RX_PORT  (5001U)   /* DSP 수신 포트 */
-#define ETH_PC_RX_PORT   (50002U)  /* PC  수신 포트 (5000번 포트 충돌 회피용) */
+#define ETH_PC_RX_PORT   (5000U)   /* PC  수신 포트 (기본 포트) */
 
 /* MSG Header 크기 정의 */
 #define ETH_MSG_HEADER_SIZE     (12U)

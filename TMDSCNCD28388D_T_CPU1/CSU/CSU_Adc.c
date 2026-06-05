@@ -65,7 +65,18 @@ static void updateDspTempSensor(void)
     // Divide by Zero 취약점 (CWE-369) 방지를 위한 사전 분모 조건 검사 수행
     if (tempSensor_tempSlope != 0.0f)
     {
-        currentTemperatureC = ((((float32_t)adcResult * tempSensor_scaleFactor / 4096.0f) - tempSensor_tempOffset) / tempSensor_tempSlope);
+        float32_t rawTempC = ((((float32_t)adcResult * tempSensor_scaleFactor / 4096.0f) - tempSensor_tempOffset) / tempSensor_tempSlope);
+        
+        // IIR 로우패스 필터 적용 (노이즈로 인한 1의 자리 및 소수점 자리 요동 방지)
+        // Alpha = 0.05 (새로운 값 5%, 기존 값 95% 반영)
+        if (currentTemperatureC == 0.0f)
+        {
+            currentTemperatureC = rawTempC; // 초기화
+        }
+        else
+        {
+            currentTemperatureC = (currentTemperatureC * 0.95f) + (rawTempC * 0.05f);
+        }
     }
     else
     {

@@ -24,8 +24,8 @@ namespace TMDSCNCD28388D_T_PC
     public class UdpEthProtocol : IProtocol
     {
         // ── 네트워크 설정 ─────────────────────────────────────
-        private const string DspIpAddress   = "192.168.100.10";
-        private const string LocalIpAddress = "192.168.100.100";
+        private const string DspIpAddress   = "192.168.200.10";
+        private const string LocalIpAddress = "192.168.200.100";
         private const int    DspRxPort      = 5001;  // DSP 수신 포트
         private const int    PcRxPort       = 50002; // PC  수신 포트 (5000번 대역 충돌 회피를 위해 변경)
 
@@ -74,7 +74,8 @@ namespace TMDSCNCD28388D_T_PC
             _commError        = false;
             _ackReceived      = false;
             _currentSendCount = 1;
-            _localEndPoint    = new IPEndPoint(IPAddress.Any, PcRxPort);
+            /* IPAddress.Any 대신 LocalIpAddress(192.168.100.100)로 강제 바인딩하여 Wi-Fi로 패킷이 새는 것을 방지 */
+            _localEndPoint    = new IPEndPoint(IPAddress.Parse(LocalIpAddress), PcRxPort);
             _dspEndPoint      = new IPEndPoint(IPAddress.Parse(DspIpAddress), DspRxPort);
 
             _udpClient = new UdpClient();
@@ -201,7 +202,8 @@ namespace TMDSCNCD28388D_T_PC
             // ① DSP→PC Reflect 메시지 (온도+시퀀스)
             if (srcId == DstIdDsp && code == MsgCodeMonitor && reqAck == ReqAckNone)
             {
-                if (!VerifyChecksum(data, 17)) return;
+                // Reflect 메시지 구조: 헤더(12) + Data(4: Seq, Status, Temp 2B) + Checksum(2) = 총 18바이트
+                if (!VerifyChecksum(data, 18)) return;
 
                 byte   seqNum  = data[12];
                 byte   status  = data[13];

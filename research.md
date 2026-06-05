@@ -994,3 +994,144 @@ static void Initial_CmCore(void)
 ### 19.2 해결 방안
 - **조치 1 (CPU1 SCI 오버헤드 해제)**: CPU1의 `isr_CpuTimer0` (100us) 내에서 `sendScia_SCI_PC()` 호출을 제거하고, `sendScia_SCI_PC()`를 `main.c`의 메인 백그라운드 루프 `while(1u)`에서 상시(또는 매 루프마다) 폴링 방식으로 실행하도록 이동합니다. 이를 통해 100us 초고속 인터럽트가 CPU를 점유하는 문제를 근본적으로 해결합니다.
 - **조치 2 (주기 태스크 카운터 감쇄 로직 교정)**: CPU1과 CM의 `main.c` 백그라운드 스케줄러에서, 주기 카운터를 0으로 초기화하지 않고 발생 횟수만큼 감산(`xTimer.Cycle_1ms -= 1U;` 등)하도록 수정하여 백그라운드 지연으로 인한 태스크 유실을 방지합니다.
+
+---
+
+## 20. IPC / Ethernet UDP 통신 장애 근본 원인 분석 보고서
+
+**분석 일자**: 2026. 06. 05.  
+**현상**: CM 코어에서 PC로 UDP 패킷이 전혀 전송되지 않음 (PC 수신 바이트 = 0)  
+**진단 카운터 측정값**: `g_uiTxOkCnt = 0`, `g_uiTxFailCnt = 24826`, `g_uiIpcIsr1Cnt = 0`  
+**관련 파일**:
+- [CSU_Ethernet.c (CM)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/CSU_Ethernet.c)
+- [DevEthernet.c (CM)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevEthernet.c)
+- [DevIPC.c (CM)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevIPC.c)
+- [DevIPC.c (CPU1)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevIPC.c)
+- [DevDspInit.c (CPU1)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevDspInit.c)
+- [DevEpwmTimer.c (CPU1)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/Dev/DevEpwmTimer.c)
+- [ethernet.c (SDK)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/ethernet.c)
+- [ipc.c (CPU1 SDK)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/ipc.c)
+- [ipc.c (CM SDK)](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/ipc.c)
+
+### 20.1 장애 원인 #1: Ethernet TX 패킷 디스크립터 SOP/EOP 플래그 누락 (★ 확정)
+
+| 항목 | 내용 |
+|------|------|
+| **증상** | `g_uiTxFailCnt = 24826`, `g_uiTxOkCnt = 0` — TX 시도 전부 실패 |
+| **위치** | [CSU_Ethernet.c:L277](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/CSU_Ethernet.c#L277) |
+| **원인** | `s_xTxPktDesc.flags = 0U` — SOP 비트 미설정 |
+| **SDK 증거** | [ethernet.c:L921](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/ethernet.c#L921): `if(0U == (pktPtr->flags & ETHERNET_PKT_FLAG_SOP))` → SOP 없으면 즉시 오류 반환 |
+| **수정** | `s_xTxPktDesc.flags = ETHERNET_PKT_FLAG_SOP \| ETHERNET_PKT_FLAG_EOP` |
+| **상태** | ✅ **수정 완료** (2026.06.04) |
+
+**상세 설명**:
+TI EMAC 드라이버의 `Ethernet_sendPacket()` 내부에서, 패킷 디스크립터의 `flags` 필드에 `ETHERNET_PKT_FLAG_SOP`(Start of Packet, `0x20000000U`) 비트가 설정되어 있지 않으면 즉시 반환하여 전송을 거부합니다. 단일 버퍼 패킷의 경우 `SOP|EOP`를 함께 설정해야 합니다.
+
+---
+
+### 20.2 장애 원인 #2: IPC ISR 미호출 — EPWM ISR과 IPC 동기화 Race Condition (★ 확정)
+
+| 항목 | 내용 |
+|------|------|
+| **증상** | `g_uiIpcIsr1Cnt = 0` — CM의 IPC ISR가 한 번도 호출되지 않음 |
+| **증상 추가** | `g_xEthTxData.SeqNum = 0` — CPU1에서 전달된 데이터가 전혀 없음 |
+| **원인** | CPU1 초기화 시퀀스의 Race Condition (EPWM ISR이 IPC 동기화보다 먼저 FLAG1 점유) |
+
+**타임라인 분석** (아래 순서가 문제 발생의 핵심):
+
+```
+[CPU1] DSP_Initialization()
+  ├── Device_init()
+  ├── initEmacGpioPins()
+  ├── Initial_IPC_Mastership()
+  ├── Initial_GPIO()
+  ├── Interrupt_initModule()
+  ├── Interrupt_initVectorTable()
+  ├── Initial_IPC_Clear()          ← IPC 레지스터 플래그 초기화 (IPC_init)
+  ├── InitialPeripherals()
+  │     └── initSystemCommunications()
+  │           ├── Initial_SPI()
+  │           ├── Initial_SCI()
+  │           ├── Initial_TIMER()
+  │           └── Initial_EpwmTimer()   ← ⚠️ EPWM1 PIE 인터럽트 등록 완료
+  ├── Initial_CmCore()             ← CM 코어 부팅 명령
+  ├── ERTM / EINT                  ← ⚡ 전역 인터럽트 활성화!
+                                      → EPWM1 ISR 즉시 발사 시작
+                                      → sendEthDataToCM() 호출
+                                      → IPC_sendCommand(FLAG1) 호출!
+[CPU1] Initial_IPC()               ← IPC_sync(FLAG31) 대기 진입
+[CM]   Initial_IPC()               ← IPC_registerInterrupt(IPC_INT1) + IPC_sync(FLAG31)
+(양쪽 IPC_sync 완료)
+```
+
+**핵심 문제 발생 메커니즘**:
+
+1. **EINT 실행 시점** (DevDspInit.c L95): 전역 인터럽트가 활성화되는 순간 EPWM1 ISR(`isr_Epwm1Timer2ms`)이 **즉시 트리거**됩니다. UP-DOWN 카운터가 이미 동작 중이기 때문입니다.
+
+2. **ISR 내 IPC 전송** (DevEpwmTimer.c L77): ISR에서 `sendEthDataToCM()`→`IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, ...)` 호출.
+
+3. **SDK IPC_sendCommand 동작** ([ipc.c:L187](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/ipc.c#L187)):
+   ```c
+   if((IPC_Instance[ipcType].IPC_Flag_Ctr_Reg->IPC_FLG & flags) == 0U)
+   {
+       // ... 명령 레지스터에 데이터 기록 ...
+       IPC_Instance[ipcType].IPC_Flag_Ctr_Reg->IPC_SET = flags;  // FLAG1 SET!
+   }
+   ```
+   Initial_IPC_Clear()로 이미 클리어한 상태이므로 **첫 번째 호출은 성공**합니다. FLAG1이 SET됩니다.
+
+4. **CM 미등록 상태**: 이 시점에서 CM은 아직 `Initial_IPC()`를 실행하기 전(또는 CM_init/IPC_sync 진행 중)이므로, IPC_INT1에 대한 NVIC 인터럽트 핸들러가 **등록되지 않았**습니다.
+
+5. **Edge-Triggered NVIC**: ARM Cortex-M4의 NVIC는 **rising-edge triggered** 방식입니다. CM이 나중에 `IPC_registerInterrupt(IPC_INT1)`로 핸들러를 등록하고 인터럽트를 활성화하더라도, FLAG1은 이미 HIGH 상태이므로 **새로운 edge가 발생하지 않아** ISR이 절대 트리거되지 않습니다.
+
+6. **FLAG1 영원히 점유**: CM ISR가 호출되지 않으므로 `IPC_ackFlagRtoL(IPC_FLAG1)`도 절대 실행되지 않습니다. 이후 CPU1의 EPWM ISR에서 반복 호출하는 `IPC_sendCommand(FLAG1)`은 SDK 내부 busy 체크(`IPC_FLG & flags != 0`)에서 **항상 false**를 반환하여 데이터가 전혀 전송되지 않습니다.
+
+**SDK 증거** ([ipc.c:L187](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/ipc.c#L187)):
+> `IPC_sendCommand`는 FLAG가 busy이면 `return false`하고, 현재 `sendEthDataToCM()`은 이 반환값을 무시하고 있음.
+
+---
+
+### 20.3 장애 원인 #3: CM 클럭 불일치 잔존 가능성
+
+| 항목 | 내용 |
+|------|------|
+| **현상** | DevTimer.c에 `CM_CLK_HZ = 125000000U` (AUXPLL 125MHz) |
+| **DevDspInit.c** | `SysCtl_setCMClk(SYSCTL_CMCLKOUT_DIV_1, SYSCTL_SOURCE_AUXPLL)` — 125MHz 설정 |
+| **디버거** | `xTimer.Hz = 1000` — 현재는 정상 동작 중 |
+| **잔존 리스크** | AUXPLL이 불안정했던 이력이 있으므로 운용 환경 변화 시 재발 가능 |
+
+> 이전 plan.md에서 AUXPLL → SYSPLL/2(100MHz) 전환을 진행했다가 사용자 요청으로 다시 AUXPLL 125MHz로 복원한 상태입니다. 현재 `xTimer.Hz = 1000`이므로 당장은 정상이지만, AUXPLL 불안정 이력이 있으므로 주의가 필요합니다.
+
+---
+
+### 20.4 진단 카운터 검증 결과 요약
+
+| 카운터 | 값 | 의미 |
+|--------|-----|------|
+| `g_uiTxFailCnt` | 24826 | 2ms 마다 호출 → 약 49.6초 분량 TX 실패 누적 |
+| `g_uiTxOkCnt` | 0 | Ethernet TX 한 번도 성공하지 못함 |
+| `g_uiIpcIsr1Cnt` | 0 | CM IPC ISR 한 번도 호출되지 않음 (데이터 전달 불가) |
+| `g_xEthTxData.SeqNum` | 0 | IPC 데이터 수신 이력 없음 확인 |
+| `g_hEMAC` | 0x2000D200 | Ethernet 핸들 유효 (초기화 성공) |
+| `g_uiEthInitRet` | 0 | Ethernet 초기화 성공 (ETHERNET_RET_SUCCESS) |
+| `g_bCmReady` | 1 | CM 코어 기동 완료 및 CPU1 통보 성공 |
+| `xTimer.Hz` (CM) | 1000 | CM 타이머 정상 동작 |
+| `xTimer.Hz` (CPU1) | 1000 | CPU1 타이머 정상 동작 |
+
+### 20.5 네트워크 환경 확인
+
+| 항목 | 코드 설정 | PC 실제 설정 | 일치 여부 |
+|------|-----------|-------------|----------|
+| PC IP | `192.168.100.100` | `192.168.100.100` | ✅ |
+| DSP IP | `192.168.100.10` | — | 확인 필요 |
+| PC MAC | `EC:9A:0C:14:E8:4B` | 사용자 확인 완료 | ✅ |
+| DSP RX Port | `5001` | — | PC 앱 확인 필요 |
+| PC RX Port | `50002` | — | PC 앱 확인 필요 |
+| 이더넷 속도 | 100 Mbps (MII) | 100 Mbps | ✅ |
+| PC 전송 | — | 480 bytes 보냄 | ✅ (PC→DSP 전송 시도 중) |
+| PC 수신 | — | 0 bytes 받음 | ❌ (DSP→PC 전송 실패) |
+
+### 20.6 추가 발견: `DevEthernet.c`에 중복 `s_xTxPktDesc` 선언
+
+[DevEthernet.c:L51](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/Dev/DevEthernet.c#L51)에 `static Ethernet_Pkt_Desc s_xTxPktDesc;`가 선언되어 있으나, 실제 TX 전송은 [CSU_Ethernet.c:L31](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/CSU_Ethernet.c#L31)의 `static Ethernet_Pkt_Desc s_xTxPktDesc;`을 사용합니다. 서로 다른 파일의 `static` 변수이므로 링크 에러는 없지만, `DevEthernet.c`의 것은 **사용되지 않는 불필요한 변수**입니다. 제거 대상입니다.
+

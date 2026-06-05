@@ -2,12 +2,15 @@
     Nexcom Co., Ltd.
     Filename         : DevIPC.c
     Description      : CM Core IPC Device Driver
-    Last Updated     : 2026. 06. 04. (CM용 TI Clang 준수를 위한 DSP 전용 __interrupt 키워드 제거)
+    Last Updated     : 2026. 06. 05. (IPC ISR Race Condition 해결: 잔류 FLAG1 강제 ACK 추가)
 **********************************************************************/
 
 #include "DevIPC.h"
 
 static void isrIpcFromCPU1(void);
+
+/* IPC ISR 호출 진단 카운터 (CCS Expressions 사용에서 확인) */
+volatile uint32_t g_uiIpcIsr1Cnt = 0U;
 
 /*
 @funtion    void Initial_IPC(void)
@@ -19,13 +22,18 @@ static void isrIpcFromCPU1(void);
 */
 void Initial_IPC(void)
 {
-    // IPC_init()은 CPU1의 초기화 상태를 보호하기 위해 호출을 생략합니다. (마스터인 CPU1이 부팅 전에 일괄 초기화 수행 완료)
-
-    // 1. CPU1으로부터 수신받을 인터럽트 등록
+    // 1. CPU1으로부터 수신받을 인터럽트 등록 (NVIC 핸들러 + 인터럽트 활성화)
     IPC_registerInterrupt(IPC_CM_L_CPU1_R, IPC_INT1, isrIpcFromCPU1);
 
-    // 2. CPU1 코어와 동기화 수행
-    // CPU1이 준비될 때까지 대기하며 상호 확인합니다.
+    // 2. [핵심 수정] CPU1의 EPWM ISR이 CM 등록 전에 이미 FLAG1을 SET한 경우 강제 ACK
+    //    (NVIC edge-triggered 특성상, 이미 HIGH인 FLAG는 새 ISR을 트리거하지 못함)
+    //    ACK으로 FLAG1을 LOW로 내리면, 다음 IPC_sendCommand에서 새 edge 발생 → ISR 정상 트리거
+    if (IPC_isFlagBusyRtoL(IPC_CM_L_CPU1_R, IPC_FLAG1))
+    {
+        IPC_ackFlagRtoL(IPC_CM_L_CPU1_R, IPC_FLAG1);
+    }
+
+    // 3. CPU1 코어와 동기화 수행 (CPU1이 준비될 때까지 대기)
     IPC_sync(IPC_CM_L_CPU1_R, IPC_FLAG31);
 }
 
@@ -42,16 +50,18 @@ static void isrIpcFromCPU1(void)
     uint32_t command, addr, data;
     bool status;
 
-    // CPU1이 보낸 FLAG1 명령 읽기
+    g_uiIpcIsr1Cnt++;  /* IPC ISR 호출 횟수 카운터 */
+
     status = IPC_readCommand(IPC_CM_L_CPU1_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, &command, &addr, &data);
 
     if(status == true)
     {
-        // CSU_IPC 핸들러 호출
-        recvIpcCpu1Message(command, addr, data);
-
-        // 플래그 승인 처리 (CPU1의 FLAG1 Busy 해제)
+        // [최적화 포인트]: 데이터 복사가 완료되었으므로, 상위 레이어(CSU) 처리를 수행하기 전에
+        // 하드웨어 플래그를 먼저 클리어(ACK)하여 CPU1이 다음 주기를 즉시 준비할 수 있도록 채널을 개방합니다.
         IPC_ackFlagRtoL(IPC_CM_L_CPU1_R, IPC_FLAG1);
+
+        // CSU_IPC 핸들러 호출 (이 내부 연산 속도가 길어지더라도 하드웨어 인터럽트 흐름은 깨지지 않음)
+        recvIpcCpu1Message(command, addr, data);
     }
 }
 
@@ -67,10 +77,9 @@ static void isrIpcFromCPU1(void)
 */
 void sendIpcMessageToCPU1(uint32_t command, uint32_t addr, uint32_t data)
 {
-    // CPU1은 FLAG0을 모니터링하여 수신함
     while(IPC_isFlagBusyLtoR(IPC_CM_L_CPU1_R, IPC_FLAG0) == true)
     {
-        // 대기
+        /* CPU1이 이전 명령(FLAG0)을 처리하고 Clear해 줄 때까지 대기 */
     }
 
     // FLAG0을 사용하여 명령 송신

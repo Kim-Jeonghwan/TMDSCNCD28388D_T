@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevEthernet.c
     Description      : EMAC 드라이버 초기화 및 Rx/Tx 콜백 구현 (MII, DP83822)
-    Last Updated     : 2026. 06. 04. (LLD 하드폴트 예방을 위해 CoreInterruptEnable/Disable 콜백 구현 반영)
+    Last Updated     : 2026. 06. 05. (불필요한 중복 s_xTxPktDesc 변수 제거)
 **********************************************************************/
 
 /*
@@ -48,7 +48,6 @@ uint8_t g_ucTxBuf[ETH_TX_BUF_SIZE];
 /* Rx 버퍼 및 디스크립터 풀 */
 static uint8_t           s_ucRxBuf[ETH_RX_NUM_PKT_DESC][ETH_RX_BUF_SIZE];
 static Ethernet_Pkt_Desc s_xRxPktDesc[ETH_RX_NUM_PKT_DESC];
-static Ethernet_Pkt_Desc s_xTxPktDesc;
 
 /* Rx 버퍼 순환 인덱스 */
 static uint8_t s_ucRxBufIdx = 0U;
@@ -125,7 +124,6 @@ void Initial_Ethernet(void)
     /* --- Rx 디스크립터 풀 초기화 --- */
     initRxDescriptors();
     (void)memset(g_ucTxBuf, 0, ETH_TX_BUF_SIZE);
-    (void)memset(&s_xTxPktDesc, 0, sizeof(s_xTxPktDesc));
 
     /* -------------------------------------------------------
      * Step 1: 인터페이스 설정 구조체 구성
@@ -156,33 +154,39 @@ void Initial_Ethernet(void)
     xIfCfg.peripheralNum = SYSCTL_PERIPH_CLK_ENET;
 
     /* -------------------------------------------------------
-     * Step 2: 인터페이스 초기화 (SS 레지스터 설정)
+     * Step 2: 인터페이스 초기화 (SS 레지스터 설정) 및 전역 InitConfig 포인터 획득
      * ------------------------------------------------------- */
-    Ethernet_initInterface(xIfCfg);
-
-    /* -------------------------------------------------------
-     * Step 3: EMAC 초기화 설정 구조체 구성
-     * ------------------------------------------------------- */
-    (void)memset(&xInitCfg, 0, sizeof(xInitCfg));
-    Ethernet_getInitConfig(&xInitCfg);  /* 기본값 로드 */
+    Ethernet_InitConfig *pInitCfg = Ethernet_initInterface(xIfCfg);
+    
+    if (pInitCfg != NULL)
+    {
+        /* -------------------------------------------------------
+         * Step 3: EMAC 초기화 설정 구조체 구성
+         * ------------------------------------------------------- */
+        Ethernet_getInitConfig(pInitCfg);  /* 기본값 로드 */
 
     /* MAC 주소 설정: A8:63:F2:00:38:88 (Little Endian) */
-    xInitCfg.macAddr = NULL; /* Ethernet_setMACAddr 로 별도 설정 예정 */
+    pInitCfg->macAddr = NULL; /* Ethernet_setMACAddr 로 별도 설정 예정 */
 
     /* Rx 버퍼 공급 및 콜백 등록 */
-    xInitCfg.pfcbGetPacket     = &App_ethGetPacketBuffer;
-    xInitCfg.pfcbRxPacket      = &App_ethRxCallback;
-    xInitCfg.pfcbFreePacket    = &App_ethTxCallback;
-    xInitCfg.rxBuffer          = s_ucRxBuf[0U];
+    pInitCfg->pfcbGetPacket     = &App_ethGetPacketBuffer;
+    pInitCfg->pfcbRxPacket      = &App_ethRxCallback;
+    pInitCfg->pfcbFreePacket    = &App_ethTxCallback;
+    pInitCfg->rxBuffer          = s_ucRxBuf[0U];
 
     /* DMA 채널 수: 1채널 */
-    xInitCfg.numChannels = 1U;
-    xInitCfg.pktMTU      = (uint32_t)ETH_RX_BUF_SIZE;
+    pInitCfg->numChannels = 1U;
+    pInitCfg->pktMTU      = (uint32_t)ETH_RX_BUF_SIZE;
 
     /* -------------------------------------------------------
      * Step 4: EMAC 핸들 획득 및 초기화
      * ------------------------------------------------------- */
-    uiRet = Ethernet_getHandle((Ethernet_Handle)1U, &xInitCfg, &g_hEMAC);
+        uiRet = Ethernet_getHandle((Ethernet_Handle)1U, pInitCfg, &g_hEMAC);
+    }
+    else
+    {
+        uiRet = ETHERNET_ERR_INVALID_PARAM;
+    }
 
     g_uiEthInitRet = uiRet;
 
@@ -227,7 +231,11 @@ void updateEthernetTask(void)
 {
     if (g_hEMAC != (Ethernet_Handle)0U)
     {
+        /* 수신된 패킷 처리 */
         Ethernet_removePacketsFromRxQueue(&((Ethernet_Device *)g_hEMAC)->dmaObj.rxDma[0U], ETHERNET_COMPLETION_NORMAL);
+        
+        /* 송신 완료된 패킷의 디스크립터를 큐에서 제거하여 풀 방지 (핵심 누락 코드) */
+        Ethernet_removePacketsFromTxQueue(&((Ethernet_Device *)g_hEMAC)->dmaObj.txDma[0U], ETHERNET_COMPLETION_NORMAL);
     }
 }
 
@@ -261,6 +269,8 @@ Ethernet_Pkt_Desc *App_ethGetPacketBuffer(void)
     return pDesc;
 }
 
+uint32_t g_uiRxPktCnt = 0U;
+
 /* ---------------------------------------------------------------
  * 콜백: 수신 패킷 처리 (EMAC 드라이버가 패킷 수신 시 호출)
  * --------------------------------------------------------------- */
@@ -276,6 +286,8 @@ Ethernet_Pkt_Desc *App_ethGetPacketBuffer(void)
 Ethernet_Pkt_Desc *App_ethRxCallback(Ethernet_Handle hApp, Ethernet_Pkt_Desc *pPkt)
 {
     (void)hApp; /* 미사용 파라미터 */
+
+    g_uiRxPktCnt++;
 
     if (pPkt != NULL)
     {

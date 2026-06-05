@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : CSU_Ethernet.c
     Description      : UDP 프로토콜 처리 - Payload/ACK MSG 조립/파싱 (규격서 준수)
-    Last Updated     : 2026. 06. 04. (s_xTxPktDesc 선언 추가 및 dataLength를 validLength로 수정 및 검증 완료)
+    Last Updated     : 2026. 06. 05. (Ethernet TX 디스크립터 필수 필드 추가)
 **********************************************************************/
 
 /*
@@ -28,7 +28,10 @@
 #include "CSU_Ethernet.h"
 
 /* 전송용 패킷 디스크립터 구조체 (Persistent 유지) */
-static Ethernet_Pkt_Desc s_xTxPktDesc;
+/* TX 패킷 디스크립터 풀 (단일 변수 사용 시 큐 꼬임 방지) */
+#define ETH_TX_NUM_PKT_DESC  (4U)
+static Ethernet_Pkt_Desc s_xTxPktDesc[ETH_TX_NUM_PKT_DESC];
+static uint8_t s_ucTxPktDescIdx = 0U;
 
 
 /* ---------------------------------------------------------------
@@ -63,6 +66,16 @@ static Ethernet_Pkt_Desc s_xTxPktDesc;
  * --------------------------------------------------------------- */
 stEthSharedData g_xEthTxData = {0U, 0U, 0U};
 stEthSharedData g_xEthRxData = {0U, 0U, 0U};
+
+/* ---------------------------------------------------------------
+ * 진단용 카운터 (실시간 CCS Expressions 창에서 모니터링)
+ * --------------------------------------------------------------- */
+volatile uint32_t g_uiTxOkCnt   = 0U;  /* Ethernet_sendPacket 성공 누적 회수 */
+volatile uint32_t g_uiTxFailCnt = 0U;  /* Ethernet_sendPacket 실패 누적 회수 */
+volatile uint32_t g_uiEthTxErrCode = 0U;
+
+/* 동적 캡처 MAC 주소 보관 (기본값은 하드코딩 값) */
+uint8_t g_ucRealPcMac[6] = {ETH_PC_MAC0, ETH_PC_MAC1, ETH_PC_MAC2, ETH_PC_MAC3, ETH_PC_MAC4, ETH_PC_MAC5};
 
 /* ---------------------------------------------------------------
  * static 함수 선언
@@ -156,13 +169,13 @@ static uint16_t calcUdpMsgChecksum(const uint8_t *pBuf, uint16_t length)
  * --------------------------------------------------------------- */
 static void buildEthernetHeader(uint8_t *pFrame)
 {
-    /* 목적지 MAC: PC MAC 70:85:C2:B8:ED:F8 */
-    pFrame[0U] = ETH_PC_MAC0;
-    pFrame[1U] = ETH_PC_MAC1;
-    pFrame[2U] = ETH_PC_MAC2;
-    pFrame[3U] = ETH_PC_MAC3;
-    pFrame[4U] = ETH_PC_MAC4;
-    pFrame[5U] = ETH_PC_MAC5;
+    /* Destination MAC: 동적으로 캡처된 PC MAC */
+    pFrame[0U] = g_ucRealPcMac[0];
+    pFrame[1U] = g_ucRealPcMac[1];
+    pFrame[2U] = g_ucRealPcMac[2];
+    pFrame[3U] = g_ucRealPcMac[3];
+    pFrame[4U] = g_ucRealPcMac[4];
+    pFrame[5U] = g_ucRealPcMac[5];
 
     /* 출발지 MAC: DSP MAC A8:63:F2:00:38:88 */
     pFrame[6U]  = ETH_DSP_MAC0;
@@ -234,9 +247,13 @@ static void buildUDPHeader(uint8_t *pFrame, uint16_t payloadLen)
     /* Source Port: DSP RX Port (5001, Big Endian) */
     pUDP[0U] = (uint8_t)(ETH_DSP_RX_PORT >> 8U);
     pUDP[1U] = (uint8_t)(ETH_DSP_RX_PORT & 0x00FFU);
-    /* Destination Port: PC RX Port (5000, Big Endian) */
-    pUDP[2U] = (uint8_t)(ETH_PC_RX_PORT >> 8U);
-    pUDP[3U] = (uint8_t)(ETH_PC_RX_PORT & 0x00FFU);
+    
+    /* Destination Port: PC RX Port (수신된 포트가 있으면 동적으로 사용, 없으면 기본값) */
+    extern uint16_t g_uiLastRxSrcPort;
+    uint16_t pcDestPort = (g_uiLastRxSrcPort != 0U) ? g_uiLastRxSrcPort : ETH_PC_RX_PORT;
+    pUDP[2U] = (uint8_t)(pcDestPort >> 8U);
+    pUDP[3U] = (uint8_t)(pcDestPort & 0x00FFU);
+    
     /* Length (Big Endian) */
     pUDP[4U] = (uint8_t)(uiUdpLen >> 8U);
     pUDP[5U] = (uint8_t)(uiUdpLen & 0x00FFU);
@@ -263,17 +280,44 @@ static bool sendEthernetFrame(uint8_t *pFrame, uint16_t frameSize)
 
     if ((g_hEMAC != (Ethernet_Handle)0U) && (pFrame != NULL))
     {
-        s_xTxPktDesc.dataBuffer     = pFrame;
-        s_xTxPktDesc.dataOffset     = 0U;
-        s_xTxPktDesc.validLength    = (uint32_t)frameSize;
-        s_xTxPktDesc.bufferLength   = (uint32_t)frameSize;
-        s_xTxPktDesc.flags          = 0U;
-        s_xTxPktDesc.nextPacketDesc = NULL;
+        Ethernet_Pkt_Desc *pTxDesc = &s_xTxPktDesc[s_ucTxPktDescIdx];
 
-        if (Ethernet_sendPacket(g_hEMAC, &s_xTxPktDesc) == ETHERNET_RET_SUCCESS)
+        pTxDesc->dataBuffer     = pFrame;
+        pTxDesc->dataOffset     = 0U;
+        pTxDesc->validLength    = (uint32_t)frameSize;
+        pTxDesc->bufferLength   = (uint32_t)frameSize;
+        pTxDesc->pktLength      = (uint32_t)frameSize;
+        pTxDesc->pktChannel     = ETHERNET_DMA_CHANNEL_NUM_0;
+        pTxDesc->numPktFrags    = 1U;
+        /* SOP|EOP 필수: TI EMAC 드라이버는 SOP 비트 없으면 즉시 거부 (ethernet.c 참조) */
+        pTxDesc->flags          = ETHERNET_PKT_FLAG_SOP | ETHERNET_PKT_FLAG_EOP;
+        pTxDesc->nextPacketDesc = NULL;
+
+        uint32_t myErr = 0;
+        if ((pTxDesc->flags & ETHERNET_PKT_FLAG_SOP) == 0U) { myErr = 1; }
+        else if (pTxDesc->pktLength > 1536) { myErr = 2; }
+        else if (pTxDesc->nextPacketDesc != NULL) { myErr = 3; }
+        else if (pTxDesc->numPktFrags != 1U) { myErr = 4; }
+        else if (((Ethernet_Device*)g_hEMAC)->dmaObj.txDma[0].descMax < 1) { myErr = 5; }
+        
+        uint32_t retCode = Ethernet_sendPacket(g_hEMAC, pTxDesc);
+        
+        if (retCode == ETHERNET_RET_SUCCESS)
         {
+            /* 인덱스 순환 증가 (다음 송신 시 새로운 디스크립터 사용) */
+            s_ucTxPktDescIdx = (s_ucTxPktDescIdx + 1U) % ETH_TX_NUM_PKT_DESC;
+            g_uiTxOkCnt++;   /* TX 성공 카운터 증가 */
             bRet = true;
         }
+        else
+        {
+            g_uiEthTxErrCode = (myErr > 0) ? myErr : retCode;
+            g_uiTxFailCnt++; /* TX 실패 카운터 증가 */
+        }
+    }
+    else
+    {
+        g_uiTxFailCnt++; /* 핸들 무효 또는 NULL 포인터 */
     }
 
     return bRet;
@@ -338,6 +382,11 @@ void buildAndSendUdpPacket(void)
     (void)sendEthernetFrame(g_ucTxBuf, (uint16_t)TX_REFLECT_FRAME_SIZE);
 }
 
+uint32_t g_uiRxDropReason[10] = {0};
+uint16_t g_uiLastRxDstPort = 0U;
+uint16_t g_uiLastRxSrcPort = 0U;
+uint8_t g_ucLastRxPayload[16] = {0};
+
 /* ---------------------------------------------------------------
  * PC→DSP Update 패킷 수신 파싱 및 ACK 응답
  * --------------------------------------------------------------- */
@@ -364,41 +413,113 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
 
     if (pPacket == NULL)
     {
+        g_uiRxDropReason[0]++;
         return;
     }
 
     /* 최소 길이 확인 */
     if (length < (uint16_t)MIN_RX_FRAME_SIZE)
     {
+        g_uiRxDropReason[1]++;
         return;
     }
 
-    /* ---- IPv4 확인 ---- */
-    if ((pPacket[ETH_HDR_TYPE_OFFSET] != 0x08U) ||
-        (pPacket[ETH_HDR_TYPE_OFFSET + 1U] != 0x00U))
+    /* ---- 패킷 타입 확인 (IPv4 또는 ARP) ---- */
+    uint16_t ethType = ((uint16_t)pPacket[ETH_HDR_TYPE_OFFSET] << 8U) | (uint16_t)pPacket[ETH_HDR_TYPE_OFFSET + 1U];
+    
+    if (ethType == 0x0806U) /* ARP */
     {
+        /* ARP Request(Opcode 1)인지 확인 */
+        if ((pPacket[20U] == 0x00U) && (pPacket[21U] == 0x01U))
+        {
+            /* 수신된 ARP 요청의 Target IP가 DSP IP(192.168.100.10)와 일치하는지 확인 */
+            if ((pPacket[38U] == ETH_DSP_IP0) && (pPacket[39U] == ETH_DSP_IP1) &&
+                (pPacket[40U] == ETH_DSP_IP2) && (pPacket[41U] == ETH_DSP_IP3))
+            {
+                /* ---- ARP Reply 조립 (DMA 비동기 전송을 위해 반드시 static 선언 필요!) ---- */
+                static uint8_t arpReply[60] = {0};
+                uint16_t i;
+                
+                /* 1. Ethernet Header (Dst MAC = Sender MAC from ARP) */
+                for(i=0; i<6; i++) arpReply[i] = pPacket[22U + i];
+                /* Src MAC = DSP MAC */
+                arpReply[6] = ETH_DSP_MAC0; arpReply[7] = ETH_DSP_MAC1; arpReply[8] = ETH_DSP_MAC2;
+                arpReply[9] = ETH_DSP_MAC3; arpReply[10] = ETH_DSP_MAC4; arpReply[11] = ETH_DSP_MAC5;
+                arpReply[12] = 0x08U; arpReply[13] = 0x06U; /* Type: ARP */
+                
+                /* 2. ARP Payload */
+                arpReply[14] = 0x00U; arpReply[15] = 0x01U; /* HTYPE: Ethernet */
+                arpReply[16] = 0x08U; arpReply[17] = 0x00U; /* PTYPE: IPv4 */
+                arpReply[18] = 0x06U; arpReply[19] = 0x04U; /* HLEN: 6, PLEN: 4 */
+                arpReply[20] = 0x00U; arpReply[21] = 0x02U; /* Opcode: Reply(2) */
+                
+                /* Sender MAC = DSP MAC */
+                for(i=0; i<6; i++) arpReply[22U + i] = arpReply[6U + i];
+                /* Sender IP = DSP IP */
+                arpReply[28] = ETH_DSP_IP0; arpReply[29] = ETH_DSP_IP1; arpReply[30] = ETH_DSP_IP2; arpReply[31] = ETH_DSP_IP3;
+                
+                /* Target MAC = PC MAC (from request's Sender MAC) */
+                for(i=0; i<6; i++) arpReply[32U + i] = pPacket[22U + i];
+                /* Target IP = PC IP (from request's Sender IP) */
+                for(i=0; i<4; i++) arpReply[38U + i] = pPacket[28U + i];
+                
+                /* ARP 패킷 전송 (길이는 최소 42바이트, 패딩 포함 60바이트 권장) */
+                (void)sendEthernetFrame(arpReply, 60U);
+            }
+        }
+        g_uiRxDropReason[2]++; /* ARP 처리 완료 (드롭 카운트는 디버깅용으로 유지) */
+        return;
+    }
+    else if (ethType != 0x0800U) /* IPv4가 아님 */
+    {
+        g_uiRxDropReason[2]++;
         return;
     }
 
     /* ---- UDP 프로토콜 확인 ---- */
     if (pPacket[IP_HDR_OFFSET + 9U] != IP_PROTO_UDP)
     {
+        g_uiRxDropReason[3]++;
         return;
     }
 
     /* ---- UDP 목적지 포트 확인: 5001 (DSP 수신 포트) ---- */
     uiDstPort = ((uint16_t)pPacket[UDP_HDR_OFFSET + 2U] << 8U) |
                  (uint16_t)pPacket[UDP_HDR_OFFSET + 3U];
+
     if (uiDstPort != ETH_DSP_RX_PORT)
     {
-        return;
+        /* 포트가 5001이 아니더라도 일단 드롭하지 않고 카운트만 증가시켜 테스트 진행 */
+        g_uiRxDropReason[4]++;
+    }
+    else
+    {
+        /* 수신된 패킷이 5001번일 경우에만 실제 데이터이므로 캡처 진행 */
+        g_uiLastRxDstPort = uiDstPort;
+        g_uiLastRxSrcPort = ((uint16_t)pPacket[UDP_HDR_OFFSET] << 8U) |
+                             (uint16_t)pPacket[UDP_HDR_OFFSET + 1U];
+
+        /* PC의 실제 MAC 주소를 캡처하여 저장 (ACK 및 Reflect 시 사용) */
+        extern uint8_t g_ucRealPcMac[6];
+        uint16_t m;
+        for(m=0; m<6; m++) {
+            g_ucRealPcMac[m] = pPacket[6U + m]; /* Ethernet Header Src MAC */
+        }
     }
 
     pPayload = pPacket + PAYLOAD_OFFSET;
 
+    /* 디버깅을 위해 Payload 내용 저장 */
+    extern uint8_t g_ucLastRxPayload[16];
+    uint16_t i;
+    for(i=0; i<16; i++) {
+        g_ucLastRxPayload[i] = pPayload[i];
+    }
+
     /* ---- Source ID 확인: 0x20 (PC) ---- */
     if (pPayload[4U] != ETH_DST_ID_PC)
     {
+        g_uiRxDropReason[5]++;
         return;
     }
 
@@ -417,6 +538,7 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
 
     if (uiRxCalcChk != uiRxRecvChk)
     {
+        g_uiRxDropReason[6]++;
         /* Checksum 오류 → NACK 응답 */
         sendAckResponse(ETH_ACK_NACK, ETH_ACKINFO_CHECKSUM, uiTimestamp, ucCode);
     }

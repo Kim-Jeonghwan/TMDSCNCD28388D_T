@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : DevIPC.c
     Description      : CM Core IPC Device Driver 및 공유 메모리 설정
-    Last Updated     : 2026. 06. 04. (CM 송신 IPC_FLAG2 -> IPC_FLAG1 교정 및 마스터십 설정 정비)
+    Last Updated     : 2026. 06. 05. (sendEthDataToCM 내 FLAG1 busy 방어 로직 추가)
 **********************************************************************/
 
 #include "DevIPC.h"
@@ -96,6 +96,12 @@ void Initial_IPC(void)
 */
 void sendEthDataToCM(uint16_t dspTemp, uint8_t seqNum, uint8_t status)
 {
+    /* CM이 이전 메시지를 아직 ACK하지 않았으면 스킵 (2ms 후 재시도) */
+    if (IPC_isFlagBusyLtoR(IPC_CPU1_L_CM_R, IPC_FLAG1))
+    {
+        return;
+    }
+
     uint32_t uiAddr = (uint32_t)dspTemp;
     uint32_t uiData = ((uint32_t)status << 8U) | (uint32_t)seqNum;
 
