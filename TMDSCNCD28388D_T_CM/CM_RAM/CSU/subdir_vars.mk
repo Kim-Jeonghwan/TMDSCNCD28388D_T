@@ -6,27 +6,27 @@ SHELL = cmd.exe
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../CSU/CSU_Ethernet.c \
-../CSU/CSU_IPC.c 
+../CSU/csu_Ethernet.c \
+../CSU/csu_IPC.c 
 
 C_DEPS += \
-./CSU/CSU_Ethernet.d \
-./CSU/CSU_IPC.d 
+./CSU/csu_Ethernet.d \
+./CSU/csu_IPC.d 
 
 OBJS += \
-./CSU/CSU_Ethernet.obj \
-./CSU/CSU_IPC.obj 
+./CSU/csu_Ethernet.obj \
+./CSU/csu_IPC.obj 
 
 OBJS__QUOTED += \
-"CSU\CSU_Ethernet.obj" \
-"CSU\CSU_IPC.obj" 
+"CSU\csu_Ethernet.obj" \
+"CSU\csu_IPC.obj" 
 
 C_DEPS__QUOTED += \
-"CSU\CSU_Ethernet.d" \
-"CSU\CSU_IPC.d" 
+"CSU\csu_Ethernet.d" \
+"CSU\csu_IPC.d" 
 
 C_SRCS__QUOTED += \
-"../CSU/CSU_Ethernet.c" \
-"../CSU/CSU_IPC.c" 
+"../CSU/csu_Ethernet.c" \
+"../CSU/csu_IPC.c" 
 
 

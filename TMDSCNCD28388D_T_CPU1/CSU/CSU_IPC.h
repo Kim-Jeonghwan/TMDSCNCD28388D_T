@@ -1,12 +1,12 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : CSU_IPC.h
+    Filename         : csu_IPC.h
     Description      : CM Core IPC 통신 프로토콜 정의
     Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
-#ifndef CSU_IPC_H
-#define CSU_IPC_H
+#ifndef csu_IPC_H
+#define csu_IPC_H
 
 #include "main.h"
 
@@ -45,4 +45,4 @@ extern volatile stIpcDataPacket *pxIpcCmToCpu1;
 /* CM에서 수신한 IPC 메시지 체인 함수 */
 void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data);
 
-#endif // CSU_IPC_H
+#endif // csu_IPC_H

@@ -1,12 +1,12 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : CSU_Adc.h
+    Filename         : csu_Adc.h
     Description      : ADC Application Logic (10ms Periodic Task)
     Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
-#ifndef CSU_ADC_H
-#define CSU_ADC_H
+#ifndef csu_ADC_H
+#define csu_ADC_H
 
 /* ************************** [[   include  ]]  *********************************************************** */
 #include "main.h"
@@ -33,4 +33,4 @@ void updateAdcData(void);
 
 
 
-#endif /* CSU_ADC_H */
+#endif /* csu_ADC_H */

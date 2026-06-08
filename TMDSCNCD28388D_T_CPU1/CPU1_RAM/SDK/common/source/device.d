@@ -5,17 +5,17 @@ SDK/common/source/device.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28
 SDK/common/source/device.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/common/include/driverlib.h
 SDK/common/source/device.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/inc/hw_memmap.h
 SDK/common/source/device.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/adc.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdbool.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/_ti_config.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/linkage.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdint.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/_stdint40.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/stdint.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/cdefs.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/_types.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/machine/_types.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/machine/_stdint.h
-SDK/common/source/device.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/_stdint.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdbool.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/_ti_config.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/linkage.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdint.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/_stdint40.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/stdint.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/cdefs.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/_types.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/machine/_types.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/machine/_stdint.h
+SDK/common/source/device.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/_stdint.h
 SDK/common/source/device.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/inc/hw_adc.h
 SDK/common/source/device.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/inc/hw_sysctl.h
 SDK/common/source/device.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/inc/hw_types.h
@@ -115,27 +115,27 @@ D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCN
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/adc.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdbool.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdbool.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/_ti_config.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/_ti_config.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/linkage.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/linkage.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdint.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdint.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/_stdint40.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/_stdint40.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/stdint.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/stdint.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/cdefs.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/cdefs.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/_types.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/_types.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/machine/_types.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/machine/_types.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/machine/_stdint.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/machine/_stdint.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/_stdint.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/_stdint.h:
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/driverlib/inc/hw_adc.h:
 

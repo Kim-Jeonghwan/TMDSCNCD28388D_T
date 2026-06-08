@@ -1,12 +1,12 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : CSU_Ethernet.h
+    Filename         : csu_Ethernet.h
     Description      : UDP 프로토콜 처리 계층 (규격서 Payload/ACK MSG Format 준수)
     Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
-#ifndef CSU_ETHERNET_H
-#define CSU_ETHERNET_H
+#ifndef csu_ETHERNET_H
+#define csu_ETHERNET_H
 
 #include "main.h"
 
@@ -81,7 +81,7 @@ typedef struct
     uint8_t  Status;    /* 상태 바이트 */
 } stEthSharedData;
 
-/* 공유 데이터 전역 변수 (CSU_IPC.c 에서 갱신, CSU_Ethernet.c 에서 참조) */
+/* 공유 데이터 전역 변수 (csu_IPC.c 에서 갱신, csu_Ethernet.c 에서 참조) */
 extern stEthSharedData g_xEthTxData;   /* CPU1 → CM → 이더넷 Tx */
 extern stEthSharedData g_xEthRxData;   /* 이더넷 Rx → CM → CPU1 */
 
@@ -93,4 +93,4 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length);
 void sendAckResponse(uint8_t ackResult, uint16_t ackInfo,
                      uint32_t timestamp, uint8_t targetCode);
 
-#endif /* CSU_ETHERNET_H */
+#endif /* csu_ETHERNET_H */

@@ -1,14 +1,14 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : CSU_SCI_PC.c
+    Filename         : csu_SCI_PC.c
     Description      : PC Interface Communication (SCI_PC) Protocol Definition
     Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 ***********************************************************************/
 
 /* ************************** [[   include  ]]  *********************************************************** */
-#include "CSU_SCI_PC.h"
+#include "csu_SCI_PC.h"
 
-// CSU_Adc.c에 선언된 실시간 섭씨 온도 전역 변수 공유 선언 (타입 미스매치 예방을 위해 float32_t로 선언)
+// csu_Adc.c에 선언된 실시간 섭씨 온도 전역 변수 공유 선언 (타입 미스매치 예방을 위해 float32_t로 선언)
 extern float32_t currentTemperatureC;
 
 /* ************************** [[   define   ]]  *********************************************************** */

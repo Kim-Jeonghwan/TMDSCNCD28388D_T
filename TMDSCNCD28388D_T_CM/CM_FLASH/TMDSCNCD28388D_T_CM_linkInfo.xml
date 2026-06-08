@@ -19,32 +19,32 @@
       <input_file id="fl-3">
          <path>.\CSU\</path>
          <kind>object</kind>
-         <file>CSU_Ethernet.obj</file>
-         <name>CSU_Ethernet.obj</name>
+         <file>csu_Ethernet.obj</file>
+         <name>csu_Ethernet.obj</name>
       </input_file>
       <input_file id="fl-4">
          <path>.\CSU\</path>
          <kind>object</kind>
-         <file>CSU_IPC.obj</file>
-         <name>CSU_IPC.obj</name>
+         <file>csu_IPC.obj</file>
+         <name>csu_IPC.obj</name>
       </input_file>
       <input_file id="fl-5">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevEthernet.obj</file>
-         <name>DevEthernet.obj</name>
+         <file>hal_Ethernet.obj</file>
+         <name>hal_Ethernet.obj</name>
       </input_file>
       <input_file id="fl-6">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevIPC.obj</file>
-         <name>DevIPC.obj</name>
+         <file>hal_IPC.obj</file>
+         <name>hal_IPC.obj</name>
       </input_file>
       <input_file id="fl-7">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevTimer.obj</file>
-         <name>DevTimer.obj</name>
+         <file>hal_Timer.obj</file>
+         <name>hal_Timer.obj</name>
       </input_file>
       <input_file id="fl-8">
          <path>.\SDK\common\source\</path>

@@ -1,12 +1,12 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : CSU_EPWM.h
+    Filename         : csu_EPWM.h
     Description      : EPWM 7A Control
     Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
-#ifndef CSU_EPWM_H
-#define CSU_EPWM_H
+#ifndef csu_EPWM_H
+#define csu_EPWM_H
 
 /* ************************** [[   include  ]]  *********************************************************** */
 #include "main.h"
@@ -30,4 +30,4 @@ void Initial_Epwm7a(void);
 
 
 
-#endif // CSU_EPWM_H
+#endif // csu_EPWM_H

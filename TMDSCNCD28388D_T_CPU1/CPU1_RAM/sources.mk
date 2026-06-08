@@ -107,7 +107,7 @@ S62_DEPS__QUOTED :=
 SUBDIRS := \
 . \
 CSU \
-Dev \
+HAL \
 SDK/common/cmd \
 SDK/common/source \
 SDK/driverlib \

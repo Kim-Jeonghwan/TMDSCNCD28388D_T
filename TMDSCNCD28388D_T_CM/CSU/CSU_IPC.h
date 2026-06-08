@@ -1,12 +1,12 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : CSU_IPC.h
+    Filename         : csu_IPC.h
     Description      : IPC Protocol (CM to CPU1) 및 이더넷 공유 메모리(GS0/GS1) 설정
     Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
-#ifndef CSU_IPC_H
-#define CSU_IPC_H
+#ifndef csu_IPC_H
+#define csu_IPC_H
 
 #include "main.h"
 
@@ -53,4 +53,4 @@ extern volatile stIpcDataPacket *pxIpcCmToCpu1;
 void recvIpcCpu1Message(uint32_t command, uint32_t addr, uint32_t data);
 void processBulkDataFromCPU1(void);
 
-#endif // CSU_IPC_H
+#endif // csu_IPC_H

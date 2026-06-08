@@ -18,12 +18,12 @@
 #include "cm.h"
 
 /* Dev 계층 */
-#include "DevIPC.h"
-#include "DevEthernet.h"
-#include "DevTimer.h"
+#include "hal_IPC.h"
+#include "hal_Ethernet.h"
+#include "hal_Timer.h"
 
 /* CSU 계층 */
-#include "CSU_IPC.h"
-#include "CSU_Ethernet.h"
+#include "csu_IPC.h"
+#include "csu_Ethernet.h"
 
 #endif // MAIN_H

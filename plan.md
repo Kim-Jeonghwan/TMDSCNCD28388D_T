@@ -44,8 +44,8 @@
 - 메인 루프(`for(;;)`) 및 타이머 백그라운드 태스크 내부의 제어 흐름 복잡도 점검.
 - 누락된 `else` 블록에 방어 주석 추가.
 
-#### [MODIFY] `CSU/*` 및 `Dev/*` (CPU1)
-- 예: `CSU_SCI_PC.c` 등에서 중간 `return`이 발견되면 결과값을 저장하는 지역 변수(`ret` 또는 `result`)를 도입하고 마지막에 `return ret;` 하도록 구조 변경.
+#### [MODIFY] `CSU/*` 및 `HAL/*` (CPU1)
+- 예: `csu_SCI_PC.c` 등에서 중간 `return`이 발견되면 결과값을 저장하는 지역 변수(`ret` 또는 `result`)를 도입하고 마지막에 `return ret;` 하도록 구조 변경.
 - 나눗셈/모듈러 연산(`%`) 사용 시 0 나누기 방어 코드 삽입.
 
 ---
@@ -54,9 +54,9 @@
 #### [MODIFY] `main.c` (CM)
 - 이더넷 폴링 루프 등 통신 처리 루프의 복잡도 및 Array Bounds 체크 확인.
 
-#### [MODIFY] `CSU/*` 및 `Dev/*` (CM)
+#### [MODIFY] `CSU/*` 및 `HAL/*` (CM)
 - CM용 Driverlib API 및 8비트 주소 체계 호환성 확인.
-- `CSU_Ethernet.c` 내의 포인터 파라미터(`uint8_t *` 등) 역참조 전 `if (ptr != NULL)` 방어 코드 강제 적용.
+- `csu_Ethernet.c` 내의 포인터 파라미터(`uint8_t *` 등) 역참조 전 `if (ptr != NULL)` 방어 코드 강제 적용.
 - 멀티플 `return`을 단일 `return`으로 통일.
 
 ---

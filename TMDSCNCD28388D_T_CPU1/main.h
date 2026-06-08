@@ -2,7 +2,7 @@
     Nexcom Co., Ltd.
     Filename         : main.h
     Description      : Core header files inclusion
-    Last Updated     : 2026. 06. 04. (easyDSP 호환성 유지: f28x_project.h 복원 / RamfuncsLoad* 심볼 문제는 DevRamfuncs.c로 해결)
+    Last Updated     : 2026. 06. 04. (easyDSP 호환성 유지: f28x_project.h 복원 / RamfuncsLoad* 심볼 문제는 hal_Ramfuncs.c로 해결)
 **********************************************************************/
 
 #ifndef MAIN_H
@@ -28,21 +28,21 @@
 // Uint16, Uint32 타입 및 비트필드 레지스터 구조체(AdcaRegs, GpioDataRegs 등) 제공 */
 #include "f28x_project.h"
 
-#include "DevCommon.h"
-#include "DevDspInit.h"
-#include "DevSci.h"
-#include "DevSpi.h"
-#include "DevTimer.h"
-#include "DevAdc.h"
-#include "DevIPC.h"
-#include "DevEpwmTimer.h"    /* EPWM1 기반 2ms 타이머 */
-#include "DevRamfuncs.h"
+#include "hal_Common.h"
+#include "hal_DspInit.h"
+#include "hal_Sci.h"
+#include "hal_Spi.h"
+#include "hal_Timer.h"
+#include "hal_Adc.h"
+#include "hal_IPC.h"
+#include "hal_EpwmTimer.h"    /* EPWM1 기반 2ms 타이머 */
+#include "hal_Ramfuncs.h"
 
-#include "CSU_SCI_PC.h"
-#include "CSU_LED.h"
-#include "CSU_Adc.h"
-#include "CSU_EPWM.h"
-#include "CSU_IPC.h"
+#include "csu_SCI_PC.h"
+#include "csu_LED.h"
+#include "csu_Adc.h"
+#include "csu_EPWM.h"
+#include "csu_IPC.h"
 
 
 /* ************************** [[   define   ]]  *********************************************************** */

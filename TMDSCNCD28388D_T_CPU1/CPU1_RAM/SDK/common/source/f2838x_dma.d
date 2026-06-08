@@ -2,20 +2,20 @@
 
 SDK/common/source/f2838x_dma.obj: ../SDK/common/source/f2838x_dma.c
 SDK/common/source/f2838x_dma.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/headers/include/f2838x_device.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdint.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/_ti_config.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/linkage.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/_stdint40.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/stdint.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/cdefs.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/_types.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/machine/_types.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/machine/_stdint.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/_stdint.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/assert.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdarg.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdbool.h
-SDK/common/source/f2838x_dma.obj: C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stddef.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdint.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/_ti_config.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/linkage.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/_stdint40.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/stdint.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/cdefs.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/_types.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/machine/_types.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/machine/_stdint.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/_stdint.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/assert.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdarg.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdbool.h
+SDK/common/source/f2838x_dma.obj: C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stddef.h
 SDK/common/source/f2838x_dma.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/headers/include/f2838x_adc.h
 SDK/common/source/f2838x_dma.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/headers/include/f2838x_analogsubsys.h
 SDK/common/source/f2838x_dma.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/headers/include/f2838x_bgcrc.h
@@ -82,33 +82,33 @@ SDK/common/source/f2838x_dma.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCN
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/headers/include/f2838x_device.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdint.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdint.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/_ti_config.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/_ti_config.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/linkage.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/linkage.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/_stdint40.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/_stdint40.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/stdint.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/stdint.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/cdefs.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/cdefs.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/_types.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/_types.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/machine/_types.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/machine/_types.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/machine/_stdint.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/machine/_stdint.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/sys/_stdint.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/sys/_stdint.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/assert.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/assert.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdarg.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdarg.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stdbool.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stdbool.h:
 
-C:/ti/ccs2040/ti-cgt-c2000_22.6.1.LTS/include/stddef.h:
+C:/ti/ccs2051/ccs/tools/compiler/ti-cgt-c2000_25.11.0.LTS/include/stddef.h:
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/SDK/headers/include/f2838x_adc.h:
 

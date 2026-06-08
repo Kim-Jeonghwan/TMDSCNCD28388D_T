@@ -19,80 +19,80 @@
       <input_file id="fl-3">
          <path>.\CSU\</path>
          <kind>object</kind>
-         <file>CSU_Adc.obj</file>
-         <name>CSU_Adc.obj</name>
+         <file>csu_Adc.obj</file>
+         <name>csu_Adc.obj</name>
       </input_file>
       <input_file id="fl-4">
          <path>.\CSU\</path>
          <kind>object</kind>
-         <file>CSU_EPWM.obj</file>
-         <name>CSU_EPWM.obj</name>
+         <file>csu_EPWM.obj</file>
+         <name>csu_EPWM.obj</name>
       </input_file>
       <input_file id="fl-5">
          <path>.\CSU\</path>
          <kind>object</kind>
-         <file>CSU_IPC.obj</file>
-         <name>CSU_IPC.obj</name>
+         <file>csu_IPC.obj</file>
+         <name>csu_IPC.obj</name>
       </input_file>
       <input_file id="fl-6">
          <path>.\CSU\</path>
          <kind>object</kind>
-         <file>CSU_LED.obj</file>
-         <name>CSU_LED.obj</name>
+         <file>csu_LED.obj</file>
+         <name>csu_LED.obj</name>
       </input_file>
       <input_file id="fl-7">
          <path>.\CSU\</path>
          <kind>object</kind>
-         <file>CSU_SCI_PC.obj</file>
-         <name>CSU_SCI_PC.obj</name>
+         <file>csu_SCI_PC.obj</file>
+         <name>csu_SCI_PC.obj</name>
       </input_file>
       <input_file id="fl-8">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevAdc.obj</file>
-         <name>DevAdc.obj</name>
+         <file>hal_Adc.obj</file>
+         <name>hal_Adc.obj</name>
       </input_file>
       <input_file id="fl-9">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevCommon.obj</file>
-         <name>DevCommon.obj</name>
+         <file>hal_Common.obj</file>
+         <name>hal_Common.obj</name>
       </input_file>
       <input_file id="fl-a">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevDspInit.obj</file>
-         <name>DevDspInit.obj</name>
+         <file>hal_DspInit.obj</file>
+         <name>hal_DspInit.obj</name>
       </input_file>
       <input_file id="fl-b">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevEpwmTimer.obj</file>
-         <name>DevEpwmTimer.obj</name>
+         <file>hal_EpwmTimer.obj</file>
+         <name>hal_EpwmTimer.obj</name>
       </input_file>
       <input_file id="fl-c">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevIPC.obj</file>
-         <name>DevIPC.obj</name>
+         <file>hal_IPC.obj</file>
+         <name>hal_IPC.obj</name>
       </input_file>
       <input_file id="fl-d">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevSci.obj</file>
-         <name>DevSci.obj</name>
+         <file>hal_Sci.obj</file>
+         <name>hal_Sci.obj</name>
       </input_file>
       <input_file id="fl-e">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevSpi.obj</file>
-         <name>DevSpi.obj</name>
+         <file>hal_Spi.obj</file>
+         <name>hal_Spi.obj</name>
       </input_file>
       <input_file id="fl-f">
          <path>.\Dev\</path>
          <kind>object</kind>
-         <file>DevTimer.obj</file>
-         <name>DevTimer.obj</name>
+         <file>hal_Timer.obj</file>
+         <name>hal_Timer.obj</name>
       </input_file>
       <input_file id="fl-10">
          <path>.\SDK\common\source\</path>
@@ -27723,7 +27723,7 @@
          </contents>
       </logical_group>
       <logical_group id="lg-68" display="no" color="cyan">
-         <name>DevCfgRegsFile</name>
+         <name>hal_CfgRegsFile</name>
          <run_address>0x0</run_address>
          <size>0x0</size>
          <contents>

@@ -1,11 +1,11 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : CSU_IPC.c
+    Filename         : csu_IPC.c
     Description      : IPC Protocol (CM to CPU1) 구현
     Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
-#include "CSU_IPC.h"
+#include "csu_IPC.h"
 
 /* Message RAM 영역에 구조체 포인터 할당 */
 volatile stIpcDataPacket *pxIpcCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_TO_CM_MSGRAM_ADDR;

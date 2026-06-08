@@ -1,18 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : CSU_SCI_PC.h
+    Filename         : csu_SCI_PC.h
     Description      : PC Interface Communication (SCI_PC) Protocol Definition
     Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
 **********************************************************************/
 
-#ifndef CSU_SCI_PC_H
-#define CSU_SCI_PC_H
+#ifndef csu_SCI_PC_H
+#define csu_SCI_PC_H
 
 /* ************************** [[   include  ]]  *********************************************************** */
 #include "main.h"
 
 /* ************************** [[   define   ]]  *********************************************************** */
-/* 통신 패킷 관련 상수는 CSU_SCI_PC.c에 정의됨 (SOF: 0x7E, EOT: 0x0D, ID: 0x10) */
+/* 통신 패킷 관련 상수는 csu_SCI_PC.c에 정의됨 (SOF: 0x7E, EOT: 0x0D, ID: 0x10) */
 
 /* ************************** [[   enum or struct   ]]  *************************************************** */
 
@@ -74,4 +74,4 @@ void sendSciPcMessage1(void);
 
 
 
-#endif	// #ifndef CSU_SCI_PC_H
+#endif	// #ifndef csu_SCI_PC_H
