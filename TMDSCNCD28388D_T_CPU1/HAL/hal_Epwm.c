@@ -1,16 +1,19 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : hal_Epwm.c
-    Version          : 00.03
-    Description      : CPU1 EPWM1 기반 100us 메인 인터럽트 구현
+    Version          : 00.05
+    Description      : CPU1 EPWM1 타이머 초기화 (HAL 분리)
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
+    Last Updated     : 2026. 06. 19. (CSU/HAL 계층 분리: 제어 로직 이전)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 19. - CSU/HAL 계층 분리: isr_Epwm1Timer100us 제어 로직을 csu_Control.c로 완전 이전
  * 2026. 06. 19. - isr_Epwm1Timer100us 내부에 GPIO 34 토글 로직 추가 (ATTLA_T 동기화)
+ * 2026. 06. 19. - isr_Epwm1Timer100us 내부에 GPIO 34 토글 주기를 500ms(5000 카운트)로 수정 (육안 점멸 확인 목적)
+ * 2026. 06. 19. - Initial_EpwmTimer() 내부 TBCLKSYNC 정지/재가동 추가 (타이머 동기화 버그 수정)
  */
 
 /*
@@ -30,8 +33,7 @@
 
 #include "hal_Epwm.h"
 
-/* ISR 정적 선언 */
-static __interrupt void isr_Epwm1Timer100us(void);
+
 
 /*
 @function    Initial_EpwmTimer
@@ -49,6 +51,9 @@ void Initial_EpwmTimer(void)
     /* EPWM1 클럭 활성화 */
     SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_EPWM1);
 
+    /* EPWM 설정 중 타이머가 멋대로 도는 것을 방지하기 위해 TBCLK 동기화 비활성화 */
+    SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);
+
     /* EPWM1 리셋 후 초기화 */
     EPWM_setTimeBaseCounterMode(EPWM_TIMER1_BASE, EPWM_COUNTER_MODE_UP_DOWN);
     EPWM_setTimeBasePeriod(EPWM_TIMER1_BASE, (uint16_t)EPWM_TIMER1_PERIOD);
@@ -64,55 +69,8 @@ void Initial_EpwmTimer(void)
     EPWM_enableInterrupt(EPWM_TIMER1_BASE);
     EPWM_setInterruptEventCount(EPWM_TIMER1_BASE, 1U); /* 매 1회 이벤트마다 인터럽트 */
 
-    /* PIE 인터럽트 등록 및 활성화 */
-    Interrupt_register(INT_EPWM1, isr_Epwm1Timer100us);
-    Interrupt_enable(INT_EPWM1);
+    /* 설정 완료 후 전체 EPWM TBCLK 동기화 재활성화 (모든 타이머 동시 카운트 시작) */
+    SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);
 }
 
-/*
-@function   isr_Epwm1Timer100us
-@brief      EPWM1 100us 타이머 ISR (메인 루프)
-@param      void
-@return     static __interrupt void
-@remark
-    - 100us 마다 호출됩니다.
-    - ADC를 갱신하고 사인파(Sine wave)를 생성합니다.
-    - 갱신된 데이터를 IPC의 Payload에 담아 CM으로 전송합니다.
-*/
-#define SINE_WAVE_STEP 0.0062831853f // 100Hz = 100us * 1000 step
-static float32_t sineAngle = 0.0f;
-static uint32_t ipcSeqNum = 0U;
 
-static __interrupt void isr_Epwm1Timer100us(void)
-{
-    /* 1. ADC 데이터 갱신 */
-    updateAdcData();
-
-    /* 2. 사인파 생성 (100Hz 기준) */
-    float32_t sineValue = sinf(sineAngle);
-    sineAngle += SINE_WAVE_STEP;
-    if (sineAngle > 6.2831853f) // 2 * PI
-    {
-        sineAngle -= 6.2831853f;
-    }
-
-    /* 3. CM으로 IPC 데이터 전송 (TxData 캡슐화) */
-    if (!IPC_isFlagBusyLtoR(IPC_CPU1_L_CM_R, IPC_FLAG1))
-    {
-        pxIpcCpu1ToCm->Payload.TxData.sineValue = sineValue;
-        pxIpcCpu1ToCm->Payload.TxData.adcTemperature = xAdc.currentTemperatureC;
-        pxIpcCpu1ToCm->Payload.TxData.sequenceNum = ipcSeqNum++;
-        
-        IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, 
-                        (uint32_t)IPC_CMD_CPU1_ETH_TX_DATA, 0U, 0U);
-    }
-
-    /* EPWM 인터럽트 플래그 클리어 */
-    EPWM_clearEventTriggerInterruptFlag(EPWM_TIMER1_BASE);
-
-    /* PIE ACK */
-    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP3);
-
-    /* GPIO34 임시 LED 100us 토글 (ATTLA_T 동기화) */
-    GPIO_togglePin(34U);
-}

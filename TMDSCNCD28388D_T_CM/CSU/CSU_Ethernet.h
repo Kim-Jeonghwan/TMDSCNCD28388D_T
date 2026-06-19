@@ -1,11 +1,19 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ethernet.h
-    Version          : 00.01
+    Version          : 00.02
     Description      : UDP 프로토콜 처리 계층
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (Phase 5: 사인파 추가 및 PC 요청 응답 구조 변경)
+    Last Updated     : 2026. 06. 19. (이더넷 전역 변수 캡슐화)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 변수명 규칙 적용 (xCsuEth -> xEthApp 변경)
+ * 2026. 06. 19. - 이더넷 전역 변수 캡슐화 적용
+ * 2026. 06. 19. - Phase 5: 사인파 추가 및 PC 요청 응답 구조 변경
+ */
 
 #ifndef csu_ETHERNET_H
 #define csu_ETHERNET_H
@@ -84,9 +92,18 @@ typedef struct
     uint8_t  Status;    /* 상태 바이트 */
 } stEthSharedData;
 
-/* 공유 데이터 전역 변수 (csu_Ipc_cm.c 에서 갱신, csu_Ethernet.c 에서 참조) */
-extern stEthSharedData g_xEthTxData;   /* CPU1 → CM → 이더넷 Tx */
-extern stEthSharedData g_xEthRxData;   /* 이더넷 Rx → CM → CPU1 */
+/* ---------------------------------------------------------------
+ * CSU 계층 이더넷 통신 상태 구조체 캡슐화
+ * --------------------------------------------------------------- */
+typedef struct {
+    stEthSharedData txData;     /* CPU1 → CM → 이더넷 Tx */
+    stEthSharedData rxData;     /* 이더넷 Rx → CM → CPU1 */
+    uint8_t realPcMac[6];       /* 동적 학습된 PC의 물리적 MAC 주소 */
+    uint16_t lastRxSrcPort;     /* 마지막 수신 패킷의 출발지 포트 번호 */
+} stEthAppState;
+
+/* 구조체 인스턴스 (csu_Ipc_cm.c 등에서 공유 사용) */
+extern stEthAppState xEthApp;
 
 /* ---------------------------------------------------------------
  * 함수 프로토타입

@@ -44,7 +44,7 @@ void Initial_LED(void)
 {
     // RUN LED (GPIO31) 설정
     xLed.ledRun.Index  = eLED_RUN;
-    setLedModeToggle(&xLed.ledRun, LED_TOGGLE, 10u); // 1초 주기 토글
+    setLedModeToggle(&xLed.ledRun, LED_TOGGLE, 4u); // 1초 주기 토글
 }
 
 /*

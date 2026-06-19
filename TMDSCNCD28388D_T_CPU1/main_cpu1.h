@@ -1,15 +1,16 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : main_cpu1.h
-    Version          : 00.01
+    Version          : 00.02
     Description      : CPU1 전역 헤더 관리 파일
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (코드 스타일 및 주석 템플릿 적용)
+    Last Updated     : 2026. 06. 19. (csu_Control.h 인클루드 추가)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 19. - csu_Control.h 인클루드 추가 (CSU 계층 분리)
  * 2026. 06. 19. - 코드 스타일 및 주석 템플릿 적용
  * 2026. 06. 04. - easyDSP 호환성 유지: f28x_project.h 복원 / RamfuncsLoad* 심볼 문제는 hal_Ramfuncs.c로 해결
  */
@@ -52,6 +53,7 @@
 #include "csu_Adc.h"
 #include "csu_Epwm.h"
 #include "csu_Ipc_cpu1.h"
+#include "csu_Control.h"
 
 
 /* ************************** [[   define   ]]  *********************************************************** */

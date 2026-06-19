@@ -51,6 +51,14 @@ typedef struct {
 extern volatile stIpcDataPacket *pxIpcCpu1ToCm;
 extern volatile stIpcDataPacket *pxIpcCmToCpu1;
 
+/* CM 코어로부터 이더넷 수신 데이터 구조체 */
+typedef struct {
+    uint8_t seqNum;
+    uint8_t status;
+} stEthRxData;
+
+extern volatile stEthRxData xEthRxData;
+
 /* CM에서 수신한 IPC 메시지 체인 함수 */
 void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data);
 

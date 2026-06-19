@@ -1,9 +1,19 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : hal_Ethernet.h
+    Version          : 00.01
     Description      : Ethernet EMAC 드라이버 계층 헤더 (MII 모드, DP83822 PHY)
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (이더넷 전역 변수 캡슐화)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 변수명 규칙 적용 (xHalEth -> xEthDriver 변경)
+ * 2026. 06. 19. - 이더넷 전역 변수 캡슐화 적용
+ * 2026. 06. 05. - 코드 주석 포맷팅 및 한글화
+ */
 
 #ifndef HAL_ETHERNET_H
 #define HAL_ETHERNET_H
@@ -21,11 +31,17 @@
 #define ETH_RX_BUF_SIZE        (1536U)  /* 단일 Rx 버퍼 크기 (1518B 이더넷 최대 + 여유) */
 #define ETH_TX_BUF_SIZE        (256U)   /* Tx 버퍼 크기 (최대 UDP 패킷 61B 대비 여유) */
 
-/* EMAC 핸들 전역 변수 (csu_Ethernet.c 에서 사용) */
-extern Ethernet_Handle g_hEMAC;
+/* ---------------------------------------------------------------
+ * HAL 계층 이더넷 상태 구조체 캡슐화
+ * --------------------------------------------------------------- */
+typedef struct {
+    Ethernet_Handle hEMAC;
+    uint8_t txBuf[ETH_TX_BUF_SIZE];
+    uint32_t initRet;
+} stEthDriverState;
 
-/* Tx 버퍼 (csu_Ethernet.c 에서 패킷 조립 후 공유 사용) */
-extern uint8_t g_ucTxBuf[ETH_TX_BUF_SIZE];
+/* 구조체 인스턴스 (csu_Ethernet.c 등에서 사용) */
+extern stEthDriverState xEthDriver;
 
 /* ---------------------------------------------------------------
  * 함수 프로토타입

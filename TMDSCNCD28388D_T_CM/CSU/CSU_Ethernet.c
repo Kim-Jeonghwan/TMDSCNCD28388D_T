@@ -1,11 +1,19 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ethernet.c
-    Version          : 00.01
+    Version          : 00.02
     Description      : UDP 프로토콜 처리 - Payload/ACK MSG 조립/파싱
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (Phase 5: 사인파 추가 및 PC 요청 응답 구조 변경)
+    Last Updated     : 2026. 06. 19. (이더넷 전역 변수 캡슐화)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 변수명 규칙 적용 (xCsuEth, xHalEth -> xEthApp, xEthDriver 변경)
+ * 2026. 06. 19. - 이더넷 전역 변수 캡슐화 적용
+ * 2026. 06. 19. - Phase 5: 사인파 추가 및 PC 요청 응답 구조 변경
+ */
 
 /*
  * [패킷 구조]
@@ -66,11 +74,12 @@ static uint8_t s_ucTxPktDescIdx = 0U;
 /* ---------------------------------------------------------------
  * 공유 데이터 전역 변수 (csu_Ipc_cm.c 에서 갱신)
  * --------------------------------------------------------------- */
-stEthSharedData g_xEthTxData = {0U, 0U, 0U};
-stEthSharedData g_xEthRxData = {0U, 0U, 0U};
-
-/* 동적 캡처 MAC 주소 보관 (기본값은 하드코딩 값) */
-uint8_t g_ucRealPcMac[6] = {ETH_PC_MAC0, ETH_PC_MAC1, ETH_PC_MAC2, ETH_PC_MAC3, ETH_PC_MAC4, ETH_PC_MAC5};
+stEthAppState xEthApp = {
+    .txData = {0U, 0U, 0U},
+    .rxData = {0U, 0U, 0U},
+    .realPcMac = {ETH_PC_MAC0, ETH_PC_MAC1, ETH_PC_MAC2, ETH_PC_MAC3, ETH_PC_MAC4, ETH_PC_MAC5},
+    .lastRxSrcPort = 0U
+};
 
 /* ---------------------------------------------------------------
  * static 함수 선언
@@ -170,12 +179,12 @@ static uint16_t calcUdpMsgChecksum(const uint8_t *pBuf, uint16_t length)
 static void buildEthernetHeader(uint8_t *pFrame)
 {
     /* Destination MAC: 동적으로 캡처된 PC MAC */
-    pFrame[0U] = g_ucRealPcMac[0];
-    pFrame[1U] = g_ucRealPcMac[1];
-    pFrame[2U] = g_ucRealPcMac[2];
-    pFrame[3U] = g_ucRealPcMac[3];
-    pFrame[4U] = g_ucRealPcMac[4];
-    pFrame[5U] = g_ucRealPcMac[5];
+    pFrame[0U] = xEthApp.realPcMac[0];
+    pFrame[1U] = xEthApp.realPcMac[1];
+    pFrame[2U] = xEthApp.realPcMac[2];
+    pFrame[3U] = xEthApp.realPcMac[3];
+    pFrame[4U] = xEthApp.realPcMac[4];
+    pFrame[5U] = xEthApp.realPcMac[5];
 
     /* 출발지 MAC: DSP MAC A8:63:F2:00:38:88 */
     pFrame[6U]  = ETH_DSP_MAC0;
@@ -261,8 +270,7 @@ static void buildUDPHeader(uint8_t *pFrame, uint16_t payloadLen)
     pUDP[1U] = (uint8_t)(ETH_DSP_RX_PORT & 0x00FFU);
     
     /* Destination Port: PC RX Port (수신된 포트가 있으면 동적으로 사용, 없으면 기본값) */
-    extern uint16_t g_uiLastRxSrcPort;
-    uint16_t pcDestPort = (g_uiLastRxSrcPort != 0U) ? g_uiLastRxSrcPort : ETH_PC_RX_PORT;
+    uint16_t pcDestPort = (xEthApp.lastRxSrcPort != 0U) ? xEthApp.lastRxSrcPort : ETH_PC_RX_PORT;
     pUDP[2U] = (uint8_t)(pcDestPort >> 8U);
     pUDP[3U] = (uint8_t)(pcDestPort & 0x00FFU);
     
@@ -290,7 +298,7 @@ static bool sendEthernetFrame(uint8_t *pFrame, uint16_t frameSize)
 {
     bool bRet = false;
 
-    if ((g_hEMAC != (Ethernet_Handle)0U) && (pFrame != NULL))
+    if ((xEthDriver.hEMAC != (Ethernet_Handle)0U) && (pFrame != NULL))
     {
         Ethernet_Pkt_Desc *pTxDesc = &s_xTxPktDesc[s_ucTxPktDescIdx];
 
@@ -310,9 +318,9 @@ static bool sendEthernetFrame(uint8_t *pFrame, uint16_t frameSize)
         else if (pTxDesc->pktLength > 1536U) { myErr = 2U; }
         else if (pTxDesc->nextPacketDesc != NULL) { myErr = 3U; }
         else if (pTxDesc->numPktFrags != 1U) { myErr = 4U; }
-        else if (((Ethernet_Device*)g_hEMAC)->dmaObj.txDma[0].descMax < 1U) { myErr = 5U; }
+        else if (((Ethernet_Device*)xEthDriver.hEMAC)->dmaObj.txDma[0].descMax < 1U) { myErr = 5U; }
         
-        uint32_t retCode = Ethernet_sendPacket(g_hEMAC, pTxDesc);
+        uint32_t retCode = Ethernet_sendPacket(xEthDriver.hEMAC, pTxDesc);
         
         if ((myErr == 0U) && (retCode == 0U))
         {
@@ -342,13 +350,13 @@ static bool sendEthernetFrame(uint8_t *pFrame, uint16_t frameSize)
 @param      uint32_t rxTimestamp: 요청 패킷의 Timestamp (응답 시 반환)
 @return     void
 @remark
-    - g_xEthTxData: CPU1이 IPC로 갱신한 공유 데이터
+    - xEthApp.txData: CPU1이 IPC로 갱신한 공유 데이터
     - Payload: MSG Header(12B) + Data(8B) + Checksum(2B) = 22B
     - Request Ack = 0xFF (Reflect 타입, ACK 미요청)
 */
 void buildAndSendUdpPacket(uint32_t rxTimestamp)
 {
-    uint8_t  *pPayload   = g_ucTxBuf + PAYLOAD_OFFSET;
+    uint8_t  *pPayload   = xEthDriver.txBuf + PAYLOAD_OFFSET;
     uint16_t  uiChksum   = 0U;
     uint16_t  uiChksumLen = 0U;
     uint32_t  sineBits   = 0U;
@@ -371,13 +379,13 @@ void buildAndSendUdpPacket(uint32_t rxTimestamp)
     pPayload[11U] = (uint8_t)(ETH_PAYLOAD_DATA_SIZE >> 8U);
 
     /* ---- Data (8B) ---- */
-    pPayload[12U] = g_xEthTxData.SeqNum;
-    pPayload[13U] = g_xEthTxData.Status;
+    pPayload[12U] = xEthApp.txData.SeqNum;
+    pPayload[13U] = xEthApp.txData.Status;
     /* DspTemp (2B, Little Endian) */
-    pPayload[14U] = (uint8_t)(g_xEthTxData.DspTemp & 0x00FFU);
-    pPayload[15U] = (uint8_t)(g_xEthTxData.DspTemp >> 8U);
+    pPayload[14U] = (uint8_t)(xEthApp.txData.DspTemp & 0x00FFU);
+    pPayload[15U] = (uint8_t)(xEthApp.txData.DspTemp >> 8U);
     /* SineVal (4B, Little Endian) */
-    (void)memcpy(&sineBits, &g_xEthTxData.SineVal, sizeof(uint32_t));
+    (void)memcpy(&sineBits, &xEthApp.txData.SineVal, sizeof(uint32_t));
     pPayload[16U] = (uint8_t)(sineBits & 0x000000FFU);
     pPayload[17U] = (uint8_t)((sineBits >>  8U) & 0x000000FFU);
     pPayload[18U] = (uint8_t)((sineBits >> 16U) & 0x000000FFU);
@@ -390,15 +398,13 @@ void buildAndSendUdpPacket(uint32_t rxTimestamp)
     pPayload[21U] = (uint8_t)(uiChksum >> 8U);
 
     /* ---- 이더넷/IP/UDP 헤더 조립 ---- */
-    buildEthernetHeader(g_ucTxBuf);
-    buildIPHeader(g_ucTxBuf, (uint16_t)(ETH_MSG_HEADER_SIZE + ETH_PAYLOAD_DATA_SIZE + ETH_CHECKSUM_SIZE));
-    buildUDPHeader(g_ucTxBuf, (uint16_t)(ETH_MSG_HEADER_SIZE + ETH_PAYLOAD_DATA_SIZE + ETH_CHECKSUM_SIZE));
+    buildEthernetHeader(xEthDriver.txBuf);
+    buildIPHeader(xEthDriver.txBuf, (uint16_t)(ETH_MSG_HEADER_SIZE + ETH_PAYLOAD_DATA_SIZE + ETH_CHECKSUM_SIZE));
+    buildUDPHeader(xEthDriver.txBuf, (uint16_t)(ETH_MSG_HEADER_SIZE + ETH_PAYLOAD_DATA_SIZE + ETH_CHECKSUM_SIZE));
 
     /* ---- 전송 ---- */
-    (void)sendEthernetFrame(g_ucTxBuf, (uint16_t)TX_REFLECT_FRAME_SIZE);
+    (void)sendEthernetFrame(xEthDriver.txBuf, (uint16_t)TX_REFLECT_FRAME_SIZE);
 }
-
-uint16_t g_uiLastRxSrcPort = 0U;
 
 /* ---------------------------------------------------------------
  * PC→DSP Update 패킷 수신 파싱 및 ACK 응답
@@ -482,15 +488,13 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
                 if (uiDstPort == ETH_DSP_RX_PORT)
                 {
                     /* 수신된 패킷이 5001번일 경우에만 실제 데이터이므로 캡처 진행 */
-                    extern uint16_t g_uiLastRxSrcPort;
-                    g_uiLastRxSrcPort = ((uint16_t)pPacket[UDP_HDR_OFFSET] << 8U) |
+                    xEthApp.lastRxSrcPort = ((uint16_t)pPacket[UDP_HDR_OFFSET] << 8U) |
                                          (uint16_t)pPacket[UDP_HDR_OFFSET + 1U];
 
                     /* PC의 실제 MAC 주소를 캡처하여 저장 (ACK 및 Reflect 시 사용) */
-                    extern uint8_t g_ucRealPcMac[6];
                     uint16_t m;
                     for(m=0; m<6; m++) {
-                        g_ucRealPcMac[m] = pPacket[6U + m]; /* Ethernet Header Src MAC */
+                        xEthApp.realPcMac[m] = pPacket[6U + m]; /* Ethernet Header Src MAC */
                     }
 
                     pPayload = pPacket + PAYLOAD_OFFSET;
@@ -529,14 +533,13 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
                                 sendAckResponse(ETH_ACK_OK, ETH_ACKINFO_OK, uiTimestamp, ucCode);
 
                                 /* ---- Data 추출 및 공유 버퍼 갱신 ---- */
-                                extern stEthSharedData g_xEthRxData;
-                                g_xEthRxData.SeqNum = pPayload[12U];
-                                g_xEthRxData.Status = pPayload[13U];
+                                xEthApp.rxData.SeqNum = pPayload[12U];
+                                xEthApp.rxData.Status = pPayload[13U];
 
                                 /* CPU1에 IPC 전달 (SeqNum + Status) */
                                 sendIpcMessageToCPU1(IPC_CMD_CM_ETH_RX_DATA,
-                                                     (uint32_t)g_xEthRxData.SeqNum,
-                                                     (uint32_t)g_xEthRxData.Status);
+                                                     (uint32_t)xEthApp.rxData.SeqNum,
+                                                     (uint32_t)xEthApp.rxData.Status);
                             }
                         }
                     }

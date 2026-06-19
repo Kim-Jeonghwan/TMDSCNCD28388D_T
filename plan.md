@@ -1,57 +1,52 @@
-# 파일명 및 모듈명 리팩토링 구현 계획 (Implementation Plan)
+# EPWM1 ISR 미동작 수정 및 시스템 부팅 안정화 계획 (Implementation Plan)
 
-## 1. 개요
-프로젝트(CPU1, CM) 내부의 `csu_`, `hal_` 모듈들에 대한 명칭을 규칙에 맞게 변경하고, 관련된 헤더 선언, include, 헤더 가드 등을 빠짐없이 갱신하기 위한 구현 계획입니다.
+## 1. 개요 (Overview)
+CPU1의 `MainControl_Isr`가 실행되지 않아 GPIO 34번 토글 등 주요 100us 제어 루프가 멈추는 현상을 해결하기 위한 구현 계획입니다.
+본 계획은 앞서 진행된 `research.md`의 분석 결과를 바탕으로, 소스 코드의 무단 축약 없이 정확히 필요한 위치만 국소적으로 수정하여 시스템의 안정성을 극대화하는 것을 목표로 합니다.
 
-## 2. 작업 절차 (Action Plan)
+## 2. 사용자 검토 필요 사항 (User Review Required)
+> [!IMPORTANT]
+> - 펌웨어 제어 코드(C2000)를 직접 수정하는 작업이므로, 사용자님의 **명시적인 구현 승인**이 필요합니다.
+> - `main_cpu1.c`에서 전역 인터럽트(`EINT; ERTM;`) 위치를 백그라운드 루프 진입 직전으로 옮김으로써, 전체 시스템의 인터럽트 시작 시점이 깔끔하게 동기화됩니다. 이 방식에 동의하시는지 확인 바랍니다.
+> - 이 문서(`plan.md`)에 추가적인 제약 사항이나 수정 방향을 코멘트로 남겨주시면 모두 반영하겠습니다.
 
-### Step 1: 파일 내용(주석, #include, 헤더 가드) 전면 교체
-파일 이름 자체를 변경하기 전에, 파일 **내부의 텍스트**를 새로운 이름에 맞추어 안전한 도구를 사용하여 국소적으로 치환(Replace)합니다. 
-*임베디드 펌웨어 수정 규칙에 의거, 해당 내용은 일괄 수정되며 한글 주석이 깨지지 않도록 UTF-8 인코딩에 유의합니다.*
+## 3. 수정 진행 현황 (Progress)
+- [x] **`main_cpu1.c` 수정 완료**: 전역 인터럽트(`EINT`, `ERTM`)를 메인 유휴 루프 직전으로 이동
+- [x] **`hal_DspInit.c` 수정 완료**: 조기 활성화된 전역 인터럽트 명령 제거
+- [x] **`csu_Control.c` 수정 완료**: PIE 인터럽트 활성화 전 EPWM 타이머 플래그 클리어 적용
+- [x] **`hal_Epwm.c` 수정 완료**: EPWM 타이머 초기화 전후 TBCLKSYNC 동기화 잠금/해제 적용
 
-- **CPU1 헤더 가드 및 주석 변경**
-  - `CSU/csu_EPWM.h`, `CSU/csu_EPWM.c`
-  - `CSU/csu_IPC.h`, `CSU/csu_IPC.c`
-  - `CSU/csu_LED.h`, `CSU/csu_LED.c`
-  - `CSU/csu_SCI_PC.h`, `CSU/csu_SCI_PC.c`
-  - `HAL/hal_EpwmTimer.h`, `HAL/hal_EpwmTimer.c`
-  - `HAL/hal_IPC.h`, `HAL/hal_IPC.c`
-- **CM 헤더 가드 및 주석 변경**
-  - `CSU/csu_IPC.h`, `CSU/csu_IPC.c`
-  - `HAL/hal_IPC.h`, `HAL/hal_IPC.c`
-- **타 모듈 참조 주석 변경**
-  - `CPU1/HAL/hal_DspInit.c`
-  - `CM/CSU/csu_Ethernet.h`, `CM/CSU/csu_Ethernet.c`
+### 3.1. CPU1 Core Initialization
+#### [MODIFY] [main_cpu1.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/main_cpu1.c)
+- **변경 목적**: 안전한 전역 인터럽트(`EINT`) 가동 시점 확보
+- **수정 내용**: 
+  - `while (1u)` 유휴 루프에 진입하기 바로 직전에 `EINT;` 와 `ERTM;` 코드를 추가합니다.
+  - 헤더 주석의 `Modification History`에 날짜와 함께 해당 내역을 추가합니다.
 
-### Step 2: main.h 내의 #include 구문 일괄 교체
-- `CPU1`의 `main.h`: 구 파일명들을 새 파일명들로 치환.
-- `CM`의 `main.h`: 구 파일명들을 새 파일명들로 치환.
-
-### Step 3: 파일 이름 변경 (Powershell `Rename-Item`)
-내부 텍스트 치환이 완료되면 터미널 명령어를 통해 실제 파일의 이름을 변경합니다. (Git 자동 연동 금지 룰에 따라 Powershell 기본 명령어로 변경합니다.)
-- **CPU1 Rename-Item 목록**
-  - `csu_EPWM.*` ➔ `csu_Epwm.*`
-  - `csu_IPC.*` ➔ `csu_Ipc_cpu1.*`
-  - `csu_LED.*` ➔ `csu_Led.*`
-  - `csu_SCI_PC.*` ➔ `csu_SciPc.*`
-  - `hal_EpwmTimer.*` ➔ `hal_Epwm.*`
-  - `hal_IPC.*` ➔ `hal_Ipc_cpu1.*`
-- **CM Rename-Item 목록**
-  - `csu_IPC.*` ➔ `csu_Ipc_cm.*`
-  - `hal_IPC.*` ➔ `hal_Ipc_cm.*`
-
-### Step 4: 임시 파일 삭제 및 뒷정리
-작업 과정 중 백업 혹은 비교 목적으로 생성된 임시 파일이 있다면 프로젝트 폴더에서 모두 지웁니다.
-
-### Step 5: 사용자 검토 및 빌드 요청
-모든 수정 및 파일 이름 변경 작업이 끝나면, 빌드 시스템에 혼란이 없는지 점검하고 사용자에게 CCS(Code Composer Studio) IDE를 통해 수동으로 Rebuild를 요청합니다.
+#### [MODIFY] [hal_DspInit.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/HAL/hal_DspInit.c)
+- **변경 목적**: 위험한 인터럽트 조기 가동 방지
+- **수정 내용**: 
+  - `DSP_Initialization()` 함수 맨 마지막에 위치한 `EINT;`, `ERTM;` 명령어를 **제거**합니다. (main_cpu1.c로 이관됨)
+  - 헤더 주석의 `Modification History`에 날짜와 함께 해당 내역을 추가합니다.
 
 ---
 
-## 3. 사용자 승인 대기 (User Review Required)
-> [!IMPORTANT]
-> - 이 계획에 따라 C2000 및 ARM 펌웨어 코드의 일괄 수정 및 파일명 변경 작업이 수행됩니다.
-> - 프로젝트 내비게이터(CCS) 상에서 파일이 변경된 것으로 인식될 수 있습니다.
-> - 계획 내용에 추가하거나 변경하고 싶은 제약조건(메모)이 있다면 이 문서(`plan.md`)에 메모를 남겨주시거나 채팅으로 말씀해 주십시오.
+### 3.2. EPWM & Interrupt Control
+#### [MODIFY] [csu_Control.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/CSU/csu_Control.c)
+- **변경 목적**: 죽어버린 EPWM1 ISR 활성화 (Deadlock 방지)
+- **수정 내용**: 
+  - `Control_Init()` 함수 내부의 `Interrupt_enable(INT_EPWM1);` 호출 바로 윗줄에 `EPWM_clearEventTriggerInterruptFlag(EPWM_TIMER1_BASE);` 를 추가하여, 초기화 시 발생했을 수 있는 가짜 펜딩 플래그를 말끔히 지웁니다.
+  - 헤더 주석의 `Modification History`에 변경 내역을 추가합니다.
 
-이견이 없으시다면 **"구현 시작해줘"**라고 지시해 주시기 바랍니다. 승인 즉시 Step 1부터 순차적으로 코드를 수정하겠습니다.
+#### [MODIFY] [hal_Epwm.c](file:///d:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CPU1/HAL/hal_Epwm.c)
+- **변경 목적**: EPWM 타이머 카운터 및 클럭 동기화
+- **수정 내용**: 
+  - `Initial_EpwmTimer()` 함수 초반에 `SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);` 를 삽입하여 전체 타이머 클럭을 잠시 멈춥니다.
+  - 타이머 레지스터 세팅(`EPWM_setClockPrescaler` 등)이 모두 끝난 함수 최하단에서 `SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);` 를 다시 호출하여 클럭 동기화를 재개시킵니다.
+  - 헤더 주석의 `Modification History`에 변경 내역을 추가합니다.
+
+## 4. 검증 계획 (Verification Plan)
+### Manual Verification
+- 컴파일 및 빌드가 정상적으로 완료되는지 확인 요청.
+- 펌웨어를 장비에 다운로드 한 후, GPIO 34번(디버그 LED)이 500ms(0.5초) 주기로 안정적으로 점멸하는지 육안 확인.
+- CM 코어와의 이더넷/IPC 통신(사인파 및 ADC 데이터 전송)이 원활하게 복구되었는지 확인.

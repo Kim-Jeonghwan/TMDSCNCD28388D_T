@@ -1,11 +1,20 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : hal_Ethernet.c
-    Version          : 00.01
+    Version          : 00.02
     Description      : EMAC 드라이버 초기화 및 Rx 하드웨어 인터럽트 구현
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (Phase 4: 이더넷 RX 폴링 -> 인터럽트 전환)
+    Last Updated     : 2026. 06. 19. (이더넷 전역 변수 캡슐화)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 변수명 규칙 적용 (xHalEth -> xEthDriver 변경)
+ * 2026. 06. 19. - 이더넷 전역 변수 캡슐화 적용
+ * 2026. 06. 19. - (Phase 4: 이더넷 RX 폴링 -> 인터럽트 전환)
+ * 2026. 06. 05. - 코드 주석 포맷팅 및 한글화
+ */
 
 /*
  * [회로도 GPIO 핀 매핑] (CPU1 hal_DspInit.c 에서 GPIO 핀 MUX 설정)
@@ -38,14 +47,12 @@
  * 전역 변수
  * --------------------------------------------------------------- */
 
-/* EMAC 핸들 */
-Ethernet_Handle g_hEMAC = (Ethernet_Handle)0U;
-
-/* 디버깅 용: 이더넷 초기화 함수 리턴 결과값 저장 */
-volatile uint32_t g_uiEthInitRet = 0U;
-
-/* Tx 버퍼 (csu_Ethernet.c 에서 패킷 조립 후 이 버퍼 사용) */
-uint8_t g_ucTxBuf[ETH_TX_BUF_SIZE];
+/* HAL 계층 이더넷 상태 인스턴스 초기화 */
+stEthDriverState xEthDriver = {
+    .hEMAC = (Ethernet_Handle)0U,
+    .txBuf = {0U},
+    .initRet = 0U
+};
 
 /* Rx 버퍼 및 디스크립터 풀 */
 static uint8_t           s_ucRxBuf[ETH_RX_NUM_PKT_DESC][ETH_RX_BUF_SIZE];
@@ -125,7 +132,7 @@ void Initial_Ethernet(void)
 
     /* --- Rx 디스크립터 풀 초기화 --- */
     initRxDescriptors();
-    (void)memset(g_ucTxBuf, 0U, ETH_TX_BUF_SIZE);
+    (void)memset(xEthDriver.txBuf, 0U, ETH_TX_BUF_SIZE);
 
     /* -------------------------------------------------------
      * Step 1: 인터페이스 설정 구조체 구성
@@ -183,19 +190,19 @@ void Initial_Ethernet(void)
     /* -------------------------------------------------------
      * Step 4: EMAC 핸들 획득 및 초기화
      * ------------------------------------------------------- */
-        uiRet = Ethernet_getHandle((Ethernet_Handle)1U, pInitCfg, &g_hEMAC);
+        uiRet = Ethernet_getHandle((Ethernet_Handle)1U, pInitCfg, &xEthDriver.hEMAC);
     }
     else
     {
         uiRet = ETHERNET_ERR_INVALID_PARAM;
     }
 
-    g_uiEthInitRet = uiRet;
+    xEthDriver.initRet = uiRet;
 
     if (uiRet != ETHERNET_RET_SUCCESS)
     {
         /* 초기화 실패 처리: 핸들 무효화 */
-        g_hEMAC = (Ethernet_Handle)0U;
+        xEthDriver.hEMAC = (Ethernet_Handle)0U;
     }
     else
     {
@@ -276,13 +283,13 @@ void Initial_Ethernet(void)
 */
 void updateEthernetTask(void)
 {
-    if (g_hEMAC != (Ethernet_Handle)0U)
+    if (xEthDriver.hEMAC != (Ethernet_Handle)0U)
     {
         /* 수신된 패킷 처리 (DMA CP 레지스터 업데이트를 통해 인터럽트 소스 해제) */
-        Ethernet_removePacketsFromRxQueue(&((Ethernet_Device *)g_hEMAC)->dmaObj.rxDma[0U], ETHERNET_COMPLETION_NORMAL);
+        Ethernet_removePacketsFromRxQueue(&((Ethernet_Device *)xEthDriver.hEMAC)->dmaObj.rxDma[0U], ETHERNET_COMPLETION_NORMAL);
         
         /* 송신 완료된 패킷의 디스크립터를 큐에서 제거하여 풀 방지 */
-        Ethernet_removePacketsFromTxQueue(&((Ethernet_Device *)g_hEMAC)->dmaObj.txDma[0U], ETHERNET_COMPLETION_NORMAL);
+        Ethernet_removePacketsFromTxQueue(&((Ethernet_Device *)xEthDriver.hEMAC)->dmaObj.txDma[0U], ETHERNET_COMPLETION_NORMAL);
     }
 }
 
@@ -378,5 +385,5 @@ void App_ethTxCallback(Ethernet_Handle hApp, Ethernet_Pkt_Desc *pPkt)
 {
     (void)hApp; /* 미사용 파라미터 */
     (void)pPkt; /* 미사용 파라미터 */
-    /* g_ucTxBuf 는 정적 배열이므로 별도 해제 불필요 */
+    /* xEthDriver.txBuf 는 정적 배열이므로 별도 해제 불필요 */
 }

@@ -1,15 +1,16 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : main_cm.c
-    Version          : 00.01
+    Version          : 00.02
     Description      : CM 코어 메인 루프 및 태스크
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (코드 스타일 및 주석 템플릿 적용)
+    Last Updated     : 2026. 06. 19. (Cycle_100ms 내부에 GPIO 145 토글 로직 추가)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 19. - Cycle_100ms 내부에 GPIO 145 토글 로직 추가 (500ms 주기)
  * 2026. 06. 19. - 코드 스타일 및 주석 템플릿 적용
  * 2026. 06. 05. - 코드 주석 포맷팅 및 한글화
  */
@@ -155,7 +156,13 @@ static void Cycle_10ms(void)
 */
 static void Cycle_100ms(void)
 {
-    // 100ms 작업 내용
+    // 500ms(100ms * 5) 주기로 점멸시키기 위한 로직
+    static uint16_t cmLedCnt = 0U;
+    if (++cmLedCnt >= 5U)
+    {
+        GPIO_togglePin(145U); // GPIO 145 토글 (CM 코어 API 사용)
+        cmLedCnt = 0U;
+    }
 }
 
 /*

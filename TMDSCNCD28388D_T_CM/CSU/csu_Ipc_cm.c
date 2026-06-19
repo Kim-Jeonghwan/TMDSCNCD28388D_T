@@ -1,10 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ipc_cm.c
-    Version          : 00.02
+    Version          : 00.04
     Description      : CM IPC Protocol 구현
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
+    Last Updated     : 2026. 06. 19. (변수명 규칙 적용, xCsuEth -> xEthApp)
 **********************************************************************/
 
 #include "csu_Ipc_cm.h"
@@ -32,10 +32,10 @@ void recvIpcCpu1Message(uint32_t command, uint32_t addr, uint32_t data)
     if (command == IPC_CMD_CPU1_ETH_TX_DATA)
     {
         /* CPU1에서 보낸 온도, 시퀀스, 사인파 데이터 갱신 */
-        g_xEthTxData.SineVal = pxIpcCpu1ToCm->Payload.TxData.sineValue;
-        g_xEthTxData.DspTemp = (uint16_t)pxIpcCpu1ToCm->Payload.TxData.adcTemperature;
-        g_xEthTxData.SeqNum  = (uint8_t)(pxIpcCpu1ToCm->Payload.TxData.sequenceNum & 0xFFU);
-        g_xEthTxData.Status  = 0U; /* TODO: CPU1에서 상태 필드 제거됨에 따른 기본값 */
+        xEthApp.txData.SineVal = pxIpcCpu1ToCm->Payload.TxData.sineValue;
+        xEthApp.txData.DspTemp = (uint16_t)pxIpcCpu1ToCm->Payload.TxData.adcTemperature;
+        xEthApp.txData.SeqNum  = (uint8_t)(pxIpcCpu1ToCm->Payload.TxData.sequenceNum & 0xFFU);
+        xEthApp.txData.Status  = 0U; /* TODO: CPU1에서 상태 필드 제거됨에 따른 기본값 */
     }
     else
     {

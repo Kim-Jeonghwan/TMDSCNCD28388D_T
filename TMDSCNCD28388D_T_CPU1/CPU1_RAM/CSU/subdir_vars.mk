@@ -7,6 +7,7 @@ SHELL = cmd.exe
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../CSU/csu_Adc.c \
+../CSU/csu_Control.c \
 ../CSU/csu_Epwm.c \
 ../CSU/csu_Ipc_cpu1.c \
 ../CSU/csu_Led.c \
@@ -14,6 +15,7 @@ C_SRCS += \
 
 C_DEPS += \
 ./CSU/csu_Adc.d \
+./CSU/csu_Control.d \
 ./CSU/csu_Epwm.d \
 ./CSU/csu_Ipc_cpu1.d \
 ./CSU/csu_Led.d \
@@ -21,6 +23,7 @@ C_DEPS += \
 
 OBJS += \
 ./CSU/csu_Adc.obj \
+./CSU/csu_Control.obj \
 ./CSU/csu_Epwm.obj \
 ./CSU/csu_Ipc_cpu1.obj \
 ./CSU/csu_Led.obj \
@@ -28,6 +31,7 @@ OBJS += \
 
 OBJS__QUOTED += \
 "CSU\csu_Adc.obj" \
+"CSU\csu_Control.obj" \
 "CSU\csu_Epwm.obj" \
 "CSU\csu_Ipc_cpu1.obj" \
 "CSU\csu_Led.obj" \
@@ -35,6 +39,7 @@ OBJS__QUOTED += \
 
 C_DEPS__QUOTED += \
 "CSU\csu_Adc.d" \
+"CSU\csu_Control.d" \
 "CSU\csu_Epwm.d" \
 "CSU\csu_Ipc_cpu1.d" \
 "CSU\csu_Led.d" \
@@ -42,6 +47,7 @@ C_DEPS__QUOTED += \
 
 C_SRCS__QUOTED += \
 "../CSU/csu_Adc.c" \
+"../CSU/csu_Control.c" \
 "../CSU/csu_Epwm.c" \
 "../CSU/csu_Ipc_cpu1.c" \
 "../CSU/csu_Led.c" \

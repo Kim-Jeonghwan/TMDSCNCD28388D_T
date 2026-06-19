@@ -10,8 +10,8 @@
 #include "hal_Ipc_cpu1.h"
 #include "csu_Ipc_cpu1.h"
 
-/* 전역 변수 */
-volatile bool g_bCmReady = false; // CM 코어 기동 완료 여부 플래그
+/* 구조체 할당 */
+volatile stIpcState xIpcState = {false}; // CM 코어 기동 완료 여부 플래그
 
 /* 정적 ISR 선언 */
 static __interrupt void isrIpcFromCM(void);
@@ -106,7 +106,7 @@ static __interrupt void isrIpcFromCM(void)
         if (uiCmd == IPC_CMD_CM_BOOT_READY)
         {
             /* CM 코어 이더넷 및 통신 준비 완료 플래그 활성화 */
-            g_bCmReady = true;
+            xIpcState.isCmReady = true;
         }
         else if (uiCmd == IPC_CMD_CM_ETH_RX_DATA)
         {

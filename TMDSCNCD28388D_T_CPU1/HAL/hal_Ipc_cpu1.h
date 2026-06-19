@@ -12,8 +12,12 @@
 
 #include "main_cpu1.h"
 
-/* 전역 변수 */
-extern volatile bool g_bCmReady;
+/* 구조체 및 전역 변수 */
+typedef struct {
+    bool isCmReady;
+} stIpcState;
+
+extern volatile stIpcState xIpcState;
 
 /* 함수 프로토타입 */
 void Initial_IPC_Clear(void);

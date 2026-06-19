@@ -1,68 +1,46 @@
-# 파일명 및 모듈명 리팩토링 리서치 보고서
+# Research Report: EPWM1 ISR 미동작 및 GPIO 34번 토글 불발 원인 분석
 
-## 1. 개요
-사용자의 요청에 따라 `CPU1` 및 `CM` 프로젝트 내의 주요 `CSU` 및 `HAL` 계층 파일들의 이름을 명명 규칙에 맞게 변경하고, 관련된 헤더 파일 포함(`#include`), 헤더 가드, 파일 내부 주석 등에 대한 전면적인 리팩토링을 수행하기 위한 조사를 완료하였습니다.
+## 1. 개요 (Overview)
+CPU1 코어에서 100us 주기로 실행되도록 설계된 `MainControl_Isr` (EPWM1 기반) 인터럽트 루틴이 호출되지 않아, 해당 ISR 내부에서 제어하는 GPIO 34번(디버그용 점멸 LED)이 토글되지 않는 현상이 발생하고 있습니다. 
+본 리서치는 C2000 MCU 하드웨어의 인터럽트, 타이머 동작 원리와 현 코드의 초기화 타이밍을 분석하여 이 문제의 원인을 규명하고 해결책을 제시합니다.
 
-## 2. 변경 대상 파일 목록 (Rename Target)
+## 2. 코드 분석 및 원인 규명 (Root Cause Analysis)
 
-### 2.1 CPU1 프로젝트 (TMDSCNCD28388D_T_CPU1)
-| 기존 파일명 | 변경할 파일명 |
-| --- | --- |
-| `CSU/csu_EPWM.c` / `.h` | `CSU/csu_Epwm.c` / `.h` |
-| `CSU/csu_IPC.c` / `.h` | `CSU/csu_Ipc_cpu1.c` / `.h` |
-| `CSU/csu_LED.c` / `.h` | `CSU/csu_Led.c` / `.h` |
-| `CSU/csu_SCI_PC.c` / `.h` | `CSU/csu_SciPc.c` / `.h` |
-| `HAL/hal_EpwmTimer.c` / `.h` | `HAL/hal_Epwm.c` / `.h` |
-| `HAL/hal_IPC.c` / `.h` | `HAL/hal_Ipc_cpu1.c` / `.h` |
+문제의 원인은 크게 세 가지 타이밍 및 초기화 누락 요소가 복합적으로 작용한 결과입니다.
 
-### 2.2 CM 프로젝트 (TMDSCNCD28388D_T_CM)
-| 기존 파일명 | 변경할 파일명 |
-| --- | --- |
-| `CSU/csu_IPC.c` / `.h` | `CSU/csu_Ipc_cm.c` / `.h` |
-| `HAL/hal_IPC.c` / `.h` | `HAL/hal_Ipc_cm.c` / `.h` |
+### 2.1. EPWM Event Trigger Flag(ETFLG) 미초기화 문제
+- **현상**: `csu_Control.c`의 `Control_Init()`에서 `Interrupt_enable(INT_EPWM1);`을 통해 PIE 인터럽트를 활성화하기 전에, EPWM 모듈의 Event Trigger 인터럽트 플래그를 비워주지 않았습니다.
+- **원인**: 디바이스 부팅 및 하드웨어 초기화 과정에서 EPWM 레지스터를 조작하다 보면 가짜(spurious) 이벤트가 발생하여 플래그가 1로 Set될 수 있습니다. 플래그가 이미 1인 상태에서는 PIE가 활성화되어도 하드웨어가 새로운 상승 에지(Edge) 펄스를 만들어내지 못하기 때문에, 첫 번째 인터럽트 진입이 영구히 봉쇄됩니다 (Deadlock 현상).
+- **해결책**: 인터럽트를 활성화(enable)하기 직전에 반드시 `EPWM_clearEventTriggerInterruptFlag(EPWM_TIMER1_BASE);` 명령을 통해 플래그를 깨끗하게 강제 클리어해야 합니다.
 
+### 2.2. 전역 인터럽트 활성화(`EINT`, `ERTM`) 시점의 오류
+- **현상**: `hal_DspInit.c`의 `DSP_Initialization()` 함수 맨 마지막 부분에서 전역 인터럽트(`EINT`)와 디버그 인터럽트(`ERTM`)를 활성화하고 있습니다. 
+- **원인**: `main_cpu1.c`의 부팅 시퀀스를 보면 `DSP_Initialization()` 호출이 끝난 **이후에** `Control_Init()`을 호출합니다. 즉, 문(Door)이 이미 활짝 열린(전역 인터럽트 ON) 상태에서 뒤늦게 문지기(인터럽트 벡터)를 등록하고 개별 인터럽트를 켜려는 형태입니다. 이는 C2000 하드웨어 구조상 레이스 컨디션을 유발할 수 있는 매우 위험한 안티 패턴입니다.
+- **해결책**: `EINT; ERTM;` 호출 시점을 `main_cpu1.c`의 백그라운드 유휴 루프(`while(1)`) 진입 바로 직전으로 대이동(Shift)하여, 모든 시스템 인터럽트 등록이 100% 끝난 안전한 시점에 일제히 가동되도록 해야 합니다.
 
-## 3. 코드 내부 수정 대상 상세
+### 2.3. TBCLKSYNC (타임베이스 클럭 동기화) 관리 누락
+- **현상**: `hal_Epwm.c`의 `Initial_EpwmTimer()`에서 EPWM1의 주기와 동작 모드 등을 세팅할 때, 전체 EPWM 카운터를 일시 정지시키는 `TBCLKSYNC` 제어가 누락되었습니다.
+- **원인**: `Device_init()`에서 이미 `TBCLKSYNC`가 1로 설정되어 모든 클럭이 도는 상태인데, 이 상태에서 카운터 주기(`PRD`)를 수정하거나 카운터(`TBCTR`)를 강제로 0으로 밀어버리면 타이머 모듈 내부가 엉키거나 다른 PWM 채널과의 동기화가 완전히 깨져버립니다.
+- **해결책**: EPWM 타이머를 설정하기 직전 `SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);`로 클럭을 멈추고 설정을 모두 마친 후, 다시 `SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);`를 호출해 모든 타이머가 깔끔하게 0부터 동시 출발하게 만들어야 합니다.
 
-### 3.1 헤더 인클루드 (`#include`) 수정 (main.h 및 개별 c 파일)
-*   **CPU1 `main.h`**
-    *   `#include "csu_EPWM.h"` ➔ `#include "csu_Epwm.h"`
-    *   `#include "csu_IPC.h"` ➔ `#include "csu_Ipc_cpu1.h"`
-    *   `#include "csu_LED.h"` ➔ `#include "csu_Led.h"`
-    *   `#include "csu_SCI_PC.h"` ➔ `#include "csu_SciPc.h"`
-    *   `#include "hal_EpwmTimer.h"` ➔ `#include "hal_Epwm.h"`
-    *   `#include "hal_IPC.h"` ➔ `#include "hal_Ipc_cpu1.h"`
-*   **CM `main.h`**
-    *   `#include "csu_IPC.h"` ➔ `#include "csu_Ipc_cm.h"`
-    *   `#include "hal_IPC.h"` ➔ `#include "hal_Ipc_cm.h"`
-*   **개별 소스 코드 파일** 내부에서도 자기 자신의 헤더 참조 시 새로운 이름으로 포함하도록 변경해야 합니다 (예: `csu_Epwm.c` 파일 내 `#include "csu_Epwm.h"`).
-*   **CPU1 `HAL/hal_Ipc_cpu1.c`**: 기존의 `#include "csu_IPC.h"`를 새로운 이름인 `#include "csu_Ipc_cpu1.h"`로 수정해야 합니다.
+## 3. 구현 및 수정 계획 (Implementation Plan)
 
-### 3.2 헤더 가드 매크로 (`#ifndef` / `#define`) 표준화
-현재 일부 파일의 헤더 가드가 소문자를 포함하고 있거나 기존 이름을 따르고 있습니다. 명명 규칙("헤더 가드 등의 매크로는 대문자 HAL_ 등을 사용합니다.")에 맞추어 아래와 같이 대문자로 수정합니다.
+### 3.1. `main_cpu1.c` 수정
+- 파일 최상단 수정 이력에 `EINT`, `ERTM` 이동 관련 내역 추가
+- `while(1)` 메인 유휴 루프 진입 직전 위치로 `EINT;` 및 `ERTM;` 추가
 
-*   **CPU1**
-    *   `csu_Epwm.h`: `csu_EPWM_H` ➔ `CSU_EPWM_H`
-    *   `csu_Ipc_cpu1.h`: `csu_IPC_H` ➔ `CSU_IPC_CPU1_H`
-    *   `csu_Led.h`: `csu_LED_H` ➔ `CSU_LED_H`
-    *   `csu_SciPc.h`: `csu_SCI_PC_H` ➔ `CSU_SCIPC_H`
-    *   `hal_Epwm.h`: `HAL_EPWM_TIMER_H` ➔ `HAL_EPWM_H`
-    *   `hal_Ipc_cpu1.h`: `HAL_IPC_H` ➔ `HAL_IPC_CPU1_H`
-*   **CM**
-    *   `csu_Ipc_cm.h`: `csu_IPC_H` ➔ `CSU_IPC_CM_H`
-    *   `hal_Ipc_cm.h`: `HAL_IPC_H` ➔ `HAL_IPC_CM_H`
+### 3.2. `hal_DspInit.c` 수정
+- 파일 최상단 수정 이력에 `EINT`, `ERTM` 이동 관련 내역 추가
+- `DSP_Initialization()` 함수 맨 끝단에 존재하는 `EINT;` 및 `ERTM;` 삭제 (main_cpu1.c로 이관)
 
-### 3.3 파일 상단 템플릿(주석) 갱신
-모든 변경 대상 파일(총 16개 파일, .c 및 .h)의 최상단 주석 템플릿 영역에 기재된 `Filename` 항목을 새로운 파일명으로 갱신해야 합니다. 더불어, `Last Updated`에 변경 사유(예: "모듈 및 파일명 리팩토링") 및 수정 일자를 기록해야 합니다.
+### 3.3. `csu_Control.c` 수정
+- 파일 최상단 수정 이력에 인터럽트 플래그 강제 클리어 추가 내역 기재
+- `Control_Init()` 함수 내부, `Interrupt_enable(INT_EPWM1);` 호출 바로 윗줄에 `EPWM_clearEventTriggerInterruptFlag(EPWM_TIMER1_BASE);` 삽입
 
-### 3.4 타 파일 내 주석 및 참조 텍스트 업데이트
-다른 소스 파일에서 기존 파일명을 언급하며 설명하고 있는 주석 내용도 일관성을 위해 동기화가 필요합니다.
-*   **CPU1 `hal_Epwm.c` (구 `hal_EpwmTimer.c`)**: `csu_SCI_PC.c 에서 ADC 읽어서` ➔ `csu_SciPc.c 에서 ADC 읽어서`
-*   **CPU1 `hal_DspInit.c`**: `csu_LED.c에서 분리된` ➔ `csu_Led.c에서 분리된`
-*   **CPU1 `csu_Ipc_cpu1.c` (구 `csu_IPC.c`)**: `csu_SCI_PC.c 등에서 참조` ➔ `csu_SciPc.c 등에서 참조`
-*   **CPU1 `hal_Ipc_cpu1.c` (구 `hal_IPC.c`)**: `csu_IPC 레이어로 전달` ➔ `csu_Ipc_cpu1 레이어로 전달`
-*   **CM `csu_Ethernet.h`, `csu_Ethernet.c`**: `csu_IPC.c 에서 갱신` ➔ `csu_Ipc_cm.c 에서 갱신`
-*   **CM `hal_Ipc_cm.c` (구 `hal_IPC.c`)**: `csu_IPC 레이어로 처리 요청` ➔ `csu_Ipc_cm 레이어로 처리 요청`
+### 3.4. `hal_Epwm.c` 수정
+- 파일 최상단 수정 이력에 TBCLKSYNC 동기화 로직 추가 내역 기재
+- `Initial_EpwmTimer()` 함수의 EPWM1 타이머 관련 설정 구간 앞/뒤로 `SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);` 와 `SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);` 추가
 
-## 4. 리서치 결론
-프로젝트 전반에 걸친 변경 대상이므로 각 계층(CSU, HAL) 내부 뿐만 아니라 `main.h`와 타 모듈의 주석 참조 내역까지 모두 함께 치환(Replace)해야 합니다. 변수 및 함수 명명 규칙 상 이미 `Initial_Epwm7a`나 `recvSciPcMessage`와 같이 함수명은 prefix 규칙에 구속받지 않는 형태로 작성되어 있으므로 파일 이름과 `#include` 구문, 그리고 헤더 가드만 전면 교체하면 시스템 빌드 및 동작에 지장이 없을 것으로 판단됩니다.
+## 4. 예상 효과 및 부작용 검토 (Expected Results & Side Effects)
+- **효과**: EPWM1 인터럽트가 100us 주기로 정상 진입하며, GPIO 34가 500ms 간격으로 정상 점멸하게 됩니다. 또한 CM 코어와의 IPC 통신 및 ADC 갱신 사이클도 완벽하게 살아납니다.
+- **부작용 방어**: `EINT` 이동으로 인해 타 인터럽트(Timer0, SCI 등) 역시 초기화 과정 중 불필요하게 튀는 증상이 함께 방지되어 시스템 부팅 안정성이 극대화됩니다. `TBCLKSYNC` 처리 역시 EPWM8, EPWM9 등 이미 초기화된 타이머들과 동시에 출발선(0)에서 시작하도록 만들어 주어 완벽한 동기화를 보장합니다.

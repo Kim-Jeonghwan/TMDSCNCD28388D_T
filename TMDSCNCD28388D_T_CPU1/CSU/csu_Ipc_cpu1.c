@@ -14,8 +14,7 @@ volatile stIpcDataPacket *pxIpcCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_T
 volatile stIpcDataPacket *pxIpcCmToCpu1 = (volatile stIpcDataPacket *)IPC_CM_TO_CPU1_MSGRAM_ADDR;
 
 /* CM→CPU1 수신 공유 변수 (csu_SciPc.c 등에서 참조) */
-uint8_t  g_ucEthRxSeqNum  = 0U;
-uint8_t  g_ucEthRxStatus  = 0U;
+volatile stEthRxData xEthRxData = {0U, 0U};
 
 /*
 @funtion    void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data)
@@ -33,8 +32,8 @@ void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data)
 
     if (command == IPC_CMD_CM_ETH_RX_DATA)
     {
-        g_ucEthRxSeqNum = (uint8_t)(data & 0x000000FFU);
-        g_ucEthRxStatus = (uint8_t)((data >> 8U) & 0x000000FFU);
+        xEthRxData.seqNum = (uint8_t)(data & 0x000000FFU);
+        xEthRxData.status = (uint8_t)((data >> 8U) & 0x000000FFU);
     }
     else
     {

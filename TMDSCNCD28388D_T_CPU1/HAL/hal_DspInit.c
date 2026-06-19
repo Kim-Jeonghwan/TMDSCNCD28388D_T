@@ -4,17 +4,20 @@
     Copyright 2021. All Rights Reserved.
 
     Filename        : hal_DspInit.c
-    Version         : 00.04
+    Version         : 00.05
     Description     : CPU1 Master Initialization (CM Core Fault 해결을 위한 권한 양도 시퀀스 개편)
     Tracebility     : 
     Programmer      : Kim Jeonghwan
-    Last Updated    : 2026. 06. 19. (LED GPIO 초기화 로직 병합)
+    Last Updated    : 2026. 06. 19. (전역 인터럽트 활성화 시점 이동)
 
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 19. - 전역 인터럽트(EINT, ERTM) 호출을 main_cpu1.c 내부 while(1) 직전으로 이동 (안전성 확보)
+ * 2026. 06. 19. - Device_init() 직후 전체 EPWM 클럭(EPWMCLK)을 200MHz(1:1 분주)로 교정하는 로직 추가
+ * 2026. 06. 19. - Init_GpioDout 내부에 GPIO 145 제어권 CM 코어로 양도
  * 2026. 06. 19. - csu_Led.c에서 분리된 GPIO 31 및 34 초기화 로직을 Init_GpioDout()에 직접 통합
  * 2026. 06. 02. - CM 코어 기동 시점(Initial_CmCore)을 동기화(IPC_sync) 직전 최고의 타이밍으로 대이동 교정
  * 2026. 06. 02. - 온도 센서 전용 1kHz 느린 트리거용 ePWM9 모듈 추가 기동 반영
@@ -68,6 +71,9 @@ void DSP_Initialization(void)
     // 시스템 및 주변회로 클럭 설정
     Device_init();
 
+    /* --- [클럭 교정] EPWM 모듈의 입력 클럭(EPWMCLK)을 SYSCLK(200MHz)과 동일하게 1:1 분주로 명시적 설정 --- */
+    SysCtl_setEPWMClockDivider(SYSCTL_EPWMCLK_DIV_1);
+
     /* --- [최우선 조치] 동기화(IPC_sync) 대기 전에 물리 이더넷 PHY부터 즉시 깨움 --- */
     initEmacGpioPins();
 
@@ -91,9 +97,8 @@ void DSP_Initialization(void)
     /* --- [정석 타이밍 적용] 모든 권한 양도와 하드웨어 준비가 100% 완료된 바로 이 시점에 CM 코어 기동 --- */
     Initial_CmCore();
 
-    // 실시간 디버깅 활성화, 전역 인터럽트 스위치 ON
-    ERTM;   // Debug Enable Mask 비트 설정 (실시간 디버깅이 가능하도록 ST1 레지스터의 /DBGM 비트를 0으로 클리어)
-    EINT;   // 전역 인터럽트 스위치 ON (/INTM ON)
+    // 전역 인터럽트 활성화(EINT, ERTM)는 모든 시스템 초기화 및 인터럽트 등록이 완료된 
+    // main_cpu1.c 의 while(1) 메인 루프 진입 직전에 수행하도록 이동되었습니다.
 }
 
 /*
@@ -147,6 +152,12 @@ static void Init_GpioDout(void)
     GPIO_setPadConfig(34u, GPIO_PIN_TYPE_STD);
     GPIO_setDirectionMode(34u, GPIO_DIR_MODE_OUT);
     GPIO_setMasterCore(34u, GPIO_CORE_CPU1);
+
+    // GPIO 145: CM 코어 구동 상태 확인용 LED
+    GPIO_setPinConfig(GPIO_145_GPIO145);
+    GPIO_setPadConfig(145u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(145u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(145u, GPIO_CORE_CM); // CM으로 제어권 양도
 }
 
 /*
