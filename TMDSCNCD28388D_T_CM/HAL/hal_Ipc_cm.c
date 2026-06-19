@@ -1,11 +1,13 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : hal_IPC.c
+    Filename         : hal_Ipc_cm.c
+    Version          : 00.00
     Description      : CM Core IPC Device Driver
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 **********************************************************************/
 
-#include "hal_IPC.h"
+#include "hal_Ipc_cm.h"
 
 static void isrIpcFromCPU1(void);
 
@@ -42,7 +44,7 @@ void Initial_IPC(void)
 @param      void
 @return     static void
 @remark
-    - CPU1이 보낸 명령과 데이터를 읽어 csu_IPC 레이어로 처리 요청을 넘기고 수신 플래그를 ack합니다.
+    - CPU1이 보낸 명령과 데이터를 읽어 csu_Ipc_cm 레이어로 처리 요청을 넘기고 수신 플래그를 ack합니다.
 */
 static void isrIpcFromCPU1(void)
 {
@@ -57,7 +59,7 @@ static void isrIpcFromCPU1(void)
         // 하드웨어 플래그를 먼저 클리어(ACK)하여 CPU1이 다음 주기를 즉시 준비할 수 있도록 채널을 개방합니다.
         IPC_ackFlagRtoL(IPC_CM_L_CPU1_R, IPC_FLAG1);
 
-        // csu_IPC 핸들러 호출 (이 내부 연산 속도가 길어지더라도 하드웨어 인터럽트 흐름은 깨지지 않음)
+        // csu_Ipc_cm 핸들러 호출 (이 내부 연산 속도가 길어지더라도 하드웨어 인터럽트 흐름은 깨지지 않음)
         recvIpcCpu1Message(command, addr, data);
     }
 }

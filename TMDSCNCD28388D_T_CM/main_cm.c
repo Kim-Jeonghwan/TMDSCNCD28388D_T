@@ -1,6 +1,6 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : main.c
+    Filename         : main_cm.c
     Version          : 00.01
     Description      : CM 코어 메인 루프 및 태스크
     Programmer       : Kim Jeonghwan
@@ -14,7 +14,7 @@
  * 2026. 06. 05. - 코드 주석 포맷팅 및 한글화
  */
 
-#include "main.h"
+#include "main_cm.h"
 
 // --- 정적 함수 선언 ---
 static void Cycle_2ms(void);

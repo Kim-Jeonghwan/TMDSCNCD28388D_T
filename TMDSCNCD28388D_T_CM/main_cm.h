@@ -1,6 +1,6 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : main.h
+    Filename         : main_cm.h
     Version          : 00.01
     Description      : CM 전역 헤더 관리 파일
     Programmer       : Kim Jeonghwan
@@ -14,8 +14,8 @@
  * 2026. 04. 22. - 초기 작성
  */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef MAIN_CM_H
+#define MAIN_CM_H
 
 /* 표준 라이브러리 */
 #include <stdint.h>
@@ -30,12 +30,12 @@ typedef float float32_t;
 #include "cm.h"
 
 /* Dev 계층 */
-#include "hal_IPC.h"
+#include "hal_Ipc_cm.h"
 #include "hal_Ethernet.h"
 #include "hal_Timer.h"
 
 /* CSU 계층 */
-#include "csu_IPC.h"
+#include "csu_Ipc_cm.h"
 #include "csu_Ethernet.h"
 
-#endif // MAIN_H
+#endif // MAIN_CM_H

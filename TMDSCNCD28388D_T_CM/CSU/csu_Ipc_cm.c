@@ -1,13 +1,13 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : csu_IPC.c
-    Version          : 00.01
+    Filename         : csu_Ipc_cm.c
+    Version          : 00.02
     Description      : CM IPC Protocol 구현
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (Phase 3: IPC Payload에 TxData 구조체 적용)
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 **********************************************************************/
 
-#include "csu_IPC.h"
+#include "csu_Ipc_cm.h"
 
 /* Message RAM 영역에 구조체 포인터 할당 */
 volatile stIpcDataPacket *pxIpcCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_TO_CM_MSGRAM_ADDR;

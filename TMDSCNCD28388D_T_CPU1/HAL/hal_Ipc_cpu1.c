@@ -1,12 +1,14 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : hal_IPC.c
+    Filename         : hal_Ipc_cpu1.c
+    Version          : 00.00
     Description      : CM Core IPC Device Driver 및 공유 메모리 설정
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 **********************************************************************/
 
-#include "hal_IPC.h"
-#include "csu_IPC.h"
+#include "hal_Ipc_cpu1.h"
+#include "csu_Ipc_cpu1.h"
 
 /* 전역 변수 */
 volatile bool g_bCmReady = false; // CM 코어 기동 완료 여부 플래그
@@ -108,7 +110,7 @@ static __interrupt void isrIpcFromCM(void)
         }
         else if (uiCmd == IPC_CMD_CM_ETH_RX_DATA)
         {
-            /* CM으로부터 수신된 PC 명령 데이터를 csu_IPC 레이어로 전달 */
+            /* CM으로부터 수신된 PC 명령 데이터를 csu_Ipc_cpu1 레이어로 전달 */
             recvIpcCmMessage(uiCmd, uiAddr, uiData);
         }
         else

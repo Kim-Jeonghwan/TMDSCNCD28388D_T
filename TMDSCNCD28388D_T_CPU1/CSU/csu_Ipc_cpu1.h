@@ -1,16 +1,16 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : csu_IPC.h
-    Version          : 00.01
+    Filename         : csu_Ipc_cpu1.h
+    Version          : 00.02
     Description      : CPU1 IPC 통신 프로토콜 정의
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (Phase 3: IPC Payload에 TxData 구조체 적용)
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 **********************************************************************/
 
-#ifndef csu_IPC_H
-#define csu_IPC_H
+#ifndef CSU_IPC_CPU1_H
+#define CSU_IPC_CPU1_H
 
-#include "main.h"
+#include "main_cpu1.h"
 
 // IPC 통신용 공용 데이터 구조체 (32비트 정렬 권장)
 typedef struct {
@@ -54,4 +54,4 @@ extern volatile stIpcDataPacket *pxIpcCmToCpu1;
 /* CM에서 수신한 IPC 메시지 체인 함수 */
 void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data);
 
-#endif // csu_IPC_H
+#endif // CSU_IPC_CPU1_H

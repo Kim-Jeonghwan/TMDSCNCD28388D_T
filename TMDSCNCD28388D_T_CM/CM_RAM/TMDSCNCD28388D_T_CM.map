@@ -1,7 +1,7 @@
 ******************************************************************************
                   TI ARM Linker PC v20.2.7                     
 ******************************************************************************
->> Linked Fri Jun 19 11:26:39 2026
+>> Linked Fri Jun 19 12:59:43 2026
 
 OUTPUT FILE NAME:   <TMDSCNCD28388D_T_CM.out>
 ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 20004469
@@ -117,7 +117,7 @@ section   page    origin      length       input sections
                   2000da20    0000003c     csu_Ethernet.obj (.data:arpReply$1)
                   2000da5c    00000009     hal_Ethernet.obj (.data)
                   2000da65    00000003     --HOLE--
-                  2000da68    00000008     csu_IPC.obj (.data)
+                  2000da68    00000008     csu_Ipc_cm.obj (.data)
                   2000da70    00000008     csu_Ethernet.obj (.data:g_xEthRxData)
                   2000da78    00000008     csu_Ethernet.obj (.data:g_xEthTxData)
                   2000da80    00000006     csu_Ethernet.obj (.data:g_ucRealPcMac)
@@ -144,7 +144,7 @@ __llvm_prf_cnts
 
 .text.1    0    20000808    000003f8     
                   20000808    00000398     csu_Ethernet.obj (.text:processReceivedEthernetPacket)
-                  20000ba0    00000058     csu_IPC.obj (.text:recvIpcCpu1Message)
+                  20000ba0    00000058     csu_Ipc_cm.obj (.text:recvIpcCpu1Message)
                   20000bf8    00000008     hal_Ethernet.obj (.text:CPU_clearPRIMASK)
 
 .text.2    0    20000d40    000032c0     
@@ -166,17 +166,17 @@ __llvm_prf_cnts
                   200027ec    000000dc     ipc.obj (.text:IPC_sendCommand)
                   200028c8    000000d8     hal_Timer.obj (.text:Initial_TIMER)
                   200029a0    000000d6     ethernet.obj (.text:Ethernet_writeTxDMAControl)
-                  20002a76    00000002     main.obj (.text:Cycle_1000ms)
-                  20002a78    000000d0     main.obj (.text:main)
+                  20002a76    00000002     main_cm.obj (.text:Cycle_1000ms)
+                  20002a78    000000d0     main_cm.obj (.text:main)
                   20002b48    000000c8     csu_Ethernet.obj (.text:buildIPHeader)
                   20002c10    000000c0     ipc.obj (.text:IPC_readCommand)
                   20002cd0    000000be     hal_Timer.obj (.text:CPUTimer_startTimer)
-                  20002d8e    00000002     main.obj (.text:Cycle_100ms)
+                  20002d8e    00000002     main_cm.obj (.text:Cycle_100ms)
                   20002d90    000000b6     hal_Timer.obj (.text:CPUTimer_setPreScaler)
-                  20002e46    00000002     main.obj (.text:Cycle_10ms)
+                  20002e46    00000002     main_cm.obj (.text:Cycle_10ms)
                   20002e48    000000b4     hal_Ethernet.obj (.text:initRxDescriptors)
                   20002efc    000000ae     hal_Timer.obj (.text:CPUTimer_enableInterrupt)
-                  20002faa    00000002     main.obj (.text:Cycle_2ms)
+                  20002faa    00000002     main_cm.obj (.text:Cycle_2ms)
                   20002fac    000000ae     hal_Timer.obj (.text:CPUTimer_reloadTimerCounter)
                   2000305a    00000002     startup_cm.obj (.text:defaultISR)
                   2000305c    000000ae     hal_Timer.obj (.text:CPUTimer_stopTimer)
@@ -215,26 +215,26 @@ __llvm_prf_cnts
                   20003edc    00000040     hal_Timer.obj (.text:isr_CpuTimer1)
                   20003f1c    0000003c     ethernet.obj (.text:Ethernet_performPushOnPacketQueue)
                   20003f58    0000003c     ethernet.obj (.text:Ethernet_setMACAddr)
-                  20003f94    0000003c     hal_IPC.obj (.text:isrIpcFromCPU1)
+                  20003f94    0000003c     hal_Ipc_cm.obj (.text:isrIpcFromCPU1)
                   20003fd0    00000030     ethernet.obj (.text:Ethernet_configureEEEClockGatingControl)
 
 .text.3    0    20004000    000007a6     
                   20004000    00000038     rtsv7M4_T_le_eabi.lib : fs_toi_t2.asm.obj (.text)
                   20004038    00000034     hal_Timer.obj (.text:CPUTimer_isBaseValid)
-                  2000406c    00000034     hal_IPC.obj (.text:IPC_isFlagBusyLtoR)
-                  200040a0    00000034     hal_IPC.obj (.text:IPC_isFlagBusyRtoL)
+                  2000406c    00000034     hal_Ipc_cm.obj (.text:IPC_isFlagBusyLtoR)
+                  200040a0    00000034     hal_Ipc_cm.obj (.text:IPC_isFlagBusyRtoL)
                   200040d4    00000032     ethernet.obj (.text:Ethernet_enableMACRxQ)
-                  20004106    00000032     hal_IPC.obj (.text:IPC_sync)
+                  20004106    00000032     hal_Ipc_cm.obj (.text:IPC_sync)
                   20004138    00000030     ethernet.obj (.text:Ethernet_nextDescAvailable)
-                  20004168    00000030     hal_IPC.obj (.text:Initial_IPC)
-                  20004198    00000030     hal_IPC.obj (.text:sendIpcMessageToCPU1)
+                  20004168    00000030     hal_Ipc_cm.obj (.text:Initial_IPC)
+                  20004198    00000030     hal_Ipc_cm.obj (.text:sendIpcMessageToCPU1)
                   200041c8    0000002e     ethernet.obj (.text:Ethernet_setMTLTxQueueOpMode)
                   200041f6    00000002     --HOLE-- [fill = 0]
                   200041f8    0000002c     ethernet.obj (.text:Ethernet_isTimestampIntActive)
                   20004224    0000002c     ethernet.obj (.text:Ethernet_isTransmitTimestampStatusSet)
                   20004250    00000028     ethernet.obj (.text:Ethernet_setMTLRxQueueOpMode)
-                  20004278    00000028     hal_IPC.obj (.text:IPC_waitForAck)
-                  200042a0    00000028     hal_IPC.obj (.text:IPC_waitForFlag)
+                  20004278    00000028     hal_Ipc_cm.obj (.text:IPC_waitForAck)
+                  200042a0    00000028     hal_Ipc_cm.obj (.text:IPC_waitForFlag)
                   200042c8    00000028     hal_Ethernet.obj (.text:updateEthernetTask)
                   200042f0    00000026     ethernet.obj (.text:Ethernet_configureMDIO)
                   20004316    00000026     ethernet.obj (.text:Ethernet_configureRevMIIAddress)
@@ -245,8 +245,8 @@ __llvm_prf_cnts
                   200043d4    00000026     ethernet.obj (.text:Ethernet_setTxDescRingLength)
                   200043fa    00000024     ethernet.obj (.text:Ethernet_enableDmaInterrupt)
                   2000441e    00000002     --HOLE-- [fill = 0]
-                  20004420    00000024     hal_IPC.obj (.text:IPC_ackFlagRtoL)
-                  20004444    00000024     hal_IPC.obj (.text:IPC_setFlagLtoR)
+                  20004420    00000024     hal_Ipc_cm.obj (.text:IPC_ackFlagRtoL)
+                  20004444    00000024     hal_Ipc_cm.obj (.text:IPC_setFlagLtoR)
                   20004468    00000024     rtsv7M4_T_le_eabi.lib : boot_cortex_m.c.obj (.text:_c_int00_noargs:_c_int00_noargs)
                   2000448c    00000024     hal_Timer.obj (.text:isr_CpuTimer2)
                   200044b0    00000022     hal_Ethernet.obj (.text:App_ethRxCallback)
@@ -265,13 +265,13 @@ __llvm_prf_cnts
                   20004614    00000018     ethernet.obj (.text:Ethernet_setMACPacketFilter)
                   2000462c    00000018     hal_Ethernet.obj (.text:Interrupt_disableInProcessor)
                   20004644    00000018     hal_Ethernet.obj (.text:Interrupt_enableInProcessor)
-                  2000465c    00000018     main.obj (.text:Interrupt_enableInProcessor)
+                  2000465c    00000018     main_cm.obj (.text:Interrupt_enableInProcessor)
                   20004674    00000016     ethernet.obj (.text:Ethernet_HW_descQueueGetCount)
                   2000468a    00000016     ethernet.obj (.text:Ethernet_disableTxEEEMode)
                   200046a0    00000016     ethernet.obj (.text:Ethernet_setDMAMode)
                   200046b6    00000016     ethernet.obj (.text:Ethernet_setMACConfiguration)
                   200046cc    00000014     cm.obj (.text:Interrupt_setVectorTableOffset)
-                  200046e0    00000010     main.obj (.text:Cycle_1ms)
+                  200046e0    00000010     main_cm.obj (.text:Cycle_1ms)
                   200046f0    00000010     cm.obj (.text:SysCtl_disableWatchdog)
                   20004700    0000000e     ethernet.obj (.text:Ethernet_returnTopOfPacketQueue)
                   2000470e    0000000e     platform_port.obj (.text:Platform_enablePeripheral)
@@ -282,7 +282,7 @@ __llvm_prf_cnts
                   20004752    0000000c     platform_port.obj (.text:Platform_disableInterrupt)
                   2000475e    0000000c     platform_port.obj (.text:Platform_enableInterrupt)
                   2000476a    0000000c     rtsv7M4_T_le_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init)
-                  20004776    00000008     main.obj (.text:CPU_clearPRIMASK)
+                  20004776    00000008     main_cm.obj (.text:CPU_clearPRIMASK)
                   2000477e    00000008     hal_Ethernet.obj (.text:CPU_setPRIMASK)
                   20004786    00000008     hal_Ethernet.obj (.text:Platform_disableCoreInterrupt)
                   2000478e    00000008     hal_Ethernet.obj (.text:Platform_enableCoreInterrupt)
@@ -295,20 +295,20 @@ MODULE SUMMARY
        Module                       code    ro data   rw data
        ------                       ----    -------   -------
     .\
-       main.obj                     264     0         0      
+       main_cm.obj                  264     0         0      
     +--+----------------------------+-------+---------+---------+
        Total:                       264     0         0      
                                                              
     .\CSU\
        csu_Ethernet.obj             2402    0         450    
-       csu_IPC.obj                  88      0         8      
+       csu_Ipc_cm.obj               88      0         8      
     +--+----------------------------+-------+---------+---------+
        Total:                       2490    0         458    
                                                              
     .\HAL\
        hal_Ethernet.obj             1070    0         5101   
        hal_Timer.obj                1602    0         14     
-       hal_IPC.obj                  462     0         0      
+       hal_Ipc_cm.obj               462     0         0      
     +--+----------------------------+-------+---------+---------+
        Total:                       3134    0         5115   
                                                              

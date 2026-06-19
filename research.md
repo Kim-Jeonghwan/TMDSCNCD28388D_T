@@ -1,46 +1,68 @@
-# TMDSCNCD28388D_T LED 제어 로직 리팩토링 조사 보고서 (ATTLA_T 기준 동기화)
+# 파일명 및 모듈명 리팩토링 리서치 보고서
 
 ## 1. 개요
-본 보고서는 `ATTLA_T` 프로젝트의 LED 제어 로직(`csu_Led.c`, `csu_Led.h`, `hal_DspInit.c`)을 분석하여, 현재 `TMDSCNCD28388D_T` 프로젝트의 CPU1 코어에 동일한 구조와 최적화 기법을 적용하기 위한 구체적인 구현 방안을 기술합니다.
+사용자의 요청에 따라 `CPU1` 및 `CM` 프로젝트 내의 주요 `CSU` 및 `HAL` 계층 파일들의 이름을 명명 규칙에 맞게 변경하고, 관련된 헤더 파일 포함(`#include`), 헤더 가드, 파일 내부 주석 등에 대한 전면적인 리팩토링을 수행하기 위한 조사를 완료하였습니다.
 
-## 2. ATTLA_T 프로젝트 분석 결과 (변경의 핵심)
-`ATTLA_T` 프로젝트는 기존의 LED 제어 방식에서 다음과 같은 아키텍처 및 성능 최적화를 이루었습니다.
+## 2. 변경 대상 파일 목록 (Rename Target)
 
-1. **비트필드 구조체 제거 (`stLed` in `csu_Led.h`)**
-   - 기존의 `bool` 및 `:8u`, `:1u`와 같은 비트필드는 C2000 16비트 아키텍처에서 메모리 경계 초과 버그를 유발할 수 있습니다. 
-   - 이를 해결하기 위해 구조체의 모든 멤버를 `uint16_t` 단일 자료형으로 통일하여 안정성을 확보했습니다.
-2. **HAL 래퍼 함수 제거 (`csu_Led.c`)**
-   - 불필요하게 `switch-case`문으로 분기되던 `HW_writeLedPin`과 `HW_toggleLedPin`을 제거했습니다.
-   - 대신 SDK의 `GPIO_writePin`과 `GPIO_togglePin`에 구조체가 가진 `Index` 값을 직접 전달하여 호출 지연(Overhead)을 줄였습니다.
-3. **GPIO 하드웨어 초기화의 계층 분리 (`hal_DspInit.c`)**
-   - 상위 계층인 CSU(`csu_Led.c`)에 있던 하드웨어 핀 설정 로직(`initGpioDoutLed()`)을 제거했습니다.
-   - 이를 HAL 계층인 `hal_DspInit.c`의 `Init_GpioDout()` 함수 내부로 이관하여 하드웨어 종속성을 완전히 HAL로 분리했습니다.
-4. **자료형 통일 (`bool` -> `uint16_t`)**
-   - 함수의 파라미터로 사용되던 `bool` 자료형을 모두 `uint16_t`로 변경하여 데이터 타입의 일관성을 맞추었습니다.
+### 2.1 CPU1 프로젝트 (TMDSCNCD28388D_T_CPU1)
+| 기존 파일명 | 변경할 파일명 |
+| --- | --- |
+| `CSU/csu_EPWM.c` / `.h` | `CSU/csu_Epwm.c` / `.h` |
+| `CSU/csu_IPC.c` / `.h` | `CSU/csu_Ipc_cpu1.c` / `.h` |
+| `CSU/csu_LED.c` / `.h` | `CSU/csu_Led.c` / `.h` |
+| `CSU/csu_SCI_PC.c` / `.h` | `CSU/csu_SciPc.c` / `.h` |
+| `HAL/hal_EpwmTimer.c` / `.h` | `HAL/hal_Epwm.c` / `.h` |
+| `HAL/hal_IPC.c` / `.h` | `HAL/hal_Ipc_cpu1.c` / `.h` |
 
-## 3. TMDSCNCD28388D_T 적용(구현) 계획
+### 2.2 CM 프로젝트 (TMDSCNCD28388D_T_CM)
+| 기존 파일명 | 변경할 파일명 |
+| --- | --- |
+| `CSU/csu_IPC.c` / `.h` | `CSU/csu_Ipc_cm.c` / `.h` |
+| `HAL/hal_IPC.c` / `.h` | `HAL/hal_Ipc_cm.c` / `.h` |
 
-상기 분석을 바탕으로 `TMDSCNCD28388D_T` 프로젝트의 관련 파일을 다음과 같이 수정할 계획입니다.
 
-### 3.1. `TMDSCNCD28388D_T_CPU1/CSU/csu_LED.h` 수정 방안
-- `LED_OFF`, `LED_ON`, `LED_NONE`, `LED_TOGGLE` 매크로 값을 `false`/`true`에서 `0u`/`1u` (TMDSCNCD 특성에 맞게 Active High/Low 유지) 형태의 `uint16_t` 리터럴로 변경.
-- `stLed` 구조체의 멤버 변수 자료형을 `bool`, 비트필드 방식에서 모두 `uint16_t`로 변경.
-- `initGpioDoutLed()` 함수 선언 제거.
-- `setLedStatus()`, `setLedModeToggle()` 함수의 `bool State` 파라미터를 `uint16_t State`로 변경.
-- 헤더 상단에 표준 Modification History 업데이트.
+## 3. 코드 내부 수정 대상 상세
 
-### 3.2. `TMDSCNCD28388D_T_CPU1/CSU/csu_LED.c` 수정 방안
-- `initGpioDoutLed()` 함수 구현 전체 제거 (해당 코드는 `hal_DspInit.c`로 이동).
-- `HW_writeLedPin()`, `HW_toggleLedPin()` 정적 함수 구현 제거 및 선언 제거.
-- `updateLedStatus()` 루프 내부의 핀 제어 로직을 `GPIO_writePin(pLed[i]->Index, pLed[i]->State)` 및 `GPIO_togglePin(pLed[i]->Index)`로 직접 호출하도록 수정.
-- `setLedStatus()`, `setLedModeToggle()` 함수의 `bool` 파라미터를 `uint16_t`로 수정.
-- 파일 상단에 표준 헤더 주석 및 Modification History 업데이트.
+### 3.1 헤더 인클루드 (`#include`) 수정 (main.h 및 개별 c 파일)
+*   **CPU1 `main.h`**
+    *   `#include "csu_EPWM.h"` ➔ `#include "csu_Epwm.h"`
+    *   `#include "csu_IPC.h"` ➔ `#include "csu_Ipc_cpu1.h"`
+    *   `#include "csu_LED.h"` ➔ `#include "csu_Led.h"`
+    *   `#include "csu_SCI_PC.h"` ➔ `#include "csu_SciPc.h"`
+    *   `#include "hal_EpwmTimer.h"` ➔ `#include "hal_Epwm.h"`
+    *   `#include "hal_IPC.h"` ➔ `#include "hal_Ipc_cpu1.h"`
+*   **CM `main.h`**
+    *   `#include "csu_IPC.h"` ➔ `#include "csu_Ipc_cm.h"`
+    *   `#include "hal_IPC.h"` ➔ `#include "hal_Ipc_cm.h"`
+*   **개별 소스 코드 파일** 내부에서도 자기 자신의 헤더 참조 시 새로운 이름으로 포함하도록 변경해야 합니다 (예: `csu_Epwm.c` 파일 내 `#include "csu_Epwm.h"`).
+*   **CPU1 `HAL/hal_Ipc_cpu1.c`**: 기존의 `#include "csu_IPC.h"`를 새로운 이름인 `#include "csu_Ipc_cpu1.h"`로 수정해야 합니다.
 
-### 3.3. `TMDSCNCD28388D_T_CPU1/HAL/hal_DspInit.c` 수정 방안
-- `Init_GpioDout()` 함수 내부에서 호출하던 `initGpioDoutLed();` 코드를 삭제.
-- 대신 `csu_LED.c`에서 제거된 LED 핀(145, 146, 31~38)들의 설정 로직(`GPIO_setPinConfig`, `GPIO_setPadConfig`, `GPIO_setDirectionMode`, `GPIO_setMasterCore`)을 `Init_GpioDout()` 내부로 직접 이관하여 통합.
-- 파일 상단에 표준 헤더 주석 및 Modification History 업데이트.
+### 3.2 헤더 가드 매크로 (`#ifndef` / `#define`) 표준화
+현재 일부 파일의 헤더 가드가 소문자를 포함하고 있거나 기존 이름을 따르고 있습니다. 명명 규칙("헤더 가드 등의 매크로는 대문자 HAL_ 등을 사용합니다.")에 맞추어 아래와 같이 대문자로 수정합니다.
 
-## 4. 결론 및 다음 단계
-이상의 조사를 통해 `TMDSCNCD28388D_T` 프로젝트를 `ATTLA_T`와 완벽히 동일한 구조로 리팩토링할 준비가 완료되었습니다. 본 내용에 대해 확인 및 추가 코멘트(예: 파일명 소문자 통일 여부, LED Active State 확인 등)를 반영할 수 있습니다. 
-승인이 떨어지면 즉시 `plan.md`를 작성하거나 구현에 착수할 수 있습니다.
+*   **CPU1**
+    *   `csu_Epwm.h`: `csu_EPWM_H` ➔ `CSU_EPWM_H`
+    *   `csu_Ipc_cpu1.h`: `csu_IPC_H` ➔ `CSU_IPC_CPU1_H`
+    *   `csu_Led.h`: `csu_LED_H` ➔ `CSU_LED_H`
+    *   `csu_SciPc.h`: `csu_SCI_PC_H` ➔ `CSU_SCIPC_H`
+    *   `hal_Epwm.h`: `HAL_EPWM_TIMER_H` ➔ `HAL_EPWM_H`
+    *   `hal_Ipc_cpu1.h`: `HAL_IPC_H` ➔ `HAL_IPC_CPU1_H`
+*   **CM**
+    *   `csu_Ipc_cm.h`: `csu_IPC_H` ➔ `CSU_IPC_CM_H`
+    *   `hal_Ipc_cm.h`: `HAL_IPC_H` ➔ `HAL_IPC_CM_H`
+
+### 3.3 파일 상단 템플릿(주석) 갱신
+모든 변경 대상 파일(총 16개 파일, .c 및 .h)의 최상단 주석 템플릿 영역에 기재된 `Filename` 항목을 새로운 파일명으로 갱신해야 합니다. 더불어, `Last Updated`에 변경 사유(예: "모듈 및 파일명 리팩토링") 및 수정 일자를 기록해야 합니다.
+
+### 3.4 타 파일 내 주석 및 참조 텍스트 업데이트
+다른 소스 파일에서 기존 파일명을 언급하며 설명하고 있는 주석 내용도 일관성을 위해 동기화가 필요합니다.
+*   **CPU1 `hal_Epwm.c` (구 `hal_EpwmTimer.c`)**: `csu_SCI_PC.c 에서 ADC 읽어서` ➔ `csu_SciPc.c 에서 ADC 읽어서`
+*   **CPU1 `hal_DspInit.c`**: `csu_LED.c에서 분리된` ➔ `csu_Led.c에서 분리된`
+*   **CPU1 `csu_Ipc_cpu1.c` (구 `csu_IPC.c`)**: `csu_SCI_PC.c 등에서 참조` ➔ `csu_SciPc.c 등에서 참조`
+*   **CPU1 `hal_Ipc_cpu1.c` (구 `hal_IPC.c`)**: `csu_IPC 레이어로 전달` ➔ `csu_Ipc_cpu1 레이어로 전달`
+*   **CM `csu_Ethernet.h`, `csu_Ethernet.c`**: `csu_IPC.c 에서 갱신` ➔ `csu_Ipc_cm.c 에서 갱신`
+*   **CM `hal_Ipc_cm.c` (구 `hal_IPC.c`)**: `csu_IPC 레이어로 처리 요청` ➔ `csu_Ipc_cm 레이어로 처리 요청`
+
+## 4. 리서치 결론
+프로젝트 전반에 걸친 변경 대상이므로 각 계층(CSU, HAL) 내부 뿐만 아니라 `main.h`와 타 모듈의 주석 참조 내역까지 모두 함께 치환(Replace)해야 합니다. 변수 및 함수 명명 규칙 상 이미 `Initial_Epwm7a`나 `recvSciPcMessage`와 같이 함수명은 prefix 규칙에 구속받지 않는 형태로 작성되어 있으므로 파일 이름과 `#include` 구문, 그리고 헤더 가드만 전면 교체하면 시스템 빌드 및 동작에 지장이 없을 것으로 판단됩니다.

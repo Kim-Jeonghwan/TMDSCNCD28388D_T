@@ -1,17 +1,19 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : csu_IPC.c
+    Filename         : csu_Ipc_cpu1.c
+    Version          : 00.00
     Description      : CM Core IPC 통신 프로토콜 구현
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 **********************************************************************/
 
-#include "csu_IPC.h"
+#include "csu_Ipc_cpu1.h"
 
 /* Message RAM 영역에 구조체 포인터 할당 */
 volatile stIpcDataPacket *pxIpcCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_TO_CM_MSGRAM_ADDR;
 volatile stIpcDataPacket *pxIpcCmToCpu1 = (volatile stIpcDataPacket *)IPC_CM_TO_CPU1_MSGRAM_ADDR;
 
-/* CM→CPU1 수신 공유 변수 (csu_SCI_PC.c 등에서 참조) */
+/* CM→CPU1 수신 공유 변수 (csu_SciPc.c 등에서 참조) */
 uint8_t  g_ucEthRxSeqNum  = 0U;
 uint8_t  g_ucEthRxStatus  = 0U;
 

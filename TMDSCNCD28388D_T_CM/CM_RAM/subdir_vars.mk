@@ -9,21 +9,21 @@ LIB_SRCS += \
 C:/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2838x/driverlib_cm/ccs/Debug/driverlib_cm.lib 
 
 C_SRCS += \
-../main.c 
+../main_cm.c 
 
 C_DEPS += \
-./main.d 
+./main_cm.d 
 
 OBJS += \
-./main.obj 
+./main_cm.obj 
 
 OBJS__QUOTED += \
-"main.obj" 
+"main_cm.obj" 
 
 C_DEPS__QUOTED += \
-"main.d" 
+"main_cm.d" 
 
 C_SRCS__QUOTED += \
-"../main.c" 
+"../main_cm.c" 
 
 

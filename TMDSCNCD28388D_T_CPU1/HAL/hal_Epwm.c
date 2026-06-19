@@ -1,10 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : hal_EpwmTimer.c
-    Version          : 00.02
+    Filename         : hal_Epwm.c
+    Version          : 00.03
     Description      : CPU1 EPWM1 기반 100us 메인 인터럽트 구현
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (ISR 내 GPIO 34 토글 추가)
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 **********************************************************************/
 
 /*
@@ -23,12 +23,12 @@
  *   - ISR 내에서 sendEthDataToCM() 호출 → CM이 UDP Reflect 패킷 송신
  *
  * [DspTemp 소스]
- *   xXmtSciPcMsg1.DspTemp : csu_SCI_PC.c 에서 ADC 읽어서 갱신 (x10 스케일)
+ *   xXmtSciPcMsg1.DspTemp : csu_SciPc.c 에서 ADC 읽어서 갱신 (x10 스케일)
  *   xXmtSciPcMsg1.IncNumber: 시퀀스 번호
  *   xXmtSciPcMsg1.Status   : 상태 바이트
  */
 
-#include "hal_EpwmTimer.h"
+#include "hal_Epwm.h"
 
 /* ISR 정적 선언 */
 static __interrupt void isr_Epwm1Timer100us(void);

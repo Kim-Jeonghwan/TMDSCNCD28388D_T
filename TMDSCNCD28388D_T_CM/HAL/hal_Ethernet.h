@@ -8,7 +8,7 @@
 #ifndef HAL_ETHERNET_H
 #define HAL_ETHERNET_H
 
-#include "main.h"
+#include "main_cm.h"
 
 /* ---------------------------------------------------------------
  * EMAC 기본 주소 (hw_memmap.h 정의값 사용)

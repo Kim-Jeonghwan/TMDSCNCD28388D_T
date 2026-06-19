@@ -1,16 +1,16 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : hal_EpwmTimer.h
-    Version          : 00.01
+    Filename         : hal_Epwm.h
+    Version          : 00.02
     Description      : CPU1 EPWM1 기반 100us 메인 인터럽트 헤더
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (Phase 2: 100us 주기 및 ADC/Sine 연동)
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 **********************************************************************/
 
-#ifndef HAL_EPWM_TIMER_H
-#define HAL_EPWM_TIMER_H
+#ifndef HAL_EPWM_H
+#define HAL_EPWM_H
 
-#include "main.h"
+#include "main_cpu1.h"
 
 /*
  * [EPWM1 타이머 설계]
@@ -28,4 +28,4 @@
 /* 함수 프로토타입 */
 void Initial_EpwmTimer(void);
 
-#endif /* HAL_EPWM_TIMER_H */
+#endif /* HAL_EPWM_H */

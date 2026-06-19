@@ -1,6 +1,6 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : main.h
+    Filename         : main_cpu1.h
     Version          : 00.01
     Description      : CPU1 전역 헤더 관리 파일
     Programmer       : Kim Jeonghwan
@@ -14,8 +14,8 @@
  * 2026. 06. 04. - easyDSP 호환성 유지: f28x_project.h 복원 / RamfuncsLoad* 심볼 문제는 hal_Ramfuncs.c로 해결
  */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef MAIN_CPU1_H
+#define MAIN_CPU1_H
 
 /* ************************** [[   include  ]]  *********************************************************** */
 /* 표준 라이브러리 */
@@ -43,15 +43,15 @@
 #include "hal_Spi.h"
 #include "hal_Timer.h"
 #include "hal_Adc.h"
-#include "hal_IPC.h"
-#include "hal_EpwmTimer.h"    /* EPWM1 기반 2ms 타이머 */
+#include "hal_Ipc_cpu1.h"
+#include "hal_Epwm.h"    /* EPWM1 기반 2ms 타이머 */
 #include "hal_Ramfuncs.h"
 
-#include "csu_SCI_PC.h"
-#include "csu_LED.h"
+#include "csu_SciPc.h"
+#include "csu_Led.h"
 #include "csu_Adc.h"
-#include "csu_EPWM.h"
-#include "csu_IPC.h"
+#include "csu_Epwm.h"
+#include "csu_Ipc_cpu1.h"
 
 
 /* ************************** [[   define   ]]  *********************************************************** */
@@ -72,5 +72,4 @@
 void main(void);
 
 
-#endif	// #ifndef MAIN_H
-
+#endif	// #ifndef MAIN_CPU1_H

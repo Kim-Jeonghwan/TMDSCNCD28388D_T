@@ -1,12 +1,14 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : csu_SCI_PC.c
+    Filename         : csu_SciPc.c
+    Version          : 00.00
     Description      : PC Interface Communication (SCI_PC) Protocol Definition
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 ***********************************************************************/
 
 /* ************************** [[   include  ]]  *********************************************************** */
-#include "csu_SCI_PC.h"
+#include "csu_SciPc.h"
 
 /* 외부 참조 (xAdc 사용) */
 

@@ -1,10 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : csu_LED.h
-    Version          : 00.00
+    Filename         : csu_Led.h
+    Version          : 00.01
     Description      : System Status LED Control (Green / Orange)
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (ATTLA_T 방식의 LED 제어 로직 적용 및 최적화)
+    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
 **********************************************************************/
 
 /*
@@ -14,11 +14,11 @@
  * 2026. 06. 05. - (코드 주석 포맷팅 및 한글화)
  */
 
-#ifndef csu_LED_H
-#define csu_LED_H
+#ifndef CSU_LED_H
+#define CSU_LED_H
 
 /* ************************** [[   include  ]]  *********************************************************** */
-#include "main.h"
+#include "main_cpu1.h"
 
 
 
@@ -101,5 +101,5 @@ void updateGpioLed(void);
 
 
 
-#endif	// #ifndef csu_LED_H
+#endif	// #ifndef CSU_LED_H
 

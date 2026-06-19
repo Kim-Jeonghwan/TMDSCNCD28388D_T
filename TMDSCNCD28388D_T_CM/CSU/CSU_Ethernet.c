@@ -64,7 +64,7 @@ static uint8_t s_ucTxPktDescIdx = 0U;
 #define MIN_RX_FRAME_SIZE      (ETH_HDR_SIZE + IP_HDR_SIZE + UDP_HDR_SIZE + ETH_MSG_HEADER_SIZE + ETH_CHECKSUM_SIZE)
 
 /* ---------------------------------------------------------------
- * 공유 데이터 전역 변수 (csu_IPC.c 에서 갱신)
+ * 공유 데이터 전역 변수 (csu_Ipc_cm.c 에서 갱신)
  * --------------------------------------------------------------- */
 stEthSharedData g_xEthTxData = {0U, 0U, 0U};
 stEthSharedData g_xEthRxData = {0U, 0U, 0U};

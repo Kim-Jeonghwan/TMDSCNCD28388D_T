@@ -7,7 +7,7 @@
 #ifndef HAL_TIMER_H
 #define HAL_TIMER_H
 
-#include "main.h"
+#include "main_cm.h"
 
 
 typedef struct

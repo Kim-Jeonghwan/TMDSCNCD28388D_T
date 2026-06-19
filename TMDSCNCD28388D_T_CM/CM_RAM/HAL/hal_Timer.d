@@ -2,7 +2,7 @@
 
 HAL/hal_Timer.obj: ../HAL/hal_Timer.c
 HAL/hal_Timer.obj: ../HAL/hal_Timer.h
-HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main.h
+HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main_cm.h
 HAL/hal_Timer.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdint.h
 HAL/hal_Timer.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/_ti_config.h
 HAL/hal_Timer.obj: C:/ti/ti-cgt-arm_20.2.7.LTS/include/linkage.h
@@ -70,18 +70,18 @@ HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDS
 HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/inc/hw_udma.h
 HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/driverlib_cm/usb.h
 HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/common/include/cm.h
-HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/HAL/hal_IPC.h
-HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main.h
+HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/HAL/hal_Ipc_cm.h
+HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main_cm.h
 HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/HAL/hal_Ethernet.h
 HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/HAL/hal_Timer.h
-HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/csu_IPC.h
+HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/csu_Ipc_cm.h
 HAL/hal_Timer.obj: D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/csu_Ethernet.h
 
 ../HAL/hal_Timer.c:
 
 ../HAL/hal_Timer.h:
 
-D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main.h:
+D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main_cm.h:
 
 C:/ti/ti-cgt-arm_20.2.7.LTS/include/stdint.h:
 
@@ -217,15 +217,15 @@ D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCN
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/SDK/common/include/cm.h:
 
-D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/HAL/hal_IPC.h:
+D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/HAL/hal_Ipc_cm.h:
 
-D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main.h:
+D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/main_cm.h:
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/HAL/hal_Ethernet.h:
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/HAL/hal_Timer.h:
 
-D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/csu_IPC.h:
+D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/csu_Ipc_cm.h:
 
 D:/Nexcom/Firmware/01_Project/02_Tester/TMDSCNCD28388D_T/TMDSCNCD28388D_T/TMDSCNCD28388D_T_CM/CSU/csu_Ethernet.h:
 

@@ -1,6 +1,6 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Filename         : main.c
+    Filename         : main_cpu1.c
     Version          : 00.01
     Description      : CPU1 코어 메인 루프 및 태스크
     Programmer       : Kim Jeonghwan
@@ -15,7 +15,7 @@
  */
 
 /* ************************** [[   include  ]]  *********************************************************** */
-#include "main.h"
+#include "main_cpu1.h"
 
 
 

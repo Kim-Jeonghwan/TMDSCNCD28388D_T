@@ -1,7 +1,7 @@
 ******************************************************************************
              TMS320C2000 Linker PC v25.11.0                    
 ******************************************************************************
->> Linked Fri Jun 19 11:40:49 2026
+>> Linked Fri Jun 19 12:59:29 2026
 
 OUTPUT FILE NAME:   <TMDSCNCD28388D_T_CPU1.out>
 ENTRY POINT SYMBOL: "code_start"  address: 00000000
@@ -268,22 +268,22 @@ codestart
                   00000400    00000100     --HOLE--
 
 .data      0    0000a800    00000018     UNINITIALIZED
-                  0000a800    00000006     csu_IPC.obj (.data)
+                  0000a800    00000006     csu_Ipc_cpu1.obj (.data)
                   0000a806    00000006     rts2800_fpu64_eabi.lib : exit.c.obj (.data)
-                  0000a80c    00000004     hal_EpwmTimer.obj (.data)
+                  0000a80c    00000004     hal_Epwm.obj (.data)
                   0000a810    00000002     rts2800_fpu64_eabi.lib : _lock.c.obj (.data:_lock)
                   0000a812    00000002                            : _lock.c.obj (.data:_unlock)
                   0000a814    00000002     csu_Adc.obj (.data)
                   0000a816    00000001     hal_Adc.obj (.data)
-                  0000a817    00000001     hal_IPC.obj (.data)
+                  0000a817    00000001     hal_Ipc_cpu1.obj (.data)
 
 .bss       0    0000acb6    00000116     UNINITIALIZED
                   0000acb6    00000006     f2838x_tempsensorconv.obj (.bss)
-                  0000acbc    00000003     csu_SCI_PC.obj (.bss)
+                  0000acbc    00000003     csu_SciPc.obj (.bss)
                   0000acbf    00000001     --HOLE--
                   0000acc0    00000101     hal_Sci.obj (.bss)
                   0000adc1    00000006     hal_Timer.obj (.bss)
-                  0000adc7    00000005     csu_LED.obj (.bss)
+                  0000adc7    00000005     csu_Led.obj (.bss)
 
 .init_array 
 *          0    000001b1    00000000     UNINITIALIZED
@@ -295,7 +295,7 @@ codestart
                   0000aa00    00000088     ipc.obj (.const:IPC_Instance)
                   0000aa88    00000079     hal_Timer.obj (.const:.string)
                   0000ab01    00000001     --HOLE-- [fill = 0]
-                  0000ab02    00000075     csu_LED.obj (.const:.string)
+                  0000ab02    00000075     csu_Led.obj (.const:.string)
                   0000ab77    00000001     --HOLE-- [fill = 0]
                   0000ab78    00000031     sysctl.obj (.const:.string)
                   0000aba9    00000001     --HOLE-- [fill = 0]
@@ -383,9 +383,9 @@ dcsm_zsel_z2
 
 .text.1    0    00008000    00000800     
                   00008000    00000079     interrupt.obj (.text:Interrupt_clearIFR)
-                  00008079    00000077     csu_LED.obj (.text:updateLedStatus)
+                  00008079    00000077     csu_Led.obj (.text:updateLedStatus)
                   000080f0    00000073     sysctl.obj (.text:SysCtl_getClock)
-                  00008163    00000072     hal_IPC.obj (.text:isrIpcFromCM)
+                  00008163    00000072     hal_Ipc_cpu1.obj (.text:isrIpcFromCM)
                   000081d5    00000071     hal_Sci.obj (.text:setupSciaPC_HW)
                   00008246    00000067     hal_Timer.obj (.text:Initial_TIMER)
                   000082ad    00000056     interrupt.obj (.text:Interrupt_disable)
@@ -399,12 +399,12 @@ dcsm_zsel_z2
                   00008527    00000041     interrupt.obj (.text:Interrupt_initModule)
                   00008568    00000041     sysctl.obj (.text:SysCtl_selectOscSource)
                   000085a9    0000003f     ipc.obj (.text:IPC_registerInterrupt)
-                  000085e8    0000003f     hal_EpwmTimer.obj (.text:Initial_EpwmTimer)
+                  000085e8    0000003f     hal_Epwm.obj (.text:Initial_EpwmTimer)
                   00008627    0000003f     sysctl.obj (.text:SysCtl_selectXTAL)
                   00008666    0000003f     csu_Adc.obj (.text:updateDspTempSensor)
                   000086a5    0000003e     ipc.obj (.text:IPC_unregisterInterrupt)
                   000086e3    0000003b     adc.obj (.text:ADC_setMode)
-                  0000871e    0000003b     csu_EPWM.obj (.text:Initial_Epwm7a)
+                  0000871e    0000003b     csu_Epwm.obj (.text:Initial_Epwm7a)
                   00008759    00000039     sci.obj (.text:SCI_disableInterrupt)
                   00008792    00000039     sysctl.obj (.text:SysCtl_pollX1Counter)
                   000087cb    00000030     gpio.obj (.text:GPIO_setPinConfig)
@@ -415,7 +415,7 @@ dcsm_zsel_z2
                   00008838    00000038     sci.obj (.text:SCI_enableInterrupt)
                   00008870    0000002f     gpio.obj (.text:GPIO_setControllerCore)
                   0000889f    0000002f     gpio.obj (.text:GPIO_setQualificationMode)
-                  000088ce    0000002f     main.obj (.text:main)
+                  000088ce    0000002f     main_cpu1.obj (.text:main)
                   000088fd    0000002f     hal_Sci.obj (.text:setupSciaPC_GPIO)
                   0000892c    0000002e     rts2800_fpu64_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss)
                   0000895a    0000002d     hal_Sci.obj (.text:dequeueSci)
@@ -429,7 +429,7 @@ dcsm_zsel_z2
                   00008aa8    00000024     device.obj (.text:Device_initGPIO)
                   00008acc    00000024     sysctl.obj (.text:SysCtl_getLowSpeedClock)
                   00008af0    00000023     hal_Adc.obj (.text:setupEPWM8_TimeBase)
-                  00008b13    00000022     hal_IPC.obj (.text:Initial_IPC)
+                  00008b13    00000022     hal_Ipc_cpu1.obj (.text:Initial_IPC)
                   00008b35    00000021     sysctl.obj (.text:SysCtl_selectXTALSingleEnded)
                   00008b56    00000020     cputimer.obj (.text:CPUTimer_setEmulationMode)
                   00008b76    00000020     rts2800_fpu64_eabi.lib : memcpy.c.obj (.text)
@@ -443,7 +443,7 @@ dcsm_zsel_z2
                   00008c5d    0000001a     sysctl.obj (.text:SysCtl_controlCMReset)
                   00008c77    00000019     device.obj (.text:Device_bootCM)
                   00008c90    00000019     device.obj (.text:SysCtl_enablePeripheral)
-                  00008ca9    00000019     csu_SCI_PC.obj (.text:recvSciPcMessage)
+                  00008ca9    00000019     csu_SciPc.obj (.text:recvSciPcMessage)
                   00008cc2    00000019     rts2800_fpu64_eabi.lib : boot28.asm.obj (.text)
                   00008cdb    00000017     hal_Adc.obj (.text:initEPWM8)
                   00008cf2    00000016     hal_DspInit.obj (.text:DSP_Initialization)
@@ -452,7 +452,7 @@ dcsm_zsel_z2
                   00008d34    00000015     hal_Timer.obj (.text:isr_CpuTimer2)
                   00008d49    00000015     hal_Sci.obj (.text:xmtScia_SCI_PC)
                   00008d5e    00000013     device.obj (.text:Device_enableUnbondedGPIOPullupsFor176Pin)
-                  00008d71    00000013     csu_EPWM.obj (.text:initEpwm7aGpio)
+                  00008d71    00000013     csu_Epwm.obj (.text:initEpwm7aGpio)
                   00008d84    00000012     rts2800_fpu64_eabi.lib : args_main.c.obj (.text)
                   00008d96    00000010     hal_DspInit.obj (.text:Init_GpioDin)
                   00008da6    00000010     hal_Timer.obj (.text:isr_CpuTimer0)
@@ -464,7 +464,7 @@ dcsm_zsel_z2
                   00008dff    0000000d     rts2800_fpu64_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset)
                   00008e0c    0000000c     interrupt.obj (.text:Interrupt_defaultHandler)
                   00008e18    0000000b     device.obj (.text:Device_enableUnbondedGPIOPullups)
-                  00008e23    0000000b     csu_LED.obj (.text:Initial_LED)
+                  00008e23    0000000b     csu_Led.obj (.text:Initial_LED)
                   00008e2e    0000000a     f2838x_defaultisr.obj (.text:ADCA1_ISR)
                   00008e38    0000000a     f2838x_defaultisr.obj (.text:ADCA2_ISR)
                   00008e42    0000000a     f2838x_defaultisr.obj (.text:ADCA3_ISR)
@@ -511,7 +511,7 @@ dcsm_zsel_z2
                   00008fdc    0000000a     f2838x_defaultisr.obj (.text:CLB5_ISR)
                   00008fe6    0000000a     f2838x_defaultisr.obj (.text:CLB6_ISR)
                   00008ff0    0000000a     f2838x_defaultisr.obj (.text:CLB7_ISR)
-                  00008ffa    00000004     main.obj (.text:cycle_1ms)
+                  00008ffa    00000004     main_cpu1.obj (.text:cycle_1ms)
                   00008ffe    00000002     rts2800_fpu64_eabi.lib : pre_init.c.obj (.text)
 
 .text.3    0    00009000    000006b6     
@@ -677,20 +677,20 @@ dcsm_zsel_z2
                   00009636    0000000a     f2838x_defaultisr.obj (.text:XINT4_ISR)
                   00009640    0000000a     f2838x_defaultisr.obj (.text:XINT5_ISR)
                   0000964a    00000009     hal_DspInit.obj (.text:InitialPeripherals)
-                  00009653    00000009     hal_IPC.obj (.text:Initial_IPC_Mastership)
+                  00009653    00000009     hal_Ipc_cpu1.obj (.text:Initial_IPC_Mastership)
                   0000965c    00000009     hal_DspInit.obj (.text:initSystemCommunications)
                   00009665    00000009     rts2800_fpu64_eabi.lib : _lock.c.obj (.text)
                   0000966e    00000008                            : copy_decompress_none.c.obj (.text:decompress:none)
                   00009676    00000008     f2838x_codestartbranch.obj (.text)
-                  0000967e    00000008     csu_LED.obj (.text:setLedModeToggle)
+                  0000967e    00000008     csu_Led.obj (.text:setLedModeToggle)
                   00009686    00000007     csu_Adc.obj (.text:Initial_Adc)
-                  0000968d    00000007     hal_IPC.obj (.text:Initial_IPC_Clear)
+                  0000968d    00000007     hal_Ipc_cpu1.obj (.text:Initial_IPC_Clear)
                   00009694    00000007     hal_Sci.obj (.text:Initial_SCI)
                   0000969b    00000007     hal_Sci.obj (.text:initScia_SCI_PC)
                   000096a2    00000007     hal_DspInit.obj (.text:initSystemPwm)
                   000096a9    00000003     device.obj (.text:__error__)
-                  000096ac    00000003     main.obj (.text:cycle_100ms)
-                  000096af    00000003     main.obj (.text:cycle_10ms)
+                  000096ac    00000003     main_cpu1.obj (.text:cycle_100ms)
+                  000096af    00000003     main_cpu1.obj (.text:cycle_10ms)
                   000096b2    00000003     hal_DspInit.obj (.text:initSystemUserInterface)
                   000096b5    00000001     rts2800_fpu64_eabi.lib : startup.c.obj (.text)
 
@@ -707,32 +707,32 @@ dcsm_zsel_z2
                   0000c90e    000000b2     hal_Adc.obj (.text:InitAdcModules)
                   0000c9c0    000000a7     hal_Sci.obj (.text:isrScia_SCI_PC)
                   0000ca67    00000095     hal_Timer.obj (.text:configCPUTimer)
-                  0000cafc    00000095     hal_EpwmTimer.obj (.text:isr_Epwm1Timer100us)
+                  0000cafc    00000095     hal_Epwm.obj (.text:isr_Epwm1Timer100us)
                   0000cb91    00000093     sci.obj (.text:SCI_setConfig)
                   0000cc24    00000093     sci.obj (.text:SCI_writeCharArray)
                   0000ccb7    00000092     sci.obj (.text:SCI_readCharArray)
                   0000cd49    00000091     sysctl.obj (.text:SysCtl_getAuxClock)
-                  0000cdda    0000008e     csu_SCI_PC.obj (.text:sendSciPcMessage1)
+                  0000cdda    0000008e     csu_SciPc.obj (.text:sendSciPcMessage1)
                   0000ce68    0000008b     hal_DspInit.obj (.text:initEmacGpioPins)
                   0000cef3    00000083     spi.obj (.text:SPI_setConfig)
                   0000cf76    00000079     device.obj (.text:Device_init)
-                  0000cfef    00000011     csu_IPC.obj (.text:recvIpcCmMessage)
+                  0000cfef    00000011     csu_Ipc_cpu1.obj (.text:recvIpcCmMessage)
 
 MODULE SUMMARY
 
        Module                          code   ro data   rw data
        ------                          ----   -------   -------
     .\
-       main.obj                        57     0         0      
+       main_cpu1.obj                   57     0         0      
     +--+-------------------------------+------+---------+---------+
        Total:                          57     0         0      
                                                                
     .\CSU\
-       csu_LED.obj                     138    117       5      
-       csu_SCI_PC.obj                  167    0         3      
-       csu_EPWM.obj                    78     0         0      
+       csu_Led.obj                     138    117       5      
+       csu_SciPc.obj                   167    0         3      
+       csu_Epwm.obj                    78     0         0      
        csu_Adc.obj                     70     0         2      
-       csu_IPC.obj                     17     0         6      
+       csu_Ipc_cpu1.obj                17     0         6      
     +--+-------------------------------+------+---------+---------+
        Total:                          470    117       16     
                                                                
@@ -741,8 +741,8 @@ MODULE SUMMARY
        hal_Timer.obj                   386    121       6      
        hal_Adc.obj                     402    0         1      
        hal_DspInit.obj                 268    0         0      
-       hal_EpwmTimer.obj               212    0         4      
-       hal_IPC.obj                     164    0         1      
+       hal_Epwm.obj                    212    0         4      
+       hal_Ipc_cpu1.obj                164    0         1      
        hal_Spi.obj                     79     0         0      
     +--+-------------------------------+------+---------+---------+
        Total:                          2016   121       269    
