@@ -33,7 +33,8 @@ void recvIpcCpu1Message(uint32_t command, uint32_t addr, uint32_t data)
     {
         /* CPU1에서 보낸 온도, 시퀀스, 사인파 데이터 갱신 */
         xEthApp.txData.SineVal = pxIpcCpu1ToCm->Payload.TxData.sineValue;
-        xEthApp.txData.DspTemp = (uint16_t)pxIpcCpu1ToCm->Payload.TxData.adcTemperature;
+        /* 온도는 소수점 첫째 자리까지 전송하기 위해 x10 스케일 변환 후 반올림 (+0.5f) */
+        xEthApp.txData.DspTemp = (uint16_t)((pxIpcCpu1ToCm->Payload.TxData.adcTemperature * 10.0f) + 0.5f);
         xEthApp.txData.SeqNum  = (uint8_t)(pxIpcCpu1ToCm->Payload.TxData.sequenceNum & 0xFFU);
         xEthApp.txData.Status  = 0U; /* TODO: CPU1에서 상태 필드 제거됨에 따른 기본값 */
     }

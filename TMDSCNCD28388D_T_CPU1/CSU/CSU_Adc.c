@@ -87,14 +87,14 @@ static void updateDspTempSensor(void)
         float32_t rawTempC = ((((float32_t)adcResult * tempSensor_scaleFactor / 4096.0f) - tempSensor_tempOffset) / tempSensor_tempSlope);
         
         // IIR 로우패스 필터 적용 (노이즈로 인한 1의 자리 및 소수점 자리 요동 방지)
-        // Alpha = 0.05 (새로운 값 5%, 기존 값 95% 반영)
+        // Alpha = 0.1 (새로운 값 10%, 기존 값 90% 반영)
         if (xAdc.currentTemperatureC == 0.0f)
         {
             xAdc.currentTemperatureC = rawTempC; // 초기화
         }
         else
         {
-            xAdc.currentTemperatureC = (xAdc.currentTemperatureC * 0.95f) + (rawTempC * 0.05f);
+            xAdc.currentTemperatureC = (xAdc.currentTemperatureC * 0.90f) + (rawTempC * 0.10f);
         }
     }
     else

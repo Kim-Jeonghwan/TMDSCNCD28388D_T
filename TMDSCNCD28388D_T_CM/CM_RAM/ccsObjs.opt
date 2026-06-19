@@ -1,5 +1,5 @@
 "./main_cm.obj"
-"./CSU/csu_Ethernet.obj"
+"./CSU/CSU_Ethernet.obj"
 "./CSU/csu_Ipc_cm.obj"
 "./HAL/hal_Ethernet.obj"
 "./HAL/hal_Ipc_cm.obj"

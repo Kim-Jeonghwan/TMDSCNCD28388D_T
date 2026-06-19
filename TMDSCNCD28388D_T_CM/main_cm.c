@@ -131,6 +131,16 @@ static void Cycle_2ms(void)
 static void Cycle_1ms(void)
 {
     xTimer.Hzcnt++;
+
+    /* 이더넷 활동 LED 소등 타이머 처리 (RJ-45 동작 구현) */
+    if (ethActivityTimer > 0U)
+    {
+        ethActivityTimer--;
+        if (ethActivityTimer == 0U)
+        {
+            GPIO_writePin(146U, 0U); // LED OFF (Active High 기준)
+        }
+    }
 }
 
 /*

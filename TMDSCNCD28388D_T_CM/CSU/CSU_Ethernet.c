@@ -81,6 +81,12 @@ stEthAppState xEthApp = {
     .lastRxSrcPort = 0U
 };
 
+/* 이더넷 활동(Tx/Rx) LED 표시용 타이머 (1ms 주기 감소) */
+uint16_t ethActivityTimer = 0U;
+
+#define ETH_LED_PIN 146U
+#define ETH_LED_ON()  GPIO_writePin(ETH_LED_PIN, 1U)
+
 /* ---------------------------------------------------------------
  * static 함수 선언
  * --------------------------------------------------------------- */
@@ -402,6 +408,10 @@ void buildAndSendUdpPacket(uint32_t rxTimestamp)
     buildIPHeader(xEthDriver.txBuf, (uint16_t)(ETH_MSG_HEADER_SIZE + ETH_PAYLOAD_DATA_SIZE + ETH_CHECKSUM_SIZE));
     buildUDPHeader(xEthDriver.txBuf, (uint16_t)(ETH_MSG_HEADER_SIZE + ETH_PAYLOAD_DATA_SIZE + ETH_CHECKSUM_SIZE));
 
+    /* Tx 활동 LED 점등 (타이머 리셋) */
+    ETH_LED_ON();
+    ethActivityTimer = 20U; /* 20ms 유지 */
+
     /* ---- 전송 ---- */
     (void)sendEthernetFrame(xEthDriver.txBuf, (uint16_t)TX_REFLECT_FRAME_SIZE);
 }
@@ -444,6 +454,10 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
                 if ((pPacket[38U] == ETH_DSP_IP0) && (pPacket[39U] == ETH_DSP_IP1) &&
                     (pPacket[40U] == ETH_DSP_IP2) && (pPacket[41U] == ETH_DSP_IP3))
                 {
+                    /* 당사 IP를 찾는 유효한 ARP 요청일 경우 Rx 활동 LED 점등 */
+                    ETH_LED_ON();
+                    ethActivityTimer = 20U;
+
                     /* ---- ARP Reply 조립 (DMA 비동기 전송을 위해 반드시 static 선언 필요!) ---- */
                     static uint8_t arpReply[60] = {0};
                     uint16_t i;
@@ -487,7 +501,10 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
 
                 if (uiDstPort == ETH_DSP_RX_PORT)
                 {
-                    /* 수신된 패킷이 5001번일 경우에만 실제 데이터이므로 캡처 진행 */
+                    /* 수신된 패킷이 5001번일 경우에만 실제 데이터이므로 캡처 진행 및 LED 점등 */
+                    ETH_LED_ON();
+                    ethActivityTimer = 20U;
+
                     xEthApp.lastRxSrcPort = ((uint16_t)pPacket[UDP_HDR_OFFSET] << 8U) |
                                          (uint16_t)pPacket[UDP_HDR_OFFSET + 1U];
 

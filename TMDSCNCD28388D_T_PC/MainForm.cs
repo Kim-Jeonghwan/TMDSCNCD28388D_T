@@ -66,13 +66,14 @@ namespace TMDSCNCD28388D_T_PC
         private double[] _sineData = new double[200];
         private double[] _tempData = new double[200];
         private int _dataNextIndex = 0;
+        private ScottPlot.Plottable.SignalPlot _sineSignal;
         private CheckBox chkAutoRequest;
 
         public MainForm()
         {
             this.Text = "TMDSCNCD28388D_T Monitoring & Dashboard";
-            this.Size = new Size(1100, 900); // Compact Size
-            this.MinimumSize = new Size(800, 600);
+            this.Size = new Size(1200, 1350); // Compact Size
+            this.MinimumSize = new Size(1200, 1350);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = colorBg;
             this.ForeColor = colorText;
@@ -103,9 +104,9 @@ namespace TMDSCNCD28388D_T_PC
                 Padding = new Padding(15, 40, 15, 15)
             };
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 220)); // Comm Panel
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 150)); // Status Panel
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 120)); // Control Panel
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 250)); // Chart Panel
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 190)); // Status Panel
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130)); // Control Panel
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 500)); // Chart Panel
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Log Panel
 
             // 1. Top Bar - Communication Panel
@@ -183,7 +184,7 @@ namespace TMDSCNCD28388D_T_PC
             {
                 Text = "",
                 Location = new Point(680, commY + 50),
-                Size = new Size(250, 30),
+                AutoSize = true,
                 Font = new Font("맑은 고딕", 11, FontStyle.Bold),
                 ForeColor = Color.Red
             };
@@ -237,8 +238,18 @@ namespace TMDSCNCD28388D_T_PC
             {
                 if (byte.TryParse(txtInputSeq.Text, out byte manualSeq))
                 {
+                    // 현재 적혀있는 숫자를 송신 데이터에 세팅
                     _ctrlDto.ManualSeqNum = manualSeq;
-                    _protocol.SendControlMessage(_ctrlDto);
+                    
+                    // 다음 전송을 위해 화면의 텍스트 박스 숫자를 +1 증가 (순환)
+                    txtInputSeq.Text = ((byte)((manualSeq + 1) % 256)).ToString();
+
+                    if (_protocol != null && _protocol.IsConnected)
+                    {
+                        Task.Run(() => {
+                            try { _protocol.SendControlMessage(_ctrlDto); } catch { }
+                        });
+                    }
                 }
                 else
                 {
@@ -264,17 +275,19 @@ namespace TMDSCNCD28388D_T_PC
             mainLayout.Controls.Add(pnlCtrl, 0, 2);
 
             // 3.5 Chart Panel
-            Panel pnlChart = CreateStyledPanel("REAL-TIME CHART (Sine & Temp)");
+            Panel pnlChart = CreateStyledPanel("REAL-TIME CHART (Sine Wave)");
             pnlChart.Dock = DockStyle.Fill;
             pnlChart.Margin = new Padding(5);
             _formsPlot = new FormsPlot() { Dock = DockStyle.Fill };
-            _formsPlot.Plot.AddSignal(_sineData, 10, Color.Cyan, "SineWave");
-            _formsPlot.Plot.AddSignal(_tempData, 10, Color.Orange, "Temp");
+            _sineSignal = _formsPlot.Plot.AddSignal(_sineData, 10, Color.Cyan, "SineWave");
+            _sineSignal.MaxRenderIndex = 0; // 아직 받은 데이터가 없으므로 선을 그리지 않음
+            // _formsPlot.Plot.AddSignal(_tempData, 10, Color.Orange, "Temp"); // 온도 그래프 제외
             _formsPlot.Plot.Style(Style.Black);
             _formsPlot.Plot.XAxis.Label("Time");
             _formsPlot.Plot.YAxis.Label("Value");
             pnlChart.Controls.Add(_formsPlot);
             _formsPlot.BringToFront();
+            _formsPlot.Refresh(); // ScottPlot 경고창(노란 박스) 제거
             mainLayout.Controls.Add(pnlChart, 0, 3);
 
             // 4. Real-Time Log Panel
@@ -497,15 +510,14 @@ namespace TMDSCNCD28388D_T_PC
                 if (_dataNextIndex < _sineData.Length)
                 {
                     _sineData[_dataNextIndex] = data.SineValue;
-                    _tempData[_dataNextIndex] = data.DspTemp;
                     _dataNextIndex++;
+                    _sineSignal.MaxRenderIndex = _dataNextIndex - 1;
                 }
                 else
                 {
                     Array.Copy(_sineData, 1, _sineData, 0, _sineData.Length - 1);
-                    Array.Copy(_tempData, 1, _tempData, 0, _tempData.Length - 1);
                     _sineData[_sineData.Length - 1] = data.SineValue;
-                    _tempData[_tempData.Length - 1] = data.DspTemp;
+                    _sineSignal.MaxRenderIndex = _sineData.Length - 1;
                 }
                 _formsPlot.Plot.AxisAuto();
                 _formsPlot.Render();
@@ -570,6 +582,14 @@ namespace TMDSCNCD28388D_T_PC
         {
             if (_protocol != null && _protocol.IsConnected)
             {
+                // UI 텍스트 박스의 현재 숫자를 송신 데이터에 세팅
+                if (byte.TryParse(txtInputSeq.Text, out byte currentSeq))
+                {
+                    _ctrlDto.ManualSeqNum = currentSeq;
+                    // 다음 전송을 위해 화면의 텍스트 박스 숫자를 +1 증가 (순환)
+                    txtInputSeq.Text = ((byte)((currentSeq + 1) % 256)).ToString();
+                }
+
                 // UI Freezing 방지를 위해 비동기 Task 실행
                 Task.Run(() => {
                     try { _protocol.SendControlMessage(_ctrlDto); } catch { }

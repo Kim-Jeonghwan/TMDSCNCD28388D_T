@@ -158,6 +158,13 @@ static void Init_GpioDout(void)
     GPIO_setPadConfig(145u, GPIO_PIN_TYPE_STD);
     GPIO_setDirectionMode(145u, GPIO_DIR_MODE_OUT);
     GPIO_setMasterCore(145u, GPIO_CORE_CM); // CM으로 제어권 양도
+
+    // GPIO 146: 이더넷 송수신 활동 상태 표시용 LED (CM 코어)
+    GPIO_setPinConfig(GPIO_146_GPIO146);
+    GPIO_setPadConfig(146u, GPIO_PIN_TYPE_STD);
+    GPIO_writePin(146u, 0u); // 초기 상태 OFF (Active High 기준)
+    GPIO_setDirectionMode(146u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(146u, GPIO_CORE_CM); // CM으로 제어권 양도
 }
 
 /*

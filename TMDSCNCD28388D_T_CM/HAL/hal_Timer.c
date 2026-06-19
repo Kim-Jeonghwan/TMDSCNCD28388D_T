@@ -12,7 +12,7 @@
 #define TIMER1_PERIOD_1MS  (CM_CLK_HZ / 1000U)    /* 125,000: 1ms 주기 */
 #define TIMER2_PERIOD_1S   (CM_CLK_HZ / 1U)       /* 125,000,000: 1s 주기 */
 
-stTimer xTimer;
+volatile stTimer xTimer;
 
 /*
 @funtion    void Initial_TIMER(void)
@@ -26,8 +26,8 @@ stTimer xTimer;
 */
 void Initial_TIMER(void)
 {
-    /* 타이머 변수 초기화 */
-    (void)memset(&xTimer, 0U, sizeof(xTimer));
+    /* 타이머 변수 초기화 (volatile 경고 방지를 위해 명시적 형변환) */
+    (void)memset((void *)&xTimer, 0U, sizeof(xTimer));
 
     /* --- CPU 타이머 0: UDP 이더넷 송신 전용 (2ms) --- */
     CPUTimer_setPeriod(CPUTIMER0_BASE, TIMER0_PERIOD_2MS - 1U);

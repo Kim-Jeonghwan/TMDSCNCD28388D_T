@@ -307,6 +307,16 @@ void updateEthernetTask(void)
 static void isr_EmacRx0(void)
 {
     updateEthernetTask();
+
+    /* [버그 수정] 하드웨어 인터럽트 상태 명시적 클리어 */
+    /* 수신 인터럽트(RI) 및 일반 인터럽트 요약(NIS) 비트를 해제하지 않으면 무한 인터럽트에 빠져 메인 루프가 멈춥니다. */
+    if (xEthDriver.hEMAC != (Ethernet_Handle)0U)
+    {
+        Ethernet_clearDMAChannelInterrupt(
+            EMAC_BASE,
+            ETHERNET_DMA_CHANNEL_NUM_0, 
+            ETHERNET_DMA_CH0_STATUS_RI | ETHERNET_DMA_CH0_STATUS_NIS);
+    }
 }
 
 

@@ -205,6 +205,9 @@ namespace TMDSCNCD28388D_T_PC
                 // Reflect 메시지 구조: 헤더(12) + Data(8: Seq, Status, Temp, Sine) + Checksum(2) = 총 22바이트
                 if (!VerifyChecksum(data, 22)) return;
 
+                _ackReceived = true; // Reflect 메시지 수신 시 정상 응답으로 처리하여 Task 무한 대기 방지
+                _commError   = false;
+
                 byte   seqNum  = data[12];
                 byte   status  = data[13];
                 ushort tempRaw = (ushort)(data[14] | (data[15] << 8)); // Little Endian

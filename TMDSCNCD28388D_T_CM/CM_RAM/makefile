@@ -11,7 +11,7 @@ GEN_CMDS__FLAG :=
 
 ORDERED_OBJS += \
 "./main_cm.obj" \
-"./CSU/csu_Ethernet.obj" \
+"./CSU/CSU_Ethernet.obj" \
 "./CSU/csu_Ipc_cm.obj" \
 "./HAL/hal_Ethernet.obj" \
 "./HAL/hal_Ipc_cm.obj" \
@@ -181,8 +181,8 @@ TMDSCNCD28388D_T_CM.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "main_cm.obj" "CSU\csu_Ethernet.obj" "CSU\csu_Ipc_cm.obj" "HAL\hal_Ethernet.obj" "HAL\hal_Ipc_cm.obj" "HAL\hal_Timer.obj" "SDK\common\source\cm.obj" "SDK\common\source\startup_cm.obj" "SDK\driverlib_cm\aes.obj" "SDK\driverlib_cm\can.obj" "SDK\driverlib_cm\cmmpu.obj" "SDK\driverlib_cm\cputimer.obj" "SDK\driverlib_cm\dcsm.obj" "SDK\driverlib_cm\escss.obj" "SDK\driverlib_cm\ethernet.obj" "SDK\driverlib_cm\flash.obj" "SDK\driverlib_cm\gcrc.obj" "SDK\driverlib_cm\gpio.obj" "SDK\driverlib_cm\i2c.obj" "SDK\driverlib_cm\interrupt.obj" "SDK\driverlib_cm\ipc.obj" "SDK\driverlib_cm\mcan.obj" "SDK\driverlib_cm\memcfg.obj" "SDK\driverlib_cm\mpu.obj" "SDK\driverlib_cm\platform_port.obj" "SDK\driverlib_cm\ssi.obj" "SDK\driverlib_cm\sysctl.obj" "SDK\driverlib_cm\systick.obj" "SDK\driverlib_cm\uart.obj" "SDK\driverlib_cm\udma.obj" "SDK\driverlib_cm\usb.obj" 
-	-$(RM) "main_cm.d" "CSU\csu_Ethernet.d" "CSU\csu_Ipc_cm.d" "HAL\hal_Ethernet.d" "HAL\hal_Ipc_cm.d" "HAL\hal_Timer.d" "SDK\common\source\cm.d" "SDK\common\source\startup_cm.d" "SDK\driverlib_cm\aes.d" "SDK\driverlib_cm\can.d" "SDK\driverlib_cm\cmmpu.d" "SDK\driverlib_cm\cputimer.d" "SDK\driverlib_cm\dcsm.d" "SDK\driverlib_cm\escss.d" "SDK\driverlib_cm\ethernet.d" "SDK\driverlib_cm\flash.d" "SDK\driverlib_cm\gcrc.d" "SDK\driverlib_cm\gpio.d" "SDK\driverlib_cm\i2c.d" "SDK\driverlib_cm\interrupt.d" "SDK\driverlib_cm\ipc.d" "SDK\driverlib_cm\mcan.d" "SDK\driverlib_cm\memcfg.d" "SDK\driverlib_cm\mpu.d" "SDK\driverlib_cm\platform_port.d" "SDK\driverlib_cm\ssi.d" "SDK\driverlib_cm\sysctl.d" "SDK\driverlib_cm\systick.d" "SDK\driverlib_cm\uart.d" "SDK\driverlib_cm\udma.d" "SDK\driverlib_cm\usb.d" 
+	-$(RM) "main_cm.obj" "CSU\CSU_Ethernet.obj" "CSU\csu_Ipc_cm.obj" "HAL\hal_Ethernet.obj" "HAL\hal_Ipc_cm.obj" "HAL\hal_Timer.obj" "SDK\common\source\cm.obj" "SDK\common\source\startup_cm.obj" "SDK\driverlib_cm\aes.obj" "SDK\driverlib_cm\can.obj" "SDK\driverlib_cm\cmmpu.obj" "SDK\driverlib_cm\cputimer.obj" "SDK\driverlib_cm\dcsm.obj" "SDK\driverlib_cm\escss.obj" "SDK\driverlib_cm\ethernet.obj" "SDK\driverlib_cm\flash.obj" "SDK\driverlib_cm\gcrc.obj" "SDK\driverlib_cm\gpio.obj" "SDK\driverlib_cm\i2c.obj" "SDK\driverlib_cm\interrupt.obj" "SDK\driverlib_cm\ipc.obj" "SDK\driverlib_cm\mcan.obj" "SDK\driverlib_cm\memcfg.obj" "SDK\driverlib_cm\mpu.obj" "SDK\driverlib_cm\platform_port.obj" "SDK\driverlib_cm\ssi.obj" "SDK\driverlib_cm\sysctl.obj" "SDK\driverlib_cm\systick.obj" "SDK\driverlib_cm\uart.obj" "SDK\driverlib_cm\udma.obj" "SDK\driverlib_cm\usb.obj" 
+	-$(RM) "main_cm.d" "CSU\CSU_Ethernet.d" "CSU\csu_Ipc_cm.d" "HAL\hal_Ethernet.d" "HAL\hal_Ipc_cm.d" "HAL\hal_Timer.d" "SDK\common\source\cm.d" "SDK\common\source\startup_cm.d" "SDK\driverlib_cm\aes.d" "SDK\driverlib_cm\can.d" "SDK\driverlib_cm\cmmpu.d" "SDK\driverlib_cm\cputimer.d" "SDK\driverlib_cm\dcsm.d" "SDK\driverlib_cm\escss.d" "SDK\driverlib_cm\ethernet.d" "SDK\driverlib_cm\flash.d" "SDK\driverlib_cm\gcrc.d" "SDK\driverlib_cm\gpio.d" "SDK\driverlib_cm\i2c.d" "SDK\driverlib_cm\interrupt.d" "SDK\driverlib_cm\ipc.d" "SDK\driverlib_cm\mcan.d" "SDK\driverlib_cm\memcfg.d" "SDK\driverlib_cm\mpu.d" "SDK\driverlib_cm\platform_port.d" "SDK\driverlib_cm\ssi.d" "SDK\driverlib_cm\sysctl.d" "SDK\driverlib_cm\systick.d" "SDK\driverlib_cm\uart.d" "SDK\driverlib_cm\udma.d" "SDK\driverlib_cm\usb.d" 
 	-@echo ' '
 
 .PHONY: all clean dependents

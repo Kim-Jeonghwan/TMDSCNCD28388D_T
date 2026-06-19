@@ -16,9 +16,10 @@
 
 #include "csu_Control.h"
 
-#define SINE_WAVE_STEP 0.0062831853f // 100Hz = 100us * 1000 step
+#define SINE_WAVE_STEP 0.000314159f // 0.5Hz = 100us * 20000 step (PC 모니터링 시각화용)
 static float32_t sineAngle = 0.0f;
 static uint32_t ipcSeqNum = 0U;
+static uint32_t isrTickCnt = 0U;
 
 /*
 @function   Control_Init
@@ -66,10 +67,18 @@ __interrupt void MainControl_Isr(void)
     {
         pxIpcCpu1ToCm->Payload.TxData.sineValue = sineValue;
         pxIpcCpu1ToCm->Payload.TxData.adcTemperature = xAdc.currentTemperatureC;
-        pxIpcCpu1ToCm->Payload.TxData.sequenceNum = ipcSeqNum++;
+        pxIpcCpu1ToCm->Payload.TxData.sequenceNum = ipcSeqNum;
         
         IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, 
                         (uint32_t)IPC_CMD_CPU1_ETH_TX_DATA, 0U, 0U);
+    }
+
+    /* 시퀀스 넘버 100ms(1000틱) 주기 업데이트 */
+    isrTickCnt++;
+    if (isrTickCnt >= 1000U)
+    {
+        isrTickCnt = 0U;
+        ipcSeqNum++;
     }
 
     /* EPWM 인터럽트 플래그 클리어 */

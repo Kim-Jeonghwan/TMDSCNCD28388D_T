@@ -22,7 +22,7 @@ typedef struct
     uint16_t Hz;
 } stTimer;
 
-extern stTimer xTimer;
+extern volatile stTimer xTimer;
 
 // 타이머 초기화
 extern void Initial_TIMER(void);
