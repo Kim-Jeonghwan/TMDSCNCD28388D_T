@@ -1,77 +1,46 @@
-# 프로젝트 구조 및 이더넷 통신 구조 전환 조사 보고서 (Research Report)
+# TMDSCNCD28388D_T LED 제어 로직 리팩토링 조사 보고서 (ATTLA_T 기준 동기화)
 
-본 보고서는 `GEMINI.md`의 글로벌 규칙 및 지침에 따라 작성되었으며, 기존 `TMDSCNCD28388D_T` 프로젝트와 `ATTLA_T` 프로젝트 간의 코드 스타일, 주석 방식 및 아키텍처를 비교 분석하고, 요구된 인터럽트 기반 이더넷 및 IPC 통신 구조로의 전환을 위한 조사 내용을 담고 있습니다.
+## 1. 개요
+본 보고서는 `ATTLA_T` 프로젝트의 LED 제어 로직(`csu_Led.c`, `csu_Led.h`, `hal_DspInit.c`)을 분석하여, 현재 `TMDSCNCD28388D_T` 프로젝트의 CPU1 코어에 동일한 구조와 최적화 기법을 적용하기 위한 구체적인 구현 방안을 기술합니다.
 
----
+## 2. ATTLA_T 프로젝트 분석 결과 (변경의 핵심)
+`ATTLA_T` 프로젝트는 기존의 LED 제어 방식에서 다음과 같은 아키텍처 및 성능 최적화를 이루었습니다.
 
-## 1. ATTLA_T 프로젝트 대비 도입해야 할 코드 스타일 및 주석 방식
+1. **비트필드 구조체 제거 (`stLed` in `csu_Led.h`)**
+   - 기존의 `bool` 및 `:8u`, `:1u`와 같은 비트필드는 C2000 16비트 아키텍처에서 메모리 경계 초과 버그를 유발할 수 있습니다. 
+   - 이를 해결하기 위해 구조체의 모든 멤버를 `uint16_t` 단일 자료형으로 통일하여 안정성을 확보했습니다.
+2. **HAL 래퍼 함수 제거 (`csu_Led.c`)**
+   - 불필요하게 `switch-case`문으로 분기되던 `HW_writeLedPin`과 `HW_toggleLedPin`을 제거했습니다.
+   - 대신 SDK의 `GPIO_writePin`과 `GPIO_togglePin`에 구조체가 가진 `Index` 값을 직접 전달하여 호출 지연(Overhead)을 줄였습니다.
+3. **GPIO 하드웨어 초기화의 계층 분리 (`hal_DspInit.c`)**
+   - 상위 계층인 CSU(`csu_Led.c`)에 있던 하드웨어 핀 설정 로직(`initGpioDoutLed()`)을 제거했습니다.
+   - 이를 HAL 계층인 `hal_DspInit.c`의 `Init_GpioDout()` 함수 내부로 이관하여 하드웨어 종속성을 완전히 HAL로 분리했습니다.
+4. **자료형 통일 (`bool` -> `uint16_t`)**
+   - 함수의 파라미터로 사용되던 `bool` 자료형을 모두 `uint16_t`로 변경하여 데이터 타입의 일관성을 맞추었습니다.
 
-### 1.1. 파일 헤더 주석 및 이력 관리 (Header Comment & Modification History)
-- **현행 (TMDSCNCD28388D_T)**: 파일명과 간단한 설명, 최종 업데이트 날짜만 존재합니다.
-- **도입 내용 (ATTLA_T 방식)**: 
-  - `Version` (예: 00.00), `Programmer` (Kim Jeonghwan) 정보 필수 포함.
-  - 헤더 주석 바로 아래에 `Modification History` 주석 블록을 도입하여 수정 이력을 상세히 남기도록 개선.
+## 3. TMDSCNCD28388D_T 적용(구현) 계획
 
-### 1.2. 함수 단위 주석 템플릿 (Doxygen Style)
-- **현행**: 함수 선언 및 정의 위에 단순 텍스트 주석이거나 형식이 통일되어 있지 않습니다.
-- **도입 내용**: 모든 함수의 선언부(혹은 정의부)에 아래와 같은 포맷 적용.
-  ```c
-  /*
-  @function   함수명
-  @brief      기능 요약
-  @param      매개변수 설명
-  @return     반환값 설명
-  @remark     상세 설명 및 특이사항
-  */
-  ```
+상기 분석을 바탕으로 `TMDSCNCD28388D_T` 프로젝트의 관련 파일을 다음과 같이 수정할 계획입니다.
 
-### 1.3. 전역 상태 구조체 통합 (State Struct Integration)
-- **도입 내용**: ATTLA_T의 `xAdc`와 같이 흩어진 전역 변수(예: 센서 결과값, 상태 플래그 등)를 모듈별 하나의 상태 구조체(`stAdcState xAdc;`, `stSysCtrl xSysCtrl;` 등)로 묶어 관리하도록 리팩토링합니다. 이를 통해 변수 네이밍 충돌을 방지하고 코드의 응집도를 높일 수 있습니다.
+### 3.1. `TMDSCNCD28388D_T_CPU1/CSU/csu_LED.h` 수정 방안
+- `LED_OFF`, `LED_ON`, `LED_NONE`, `LED_TOGGLE` 매크로 값을 `false`/`true`에서 `0u`/`1u` (TMDSCNCD 특성에 맞게 Active High/Low 유지) 형태의 `uint16_t` 리터럴로 변경.
+- `stLed` 구조체의 멤버 변수 자료형을 `bool`, 비트필드 방식에서 모두 `uint16_t`로 변경.
+- `initGpioDoutLed()` 함수 선언 제거.
+- `setLedStatus()`, `setLedModeToggle()` 함수의 `bool State` 파라미터를 `uint16_t State`로 변경.
+- 헤더 상단에 표준 Modification History 업데이트.
 
-### 1.4. 매크로 상수 추출 (Magic Number Removal)
-- **도입 내용**: `.c` 파일 내부에 직접 작성된 매직 넘버(스케일 팩터, 임계치 등)를 `.h` 파일로 분리하고, 직관적인 `#define` 매크로(예: `ADC_SCALE_REF_VOLT`)로 추상화하여 유지보수성을 극대화합니다.
+### 3.2. `TMDSCNCD28388D_T_CPU1/CSU/csu_LED.c` 수정 방안
+- `initGpioDoutLed()` 함수 구현 전체 제거 (해당 코드는 `hal_DspInit.c`로 이동).
+- `HW_writeLedPin()`, `HW_toggleLedPin()` 정적 함수 구현 제거 및 선언 제거.
+- `updateLedStatus()` 루프 내부의 핀 제어 로직을 `GPIO_writePin(pLed[i]->Index, pLed[i]->State)` 및 `GPIO_togglePin(pLed[i]->Index)`로 직접 호출하도록 수정.
+- `setLedStatus()`, `setLedModeToggle()` 함수의 `bool` 파라미터를 `uint16_t`로 수정.
+- 파일 상단에 표준 헤더 주석 및 Modification History 업데이트.
 
----
+### 3.3. `TMDSCNCD28388D_T_CPU1/HAL/hal_DspInit.c` 수정 방안
+- `Init_GpioDout()` 함수 내부에서 호출하던 `initGpioDoutLed();` 코드를 삭제.
+- 대신 `csu_LED.c`에서 제거된 LED 핀(145, 146, 31~38)들의 설정 로직(`GPIO_setPinConfig`, `GPIO_setPadConfig`, `GPIO_setDirectionMode`, `GPIO_setMasterCore`)을 `Init_GpioDout()` 내부로 직접 이관하여 통합.
+- 파일 상단에 표준 헤더 주석 및 Modification History 업데이트.
 
-## 2. 이더넷 통신 구조 전환 (Polling -> Interrupt + IPC 기반)
-
-현재 시스템이 주기적 폴링 루프(1ms, 10ms 등)에 의존하고 있는 구조를, 명확한 타이밍(100us)의 하드웨어 타이머(EPWM) 인터럽트와 코어 간 인터럽트(IPC), 그리고 이더넷 인터럽트(Rx) 연계 구조로 변경하기 위한 조사 내용입니다.
-
-### 2.1. CPU1 코어 (데이터 생성 및 전송)
-1. **100us EPWM 메인 루프 (인터럽트)**:
-   - `hal_EpwmTimer.c` 또는 `csu_EPWM.c`를 활용하여 100us 주기(10kHz)의 EPWM1 인터럽트를 발생시키고 최상위 우선순위의 메인 제어 루프로 사용합니다.
-   - 기존의 백그라운드 `while(1)` 폴링에 의존하던 고속 타이밍 로직을 이 ISR 안으로 이전합니다.
-2. **테스트용 사인파 발생기 구현**:
-   - 100us 주기로 호출되는 EPWM1 ISR 내부에서 `sin()` 함수 또는 LUT(Lookup Table)를 통해 사인파 데이터를 계산합니다.
-3. **IPC 송신 (CPU1 -> CM)**:
-   - 생성된 사인파 데이터를 IPC 통신용 구조체(공유 RAM 공간 혹은 IPC 메시지 RAM)에 저장합니다.
-   - 데이터가 갱신될 때마다(또는 100us 마다) IPC 플래그를 Set하여 CM 코어 측에 IPC 인터럽트를 트리거합니다.
-
-### 2.2. CM 코어 (데이터 버퍼링 및 이더넷 송수신)
-1. **IPC 수신 인터럽트 (CM)**:
-   - CPU1이 발생시킨 IPC 인터럽트를 처리할 ISR(`hal_IPC.c` 내부)을 CM 코어에 등록합니다.
-   - ISR 내에서 IPC 영역에서 전달받은 사인파 데이터를 CM 코어 전역 구조체(버퍼)에 저장합니다.
-2. **이더넷 수신 인터럽트 (W6100 Rx Interrupt)**:
-   - 현재 폴링 방식으로 패킷을 수신(recv)하던 로직을 인터럽트 방식으로 변경해야 합니다.
-   - PC가 데이터 요청 패킷을 보내면(약 100ms 주기), 하드웨어 이더넷 인터럽트가 발생하도록 설정합니다.
-   - 이더넷 Rx ISR(또는 ISR에 의해 트리거된 이벤트)에서 PC의 요청 명령을 파싱하고, 이전에 IPC로 받아 저장해둔 전역 구조체 버퍼의 사인파 데이터를 즉시 이더넷 송신(Send) 함수를 통해 PC로 응답합니다.
-
-### 2.3. PC 프로그램 (C# UI)
-1. **요청 이벤트 생성**:
-   - `SciPcProtocol.cs` (또는 메인 UI 폼)에 "100ms 주기 데이터 요청" 버튼 및 타이머 컨트롤을 추가합니다.
-   - 타이머 On/Off 토글 시 100ms 주기로 UDP/TCP 패킷(데이터 요청 메세지)을 타겟 보드로 발송합니다.
-2. **수신 및 실시간 그래프 렌더링**:
-   - 타겟 보드로부터 응답 패킷(사인파 데이터) 수신 이벤트를 처리합니다.
-   - 수신된 값을 파싱하여 실시간 Chart Control(예: `System.Windows.Forms.DataVisualization.Charting`)을 통해 화면에 연속적인 파형으로 업데이트합니다.
-
----
-
-## 3. 진행 권장 단계 (추후 구현 시)
-
-본 내용은 조사(Research) 보고서이며, 향후 구현은 다음과 같은 단계적 분할 작업(Step-by-Step)을 권장합니다.
-
-- **Phase 1**: ATTLA_T 주석 및 코드 구조 템플릿(상태 구조체, 헤더 포맷)을 현재 CPU1, CM 코드에 반영.
-- **Phase 2**: CPU1 코어에 100us EPWM 인터럽트 활성화 및 사인파 생성 루틴 추가.
-- **Phase 3**: CPU1 - CM 코어 간 IPC 인터럽트 연동 및 구조체 전달 체계 검증.
-- **Phase 4**: CM 코어 W6100 이더넷 인터럽트 활성화 및 데이터 응답 로직 구현.
-- **Phase 5**: PC C# 프로그램 주기적 송신 타이머 및 실시간 그래프 UI 구현.
+## 4. 결론 및 다음 단계
+이상의 조사를 통해 `TMDSCNCD28388D_T` 프로젝트를 `ATTLA_T`와 완벽히 동일한 구조로 리팩토링할 준비가 완료되었습니다. 본 내용에 대해 확인 및 추가 코멘트(예: 파일명 소문자 통일 여부, LED Active State 확인 등)를 반영할 수 있습니다. 
+승인이 떨어지면 즉시 `plan.md`를 작성하거나 구현에 착수할 수 있습니다.

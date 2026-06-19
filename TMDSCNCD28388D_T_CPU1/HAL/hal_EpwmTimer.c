@@ -1,11 +1,17 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : hal_EpwmTimer.c
-    Version          : 00.01
+    Version          : 00.02
     Description      : CPU1 EPWM1 기반 100us 메인 인터럽트 구현
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (Phase 2: 100us 주기 및 ADC/Sine 연동)
+    Last Updated     : 2026. 06. 19. (ISR 내 GPIO 34 토글 추가)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - isr_Epwm1Timer100us 내부에 GPIO 34 토글 로직 추가 (ATTLA_T 동기화)
+ */
 
 /*
  * [EPWM1 타이머 설계]
@@ -106,4 +112,7 @@ static __interrupt void isr_Epwm1Timer100us(void)
 
     /* PIE ACK */
     Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP3);
+
+    /* GPIO34 임시 LED 100us 토글 (ATTLA_T 동기화) */
+    GPIO_togglePin(34U);
 }

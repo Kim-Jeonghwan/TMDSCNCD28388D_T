@@ -1,9 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_LED.h
+    Version          : 00.00
     Description      : System Status LED Control (Green / Orange)
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (ATTLA_T 방식의 LED 제어 로직 적용 및 최적화)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 비트필드 구조체 제거, 자료형 통일, 사용 안하는 LED 핀 삭제 등 ATTLA_T 구조 동기화
+ * 2026. 06. 05. - (코드 주석 포맷팅 및 한글화)
+ */
 
 #ifndef csu_LED_H
 #define csu_LED_H
@@ -14,26 +23,14 @@
 
 
 /* ************************** [[   define   ]]  *********************************************************** */
-#define LED_OFF		false
-#define LED_ON		true
+#define LED_OFF		1u
+#define LED_ON		0u
 
-#define LED_NONE	false
-#define LED_TOGGLE	true
+#define LED_NONE	0u
+#define LED_TOGGLE	1u
 
-/* POWERON 상태 표시용 LED(GPIO 145)*/
-#define GPIO_LED_POWERON     145u
-/* ERROR 상태 표시용 LED(GPIO 146)*/
-#define GPIO_LED_ERROR       146u
-
-/* 배열 LED */
-#define GPIO_LED_01          31u 
-#define GPIO_LED_02          32u 
-#define GPIO_LED_03          33u 
-#define GPIO_LED_04          34u 
-#define GPIO_LED_05          35u 
-#define GPIO_LED_06          36u 
-#define GPIO_LED_07          37u 
-#define GPIO_LED_08          38u
+/* RUN 상태 표시용 LED(GPIO 31)*/
+#define GPIO_LED_RUN         31u
 
 /* ************************** [[   enum or struct   ]]  **************************************************** */
 
@@ -42,16 +39,7 @@
  */
 typedef enum
 {
-	eLED_RUN			        = 145u,
-	eLED_ERROR				    = 146u,
-    eLED_01                     = 31u,
-	eLED_02				    	= 32u,
-    eLED_03                     = 33u,
-    eLED_04                     = 34u,
-    eLED_05				    	= 35u,
-	eLED_06				    	= 36u,
-	eLED_07				    	= 37u,
-	eLED_08				    	= 38u
+	eLED_RUN			        = 31u,
 
 }eLed;
 
@@ -60,12 +48,11 @@ typedef enum
  */
 typedef struct
 {
-    uint16_t Index:8u;    // GPIO Index (eLed 타입 저장)
-    uint16_t Time:8u;     // Toggle 주기 설정
-    uint16_t Temp:8u;     // 카운트 다운용 임시 변수
-    bool     State:1u;    // 현재 점등 상태 (false: Off, true: On)
-    bool     Toggle:1u;   // 토글 모드 활성 (false: None, true: Toggle)
-    uint16_t Reserved:14u;
+    uint16_t Index;       // GPIO Index (eLed 타입 저장)
+    uint16_t Time;        // Toggle 주기 설정
+    uint16_t Temp;        // 카운트 다운용 임시 변수
+    uint16_t State;       // 현재 점등 상태 (LED_ON: 0, LED_OFF: 1)
+    uint16_t Toggle;      // 토글 모드 활성 (LED_NONE: 0, LED_TOGGLE: 1)
 } stLed;
 
 /**
@@ -74,15 +61,6 @@ typedef struct
 typedef struct
 {
 	stLed	ledRun;
-	stLed	ledError;
-    stLed   led01;
-    stLed	led02;    
-    stLed	led03;
-    stLed   led04;
-    stLed	led05;
-    stLed	led06;
-    stLed	led07;
-    stLed	led08;
 
 }stLedStatus;
 
@@ -94,11 +72,6 @@ extern stLedStatus xLed;
 
 
 /* ************************** [[  function  ]]  *********************************************************** */
-
-/**
- * @brief LED 제어를 위한 GPIO 방향 및 Mux 설정
- */
-void initGpioDoutLed(void);
 
 /**
  * @brief LED 변수 초기화 및 기본 동작 설정
@@ -114,12 +87,12 @@ void updateLedStatus(void);
  * @brief LED의 On/Off 상태를 직접 설정 (토글 중단)
 
  */
-void setLedStatus(stLed *pLed, bool State);
+void setLedStatus(stLed *pLed, uint16_t State);
 
 /**
  * @brief LED 토글 모드 활성화 및 주기 설정
  */
-void setLedModeToggle(stLed *pLed, bool State, uint16_t Time);
+void setLedModeToggle(stLed *pLed, uint16_t State, uint16_t Time);
 
 /**
  * @brief IPC 커맨드에 따른 GPIO LED 직접 제어

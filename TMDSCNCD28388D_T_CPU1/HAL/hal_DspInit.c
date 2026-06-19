@@ -4,17 +4,18 @@
     Copyright 2021. All Rights Reserved.
 
     Filename        : hal_DspInit.c
-    Version         : 00.03
+    Version         : 00.04
     Description     : CPU1 Master Initialization (CM Core Fault 해결을 위한 권한 양도 시퀀스 개편)
     Tracebility     : 
-    Programmer      :
-    Last Updated    : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Programmer      : Kim Jeonghwan
+    Last Updated    : 2026. 06. 19. (LED GPIO 초기화 로직 병합)
 
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 19. - csu_LED.c에서 분리된 GPIO 31 및 34 초기화 로직을 Init_GpioDout()에 직접 통합
  * 2026. 06. 02. - CM 코어 기동 시점(Initial_CmCore)을 동기화(IPC_sync) 직전 최고의 타이밍으로 대이동 교정
  * 2026. 06. 02. - 온도 센서 전용 1kHz 느린 트리거용 ePWM9 모듈 추가 기동 반영
  * 2026. 06. 02. - 이더넷 PHY 칩(DP83822) 하드웨어 리셋 핀(GPIO 147) 강제 해제 추가
@@ -135,13 +136,17 @@ static void Init_GpioDin(void)
 */
 static void Init_GpioDout(void)
 {
-    initGpioDoutLed();
-
-    // GPIO 31: 출력 설정 (CM 제어 테스트용)
+    // GPIO 31: RUN LED 출력 설정
     GPIO_setPinConfig(GPIO_31_GPIO31);
     GPIO_setPadConfig(31u, GPIO_PIN_TYPE_STD);
     GPIO_setDirectionMode(31u, GPIO_DIR_MODE_OUT);
     GPIO_setMasterCore(31u, GPIO_CORE_CPU1); // 초기 권한은 CPU1
+
+    // GPIO 34: 메인 컨트롤 ISR 동작 확인용 임시 LED
+    GPIO_setPinConfig(GPIO_34_GPIO34);
+    GPIO_setPadConfig(34u, GPIO_PIN_TYPE_STD);
+    GPIO_setDirectionMode(34u, GPIO_DIR_MODE_OUT);
+    GPIO_setMasterCore(34u, GPIO_CORE_CPU1);
 }
 
 /*
