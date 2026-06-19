@@ -1,8 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : hal_Ethernet.c
-    Description      : EMAC 드라이버 초기화 및 Rx/Tx 콜백 구현 (MII, DP83822)
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Version          : 00.01
+    Description      : EMAC 드라이버 초기화 및 Rx 하드웨어 인터럽트 구현
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (Phase 4: 이더넷 RX 폴링 -> 인터럽트 전환)
 **********************************************************************/
 
 /*
@@ -56,6 +58,7 @@ static uint8_t s_ucRxBufIdx = 0U;
  * static 함수 선언
  * --------------------------------------------------------------- */
 static void initRxDescriptors(void);
+static void isr_EmacRx0(void);
 
 /* ---------------------------------------------------------------
  * Rx 디스크립터 풀 초기화
@@ -110,7 +113,7 @@ void Platform_disableCoreInterrupt(void)
  * EMAC 초기화
  * --------------------------------------------------------------- */
 /*
-@funtion    void Initial_Ethernet(void)
+@function    Initial_Ethernet
 @brief      EMAC 드라이버 초기화 (MII 모드, DP83822 PHY, 외부 클럭)
 @param      void
 @return     void
@@ -118,7 +121,6 @@ void Platform_disableCoreInterrupt(void)
 void Initial_Ethernet(void)
 {
     Ethernet_InitInterfaceConfig xIfCfg;
-    static Ethernet_InitConfig   xInitCfg; /* static 선언으로 스택 오버플로우 원천 예방 및 드라이버 오염 방지 */
     uint32_t                     uiRet = 0U;
 
     /* --- Rx 디스크립터 풀 초기화 --- */
@@ -253,6 +255,10 @@ void Initial_Ethernet(void)
          */
         uiLedCfg2 |= 0x0010U;    /* Override Enable(Bit 4) = 1, Value(Bit 5) = 0, Polarity(Bit 6) = 0 (Active Low) */
         Ethernet_writePHYRegister(EMAC_BASE, 0x0EU, uiLedCfg2);
+
+        /* --- [Phase 4] EMAC RX 하드웨어 인터럽트 등록 및 활성화 --- */
+        Interrupt_registerHandler(INT_EMAC_RX0, isr_EmacRx0);
+        Interrupt_enable(INT_EMAC_RX0);
     }
 }
 
@@ -260,8 +266,8 @@ void Initial_Ethernet(void)
  * 이더넷 수신 폴링 태스크 (main loop 에서 호출)
  * --------------------------------------------------------------- */
 /*
-@funtion    void updateEthernetTask(void)
-@brief      이더넷 수신 완료 큐를 폴링하여 수신된 패킷을 처리합니다.
+@function    updateEthernetTask
+@brief      이더넷 수신 완료 큐를 폴링하여 수신된 패킷을 처리합니다. (ISR에서 호출)
 @param      void
 @return     void
 @remark
@@ -272,13 +278,30 @@ void updateEthernetTask(void)
 {
     if (g_hEMAC != (Ethernet_Handle)0U)
     {
-        /* 수신된 패킷 처리 */
+        /* 수신된 패킷 처리 (DMA CP 레지스터 업데이트를 통해 인터럽트 소스 해제) */
         Ethernet_removePacketsFromRxQueue(&((Ethernet_Device *)g_hEMAC)->dmaObj.rxDma[0U], ETHERNET_COMPLETION_NORMAL);
         
-        /* 송신 완료된 패킷의 디스크립터를 큐에서 제거하여 풀 방지 (핵심 누락 코드) */
+        /* 송신 완료된 패킷의 디스크립터를 큐에서 제거하여 풀 방지 */
         Ethernet_removePacketsFromTxQueue(&((Ethernet_Device *)g_hEMAC)->dmaObj.txDma[0U], ETHERNET_COMPLETION_NORMAL);
     }
 }
+
+/* ---------------------------------------------------------------
+ * 이더넷 수신 하드웨어 인터럽트 (Phase 4)
+ * --------------------------------------------------------------- */
+/*
+@function    isr_EmacRx0
+@brief      EMAC RX0 수신 하드웨어 인터럽트 ISR
+@param      void
+@return     static void
+@remark
+    - 하드웨어 이더넷 수신 완료 시 호출되어 updateEthernetTask를 기동합니다.
+*/
+static void isr_EmacRx0(void)
+{
+    updateEthernetTask();
+}
+
 
 /* ---------------------------------------------------------------
  * 콜백: EMAC Rx 버퍼 공급 (EMAC 드라이버가 호출)

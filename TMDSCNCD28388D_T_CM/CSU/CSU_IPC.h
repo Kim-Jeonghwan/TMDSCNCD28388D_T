@@ -1,8 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_IPC.h
-    Description      : IPC Protocol (CM to CPU1) 및 이더넷 공유 메모리(GS0/GS1) 설정
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Version          : 00.01
+    Description      : CM IPC 통신 프로토콜 정의
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (Phase 3: IPC Payload에 TxData 구조체 적용)
 **********************************************************************/
 
 #ifndef csu_IPC_H
@@ -15,7 +17,14 @@ typedef struct {
     uint32_t Command;       // 명령어
     uint32_t Status;        // 상태 플래그
     uint32_t Address;       // 메모리 주소
-    uint32_t Payload[16];   // 실제 데이터 배열
+    union {
+        uint32_t PayloadRaw[16];   // 실제 데이터 배열
+        struct {
+            float32_t sineValue;
+            float32_t adcTemperature;
+            uint32_t sequenceNum;
+        } TxData;
+    } Payload;
 } stIpcDataPacket;
 
 // Message RAM 정의 (CM View)

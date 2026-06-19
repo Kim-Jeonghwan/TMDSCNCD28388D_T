@@ -1,81 +1,79 @@
-# 📋 정적 분석 및 리팩토링 계획서 (Static Analysis & Refactoring Plan)
+# 시스템 아키텍처 및 통신 구조 리팩토링 계획서 (Implementation Plan)
 
-**작성 일자**: 2026. 06. 05.  
-**현재 단계**: Phase 2 - 소스코드 정적 분석 및 취약점 방어 코딩 적용  
-**대상 코어**: CPU1 Core 및 CM Core (`main.c`, `CSU`, `Dev` 폴더 전체)  
-
----
-
-## 1. 개요 및 목표 (Goal Description)
-사용자 정의 규칙에 따라 현재 구현된 모든 소스 코드를 대상으로 **DAPA SCR-G (무기체계 코딩규칙), 소스코드 품질 메트릭, CWE 보안 취약점 표준**을 전수 검사하고, 규격에 미달하는 코드를 리팩토링합니다. 기존의 동작 로직은 **절대 변경하지 않으며**, 오직 코드의 구조적 안정성과 방어력만 끌어올리는 것이 목표입니다.
-
----
-
-## 2. 점검 및 조치 기준 (Verification Metrics & Targets)
-
-### A. 무기체계 소프트웨어 코딩규칙 (DAPA SCR-G)
-- **단일 종료점 (Single Exit Point)**: 함수 내의 `return` 문은 오직 맨 마지막에 1개만 허용됩니다. (중간 return 불가)
-- **예외 방어 블록 필수화**: 모든 `switch` 문에는 `default:` 블록을, 모든 `if ... else if` 문에는 `else` 블록을 명시적으로 작성하여 예기치 않은 상태를 방어합니다.
-- **초기화 강제**: 모든 지역 변수는 선언과 동시에 명시적 초기값(0, NULL, false 등)을 할당받아야 합니다.
-
-### B. 소스코드 품질 메트릭 (복잡도/신뢰성 제한)
-- **순환 복잡도 (Cyclomatic Complexity)**: `<= 20` (분기문 갯수 제한)
-- **함수 호출 최대 깊이 (Call Levels)**: `<= 6` (중첩 호출 제한)
-- **함수 매개변수 수 (Parameters)**: `<= 8`
-- **호출/피호출 수 (Fan-in / Fan-out)**: Fan-in `<= 8`, Fan-out `<= 10`
-- **실행 가능 코드 라인 수**: `<= 200` 라인 (선언부 제외)
-
-### C. CWE-658 / 659 보안 취약점 점검
-- **CWE-120 (Buffer Overflow)**: 배열 인덱스/포인터 연산 전 범위 초과 여부 검사.
-- **CWE-476 (Null Pointer Deref.)**: 포인터 사용 전 반드시 `NULL` 체크 적용.
-- **CWE-369 (Divide by Zero)**: 나눗셈 연산 전 분모가 `0`인지 확인하는 방어 분기 추가.
-- **CWE-457 (Uninitialized Var)**: 변수 선언 시 쓰레기값 방어용 초기화.
-- **CWE-190 (Integer Overflow)**: 변수 자료형 범위를 초과하는 누적/곱셈 연산 방어.
-- **상수 타입 명시화 (MISRA / DAPA)**: Unsigned 변수 연산이나 할당에 사용되는 모든 상수 리터럴에는 반드시 `u` 또는 `U` 접미사를 강제하여 암시적 형변환(Implicit Conversion) 오류를 원천 차단합니다. (예: `1000` ➡️ `1000u`)
-
----
-
-## 3. 리팩토링 수행 계획 (Proposed Changes)
-
-검토 후 규격을 위반한 함수가 발견되면 다음과 같은 순서로 리팩토링을 수행합니다.
-
-### 1단계: CPU1 코어 (Control Core) 전수 검증 및 리팩토링
-#### [MODIFY] `main.c` (CPU1)
-- 메인 루프(`for(;;)`) 및 타이머 백그라운드 태스크 내부의 제어 흐름 복잡도 점검.
-- 누락된 `else` 블록에 방어 주석 추가.
-
-#### [MODIFY] `CSU/*` 및 `HAL/*` (CPU1)
-- 예: `csu_SCI_PC.c` 등에서 중간 `return`이 발견되면 결과값을 저장하는 지역 변수(`ret` 또는 `result`)를 도입하고 마지막에 `return ret;` 하도록 구조 변경.
-- 나눗셈/모듈러 연산(`%`) 사용 시 0 나누기 방어 코드 삽입.
-
----
-
-### 2단계: CM 코어 (Connectivity Core) 전수 검증 및 리팩토링
-#### [MODIFY] `main.c` (CM)
-- 이더넷 폴링 루프 등 통신 처리 루프의 복잡도 및 Array Bounds 체크 확인.
-
-#### [MODIFY] `CSU/*` 및 `HAL/*` (CM)
-- CM용 Driverlib API 및 8비트 주소 체계 호환성 확인.
-- `csu_Ethernet.c` 내의 포인터 파라미터(`uint8_t *` 등) 역참조 전 `if (ptr != NULL)` 방어 코드 강제 적용.
-- 멀티플 `return`을 단일 `return`으로 통일.
-
----
-
-## 4. 사용자 피드백 요청 (User Review Required)
+본 계획서는 `TMDSCNCD28388D_T` 프로젝트의 이더넷 통신 구조를 폴링 방식에서 인터럽트 방식으로 변경하고, 100us 주기의 메인 루프에서 ADC 처리와 IPC 연동을 수행하기 위한 구체적인 구현 단계를 명세합니다.
 
 > [!IMPORTANT]
-> - 코어 로직 자체는 변경되지 않지만, 단일 `return` 원칙과 방어적 `else`/`default` 추가로 인해 코드 라인수가 다소 증가하고 변수 선언 구조가 바뀔 수 있습니다. 
-> - 이 계획에 승인(Approval)해 주시면, 바로 CPU1 코어의 파일들부터 스캐닝 및 코드 갱신 작업을 시작하고 진행률을 `task.md`를 통해 추적하겠습니다.
-> - 계획서(`plan.md`)에 추가하고 싶으신 메모나 제약 조건이 있다면 자유롭게 적어주세요.
+> **사용자 검토 및 승인 요청 (User Review Required)**
+> 본 계획서를 검토하시고 승인(Plan Approval)해 주시면, 작성된 Phase 1부터 실제 코드 구현 작업을 진행하겠습니다. 요구사항 추가나 로직 변경을 원하시면 이 `plan.md` 파일에 메모나 주석을 직접 달아주시면 반영하겠습니다.
 
 ---
 
-## 5. 최종 검증 계획 (Verification Plan)
+## 1. 개요 및 구현 목표 (Goals)
+1. **코드 품질 향상**: `ATTLA_T` 프로젝트의 우수한 주석 방식(버전, 수정 이력, Doxygen 포맷)과 구조체 기반 상태 관리 방식 도입.
+2. **실시간 제어 최적화 (CPU1)**: 100us(10kHz) 주기 `EPWM1` 인터럽트를 메인 제어 루프로 승격시키고, 기존의 ADC 처리 로직을 이 ISR 내부로 이동.
+3. **코어 간 고속 통신 (IPC)**: CPU1의 EPWM1 루프에서 테스트용 사인파(Sine wave)를 생성하고, ADC 데이터와 함께 구조체로 패킹하여 CM 코어로 IPC 전송.
+4. **이더넷 인터럽트 응답 (CM)**: CM 코어에서 IPC 수신 인터럽트를 통해 데이터를 전역 버퍼에 저장하고, PC로부터 100ms 데이터 요청 패킷이 수신되면 W6100 Rx 인터럽트를 통해 즉시 응답 전송.
+5. **PC 모니터링 기능 (C#)**: 100ms 주기로 타겟 보드에 데이터를 요청하고, 수신된 응답 패킷(사인파, ADC)을 실시간 차트(Graph)에 렌더링.
 
-### 정적 검증 (자체 검사)
-- 리팩토링 후 각 함수의 순환 복잡도를 역산하여 20 이하인지 확인.
-- 모든 파일에서 중간 `return`이 남아있지 않은지 `grep` 스캔 확인.
+---
 
-### 컴파일 및 동적 검증 (사용자 수행)
-- CPU1 및 CM 코어 전체 빌드(Build) 수행 시 문법 에러 유무 확인.
-- 통신(Ethernet, IPC, SCI) 및 센서 획득(ADC) 동작이 기존과 동일하게 무결하게 동작하는지 테스트.
+## 2. 세부 구현 단계 (Implementation Phases)
+
+### Phase 1: 코드 스타일 및 주석 방식 도입 (Code Style & Structure Integration)
+- **대상**: CPU1 및 CM 코어의 `CSU`, `HAL`, `main.c/h`
+- **내용**:
+  - 파일 최상단 헤더 주석에 `Version`, `Programmer`, `Modification History` 템플릿 적용.
+  - 모든 주요 함수에 Doxygen 스타일 주석(`@function`, `@brief`, `@param`, `@return`, `@remark`) 적용.
+  - 흩어진 전역 변수를 구조체(`stAdcState xAdc`, `stSysCtrl xSysCtrl`)로 캡슐화.
+  - 매직 넘버(스케일 팩터 등)를 직관적인 상수로 치환.
+
+### Phase 2: CPU1 코어 - 100us EPWM 인터럽트 루프 구성 및 ADC 연동
+- **대상**: `TMDSCNCD28388D_T_CPU1` (특히 `hal_EpwmTimer.c`, `csu_EPWM.c`, `csu_Adc.c`)
+- **내용**:
+  - `EPWM1` 주기를 100us (10kHz)로 설정하고 타겟 인터럽트(`INT_EPWM1`)와 연동.
+  - EPWM1 ISR 내부에 기존 `10ms` 주기이던 ADC 측정 데이터 변환 로직(`updateAdcData`)을 호출하도록 이동시켜 실시간성 확보.
+  - EPWM1 ISR 내부에 수식(`sin()`)이나 LUT를 활용하여 테스트용 **사인파(Sine wave) 발생 로직** 구현.
+  - C2000 전용 방식인 비트필드(예: `EPwm1Regs`, `AdcaRegs`) 및 `EALLOW`, `EDIS`, `__interrupt` 문법을 엄격히 준수.
+
+### Phase 3: 코어 간 데이터 통신망 구축 (CPU1 -> CM IPC 전송)
+- **대상**: CPU1의 `hal_IPC.c`, `csu_IPC.c`
+- **내용**:
+  - 사인파 데이터와 변환된 ADC 결과값을 담을 전용 IPC 송신 구조체(`stIpcTxToCm`)를 정의하고 공유 RAM 공간(GSRAM 또는 IPC Message RAM)에 할당.
+  - EPWM1 ISR 내부에서 구조체 값을 갱신한 후, IPC 플래그를 Set하여 CM 코어로 IPC 통신 발생.
+  - C28x 코어 특성(16-bit 주소 체계)에 맞추어 데이터 타입 크기 및 정렬 관리.
+
+### Phase 4: CM 코어 - IPC 수신 인터럽트 및 데이터 버퍼링
+- **대상**: `TMDSCNCD28388D_T_CM` (특히 `hal_IPC.c`, `csu_IPC.c`)
+- **내용**:
+  - CM 코어에서 발생하는 IPC 수신 인터럽트 처리기(ISR) 등록.
+  - ARM Cortex-M4F(CM) 특성을 준수하여, `EALLOW`, `EDIS`, `__interrupt` 등의 DSP 전용 문법 사용 금지.
+  - CM 전용 NVIC 기반으로 ISR을 등록하고, `CM_IPC_...` Driverlib API를 사용하여 플래그 클리어 처리.
+  - 수신된 데이터 구조체를 읽어 CM 코어 내의 전역 구조체 버퍼(`stIpcRxFromCpu1`)에 즉각 저장.
+
+### Phase 5: CM 코어 - 이더넷 W6100 수신 인터럽트 및 데이터 응답
+- **대상**: `TMDSCNCD28388D_T_CM` (`hal_Ethernet.c`, `csu_Ethernet.c` 등)
+- **내용**:
+  - 현재 `main.c`의 `while(1)`에서 폴링 기반으로 패킷을 수신(recv)하는 로직 제거.
+  - W6100 소켓의 수신(Rx) 하드웨어 인터럽트 활성화 및 ISR 구성.
+  - Rx ISR 내에서 PC의 "데이터 요청" 패킷을 파싱.
+  - 수신된 요청이 유효하면, Phase 4에서 저장해 둔 `stIpcRxFromCpu1` 전역 구조체 버퍼 데이터를 PC로 송신(Send).
+
+### Phase 6: PC 프로그램 - 100ms 요청 송신 및 실시간 그래프 UI 추가
+- **대상**: C# 프로젝트 (UI 폼, `SciPcProtocol.cs` 등 통신 모듈)
+- **내용**:
+  - 화면에 "데이터 모니터링 (100ms)" 버튼 및 C# `Timer` 컴포넌트 추가.
+  - 타이머 활성화 시 100ms 주기로 패킷(데이터 요청 메세지) 타겟 보드로 발송.
+  - 패킷 수신 이벤트 핸들러에서 전달받은 바이트 배열을 역직렬화하여 구조체 형태로 복원.
+  - 폼에 `System.Windows.Forms.DataVisualization.Charting` (Chart Control)을 추가하고, 수신된 사인파 값과 ADC 값을 실시간 그래프에 Plot.
+
+---
+
+## 3. 유의 및 검증 사항 (Verification Plan)
+- **플랫폼 분리 원칙**: C2000(CPU1)과 ARM(CM)의 레지스터 구조 및 제어 방식이 완전히 다르므로, 각각의 컴파일러 규격 및 데이터 타입 크기(16bit vs 8bit align)를 철저하게 교차 검증하며 코드를 분리 적용합니다.
+- **Data Alignment (CWE-120 등 방어)**: IPC 통신 시 공유 메모리의 구조체 패딩(Padding) 및 정렬 불일치로 인한 오작동을 방지하기 위해 패킹(`#pragma PACK` 또는 `__attribute__((packed))`) 여부와 메모리 오프셋을 점검합니다.
+- **정적 시험(품질 메트릭) 준수**: ISR 내부에서 과도한 루프나 복잡도를 가지지 않도록 기능을 모듈화하고 순환 복잡도(20 이하)를 유지합니다.
+
+---
+
+> [!NOTE]
+> 본 Plan 문서에 이견이 없으시다면 **"승인"** 또는 **"구현 시작해"**라고 말씀해 주십시오. Phase 1부터 차례로 구현을 진행하겠습니다.

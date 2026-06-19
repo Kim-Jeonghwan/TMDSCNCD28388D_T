@@ -21,8 +21,7 @@
 /* ************************** [[   global   ]]  *********************************************************** */
 stLedStatus xLed;
 
-// csu_Adc.c에 선언된 디버깅용 실시간 온도 전역 변수
-extern float32_t currentTemperatureC;
+// csu_Adc.c에 선언된 디버깅용/* 외부 변수 참조 제거 - xAdc.currentTemperatureC 사용 */
 
 
 /* ************************** [[  static prototype  ]]  *************************************************** */
@@ -198,7 +197,7 @@ void updateLedStatus(void)
 
 
     // 3. 내부 온도 센서(ADCC13) 실시간 감시를 통한 ERROR LED 제어
-    if(currentTemperatureC >= LIMIT_TEMP_ERROR)
+    if(xAdc.currentTemperatureC >= LIMIT_TEMP_ERROR)
     {
         setLedStatus(&xLed.ledError, LED_ON);
     }

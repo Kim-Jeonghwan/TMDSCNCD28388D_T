@@ -1,9 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : main.h
-    Description      : Core header files inclusion
-    Last Updated     : 2026. 06. 04. (easyDSP 호환성 유지: f28x_project.h 복원 / RamfuncsLoad* 심볼 문제는 hal_Ramfuncs.c로 해결)
+    Version          : 00.01
+    Description      : CPU1 전역 헤더 관리 파일
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (코드 스타일 및 주석 템플릿 적용)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 코드 스타일 및 주석 템플릿 적용
+ * 2026. 06. 04. - easyDSP 호환성 유지: f28x_project.h 복원 / RamfuncsLoad* 심볼 문제는 hal_Ramfuncs.c로 해결
+ */
 
 #ifndef MAIN_H
 #define MAIN_H

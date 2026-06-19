@@ -199,21 +199,23 @@ namespace TMDSCNCD28388D_T_PC
             byte code    = data[6];
             byte reqAck  = data[7];
 
-            // ① DSP→PC Reflect 메시지 (온도+시퀀스)
+            // ① DSP→PC Reflect 메시지 (온도+시퀀스+사인파)
             if (srcId == DstIdDsp && code == MsgCodeMonitor && reqAck == ReqAckNone)
             {
-                // Reflect 메시지 구조: 헤더(12) + Data(4: Seq, Status, Temp 2B) + Checksum(2) = 총 18바이트
-                if (!VerifyChecksum(data, 18)) return;
+                // Reflect 메시지 구조: 헤더(12) + Data(8: Seq, Status, Temp, Sine) + Checksum(2) = 총 22바이트
+                if (!VerifyChecksum(data, 22)) return;
 
                 byte   seqNum  = data[12];
                 byte   status  = data[13];
                 ushort tempRaw = (ushort)(data[14] | (data[15] << 8)); // Little Endian
+                float  sineVal = BitConverter.ToSingle(data, 16);      // Little Endian float
 
                 var msg = new StatusMessageData
                 {
                     IncNumber   = seqNum,
                     Status      = status,
                     DspTemp     = tempRaw / 10.0,
+                    SineValue   = sineVal,
                     IsCommError = _commError
                 };
                 OnStatusReceived?.Invoke(msg);

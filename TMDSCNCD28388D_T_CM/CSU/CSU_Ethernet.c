@@ -1,8 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ethernet.c
-    Description      : UDP 프로토콜 처리 - Payload/ACK MSG 조립/파싱 (규격서 준수)
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Version          : 00.01
+    Description      : UDP 프로토콜 처리 - Payload/ACK MSG 조립/파싱
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (Phase 5: 사인파 추가 및 PC 요청 응답 구조 변경)
 **********************************************************************/
 
 /*
@@ -55,7 +57,7 @@ static uint8_t s_ucTxPktDescIdx = 0U;
 #define PAYLOAD_OFFSET       (ETH_HDR_SIZE + IP_HDR_SIZE + UDP_HDR_SIZE)
 
 /* 최대 프레임 크기 */
-#define TX_REFLECT_FRAME_SIZE  (61U) /* ETH + IP + UDP + 19B payload */
+#define TX_REFLECT_FRAME_SIZE  (64U) /* ETH(14) + IP(20) + UDP(8) + Payload(22) */
 #define TX_ACK_FRAME_SIZE      (60U) /* ETH + IP + UDP + 18B payload */
 
 /* 최소 수신 프레임 크기 (유효성 검사) */
@@ -332,31 +334,31 @@ static bool sendEthernetFrame(uint8_t *pFrame, uint16_t frameSize)
 }
 
 /* ---------------------------------------------------------------
- * DSP→PC Reflect 패킷 조립 및 송신 (2ms 주기 호출)
+ * DSP→PC Reflect 패킷 조립 및 송신
  * --------------------------------------------------------------- */
 /*
-@funtion    void buildAndSendUdpPacket(void)
-@brief      Reflect 타입 UDP 패킷(온도+시퀀스)을 조립하여 송신합니다. (2ms 주기)
-@param      void
+@function    buildAndSendUdpPacket
+@brief      Reflect 타입 UDP 패킷(온도+시퀀스+사인파)을 조립하여 송신합니다.
+@param      uint32_t rxTimestamp: 요청 패킷의 Timestamp (응답 시 반환)
 @return     void
 @remark
     - g_xEthTxData: CPU1이 IPC로 갱신한 공유 데이터
-    - Payload: MSG Header(12B) + Data(4B) + Checksum(2B) = 19B
+    - Payload: MSG Header(12B) + Data(8B) + Checksum(2B) = 22B
     - Request Ack = 0xFF (Reflect 타입, ACK 미요청)
-    - 모든 다중 바이트 필드는 Little Endian
 */
-void buildAndSendUdpPacket(void)
+void buildAndSendUdpPacket(uint32_t rxTimestamp)
 {
     uint8_t  *pPayload   = g_ucTxBuf + PAYLOAD_OFFSET;
     uint16_t  uiChksum   = 0U;
     uint16_t  uiChksumLen = 0U;
+    uint32_t  sineBits   = 0U;
 
     /* ---- MSG Header (12B) ---- */
-    /* Timestamp (4B, Little Endian): DSP는 0x00000000 */
-    pPayload[0U]  = 0x00U;
-    pPayload[1U]  = 0x00U;
-    pPayload[2U]  = 0x00U;
-    pPayload[3U]  = 0x00U;
+    /* Timestamp (4B, Little Endian) */
+    pPayload[0U]  = (uint8_t)(rxTimestamp & 0x000000FFU);
+    pPayload[1U]  = (uint8_t)((rxTimestamp >>  8U) & 0x000000FFU);
+    pPayload[2U]  = (uint8_t)((rxTimestamp >> 16U) & 0x000000FFU);
+    pPayload[3U]  = (uint8_t)((rxTimestamp >> 24U) & 0x000000FFU);
     /* MSG ID */
     pPayload[4U]  = ETH_SRC_ID_DSP;          /* Source ID */
     pPayload[5U]  = ETH_DST_ID_PC;           /* Destination ID */
@@ -364,22 +366,28 @@ void buildAndSendUdpPacket(void)
     pPayload[7U]  = ETH_REQ_ACK_NONE;        /* Request Ack: 0xFF (Reflect) */
     pPayload[8U]  = ETH_PRIORITY_NORMAL;     /* Priority */
     pPayload[9U]  = ETH_SEND_COUNT_INIT;     /* Send Count */
-    /* Data Length (2B, Little Endian) = 4 */
+    /* Data Length (2B, Little Endian) = 8 */
     pPayload[10U] = (uint8_t)(ETH_PAYLOAD_DATA_SIZE & 0x00FFU);
     pPayload[11U] = (uint8_t)(ETH_PAYLOAD_DATA_SIZE >> 8U);
 
-    /* ---- Data (4B) ---- */
+    /* ---- Data (8B) ---- */
     pPayload[12U] = g_xEthTxData.SeqNum;
     pPayload[13U] = g_xEthTxData.Status;
     /* DspTemp (2B, Little Endian) */
     pPayload[14U] = (uint8_t)(g_xEthTxData.DspTemp & 0x00FFU);
     pPayload[15U] = (uint8_t)(g_xEthTxData.DspTemp >> 8U);
+    /* SineVal (4B, Little Endian) */
+    (void)memcpy(&sineBits, &g_xEthTxData.SineVal, sizeof(uint32_t));
+    pPayload[16U] = (uint8_t)(sineBits & 0x000000FFU);
+    pPayload[17U] = (uint8_t)((sineBits >>  8U) & 0x000000FFU);
+    pPayload[18U] = (uint8_t)((sineBits >> 16U) & 0x000000FFU);
+    pPayload[19U] = (uint8_t)((sineBits >> 24U) & 0x000000FFU);
 
-    /* ---- Checksum (2B, Little Endian): 앞 16B 합산 최하위 2B ---- */
-    uiChksumLen = ETH_MSG_HEADER_SIZE + ETH_PAYLOAD_DATA_SIZE; /* 16B */
+    /* ---- Checksum (2B, Little Endian): 앞 20B 합산 최하위 2B ---- */
+    uiChksumLen = ETH_MSG_HEADER_SIZE + ETH_PAYLOAD_DATA_SIZE; /* 20B */
     uiChksum    = calcUdpMsgChecksum(pPayload, uiChksumLen);
-    pPayload[16U] = (uint8_t)(uiChksum & 0x00FFU);
-    pPayload[17U] = (uint8_t)(uiChksum >> 8U);
+    pPayload[20U] = (uint8_t)(uiChksum & 0x00FFU);
+    pPayload[21U] = (uint8_t)(uiChksum >> 8U);
 
     /* ---- 이더넷/IP/UDP 헤더 조립 ---- */
     buildEthernetHeader(g_ucTxBuf);
@@ -510,18 +518,26 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
                         }
                         else
                         {
-                            /* 정상 수신 → ACK 응답 */
-                            sendAckResponse(ETH_ACK_OK, ETH_ACKINFO_OK, uiTimestamp, ucCode);
+                            /* 모니터링 코드 확인 시 실시간 응답 (데이터 전송) */
+                            if (ucCode == ETH_MSG_CODE_MONITOR)
+                            {
+                                buildAndSendUdpPacket(uiTimestamp);
+                            }
+                            else
+                            {
+                                /* 정상 수신 업데이트 패킷 → ACK 응답 */
+                                sendAckResponse(ETH_ACK_OK, ETH_ACKINFO_OK, uiTimestamp, ucCode);
 
-                            /* ---- Data 추출 및 공유 버퍼 갱신 ---- */
-                            extern stEthSharedData g_xEthRxData;
-                            g_xEthRxData.SeqNum = pPayload[12U];
-                            g_xEthRxData.Status = pPayload[13U];
+                                /* ---- Data 추출 및 공유 버퍼 갱신 ---- */
+                                extern stEthSharedData g_xEthRxData;
+                                g_xEthRxData.SeqNum = pPayload[12U];
+                                g_xEthRxData.Status = pPayload[13U];
 
-                            /* CPU1에 IPC 전달 (SeqNum + Status) */
-                            sendIpcMessageToCPU1(IPC_CMD_CM_ETH_RX_DATA,
-                                                 (uint32_t)g_xEthRxData.SeqNum,
-                                                 (uint32_t)g_xEthRxData.Status);
+                                /* CPU1에 IPC 전달 (SeqNum + Status) */
+                                sendIpcMessageToCPU1(IPC_CMD_CM_ETH_RX_DATA,
+                                                     (uint32_t)g_xEthRxData.SeqNum,
+                                                     (uint32_t)g_xEthRxData.Status);
+                            }
                         }
                     }
                 }

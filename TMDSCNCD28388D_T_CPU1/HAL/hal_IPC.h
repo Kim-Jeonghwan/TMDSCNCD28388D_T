@@ -17,7 +17,4 @@ extern volatile bool g_bCmReady;
 void Initial_IPC_Clear(void);
 void Initial_IPC_Mastership(void);
 void Initial_IPC(void);
-void sendEthDataToCM(uint16_t dspTemp, uint8_t seqNum, uint8_t status);
-
-
 #endif // HAL_IPC_H

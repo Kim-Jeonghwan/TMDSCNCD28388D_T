@@ -1,9 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : main.h
-    Description      : CM Core Main Header
-    Last Updated     : 2026. 04. 22.
+    Version          : 00.01
+    Description      : CM 전역 헤더 관리 파일
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (코드 스타일 및 주석 템플릿 적용)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 코드 스타일 및 주석 템플릿 적용
+ * 2026. 04. 22. - 초기 작성
+ */
 
 #ifndef MAIN_H
 #define MAIN_H
@@ -12,6 +21,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+
+/* C28x 호환용 자료형 정의 */
+typedef float float32_t;
 
 /* CM Core Driverlib */
 #include "driverlib_cm.h"

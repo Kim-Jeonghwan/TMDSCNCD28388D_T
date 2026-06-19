@@ -10,6 +10,7 @@ namespace TMDSCNCD28388D_T_PC
         public byte IncNumber { get; set; }
         public byte Status { get; set; }
         public double DspTemp { get; set; }
+        public float SineValue { get; set; }  // 추가: 사인파 데이터
         public bool IsCommError { get; set; }
     }
 

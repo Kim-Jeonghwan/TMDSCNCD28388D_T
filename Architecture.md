@@ -16,12 +16,12 @@
 ## 2. IPC (Inter-Processor Communication) 통신 스펙
 - **통신 방향**: CPU1 ↔ CM 코어
 - **CPU1 ➡️ CM 전송 (이더넷 데이터 릴레이)**
-  - **주기**: **2ms** (CPU1의 EPWM1 타이머 Zero Event 인터럽트)
-  - **데이터**: `DspTemp` (16bit), `SeqNum` (8bit), `Status` (8bit)
-  - **데이터 갱신 아키텍처**: 온도 및 시퀀스 데이터는 10ms 주기의 백그라운드 태스크(`sendSciPcMessage1`)에서 안전하게 갱신되며, 2ms 주기의 EPWM 인터럽트(ISR) 내부에서는 FPU 충돌을 방지하기 위해 계산 없이 최신 데이터를 IPC로 전송만 하도록 아키텍처를 이원화하여 안정성을 확보함.
-  - **방식**: `IPC_FLAG1` 및 `IPC_CMD_CPU1_ETH_TX_DATA` 명령어를 통해 전송 (데이터 레지스터 활용)
+  - **주기**: **100us** (CPU1의 EPWM1 타이머 Zero Event 인터럽트)
+  - **데이터 구조체**: `TxData` 페이로드 사용 (사인파 `float32_t`, 온도 `float32_t`, 시퀀스 `uint8_t`)
+  - **데이터 갱신 아키텍처**: EPWM1 하드웨어 인터럽트(100us) 내에서 ADC 결과 갱신 및 사인파(Sine wave)를 직접 연산한 뒤, IPC 공유 램의 `pxIpcCpu1ToCm->Payload.TxData` 구조체에 패킹하여 즉시 전송합니다.
+  - **방식**: `IPC_FLAG1` 및 `IPC_CMD_CPU1_ETH_TX_DATA` 명령어를 통해 구조체 페이로드 기반 비동기 전송 수행.
 - **CM ➡️ CPU1 전송 (제어 명령 릴레이)**
-  - **방식**: 향후 구현될 기능에 따라 `IPC_FLAG0` 등을 사용하여 비동기 제어 명령 전달.
+  - **방식**: `IPC_FLAG0` 및 메시지 램을 사용하여 비동기 제어 명령 및 이더넷 수신 결과(`SeqNum`, `Status`) 전달.
 
 ---
 
@@ -41,14 +41,15 @@
   - DSP: `A8-63-F2-00-38-88`
   - PC: 초기값 `EC-9A-0C-14-E8-4B` ➡️ **런타임 시 5001번 포트로 들어오는 패킷을 분석해 동적 캡처(Auto-learning)하여 갱신**
 - **UDP 포트 및 필터링** : `5001`번 포트로 수신되는 패킷만 통과시켜 OS 백그라운드 잡음(1947번 포트 등) 방어.
-- **프로토콜 페이로드 (18 Bytes)** :
-  - Header(12B) + Data(4B: Seq, Status, DspTemp) + Checksum(2B)
+- **프로토콜 페이로드 (22 Bytes)** :
+  - Header(12B) + Data(8B: Seq, Status, DspTemp, SineVal) + Checksum(2B)
 - **구동 아키텍처** :
-  - **RX (수신)**: CM 코어 `main.c` 루프에서 **상시 폴링(Polling)** 처리.
-  - **TX (송신)**: CM 코어 2ms 소프트웨어 타이머에서 주기적으로 모니터링 데이터 송신.
-  - **큐잉(Queueing) 방어**: 4개의 TX 디스크립터 풀을 순환 참조(Circular)하여 Linked-List 꼬임 및 메모리 릭 원천 방지.
-- **PC 모니터링 보호 (Throttling)** :
-  - 초당 500회(2ms) 수신되는 패킷으로 인한 C# WinForms UI의 프리징(뻗음) 현상을 막기 위해, 수신 로그 처리 시 **100ms 단위 스로틀링(Throttling)** 방어 코드 적용.
+  - **RX (수신)**: CM 코어 EMAC 하드웨어 인터럽트(`INT_EMAC_RX0`) 기반 처리로 개편하여 폴링 부하 제거.
+  - **TX (송신)**: PC로부터 데이터 요청(Monitoring) 패킷이 수신되었을 때만 인터럽트 내부에서 즉각적으로 데이터(Reflect MSG)를 조립하여 송신하는 **요청-응답(Request-Response)** 구조.
+  - **큐잉(Queueing) 방어**: 4개의 TX 및 RX 디스크립터 풀을 순환 참조(Circular)하여 Linked-List 꼬임 및 메모리 릭 원천 방지.
+- **PC 모니터링 시스템 스펙** :
+  - **비동기 요청**: C# WinForms 기반의 100ms 자동 요청 타이머 구동을 통해 주기적으로 데이터를 폴링합니다.
+  - **실시간 렌더링**: `ScottPlot` 라이브러리를 활용하여, 수신된 패킷에서 역직렬화된 사인파(Float) 및 온도 데이터를 초고속 2채널 차트로 렌더링합니다.
 
 ---
 
@@ -57,11 +58,10 @@
 - **ADC 모듈** : **ADCA** (SOC2 사용)
 - **물리적 샘플링(트리거)** : **ePWM9 SOCA 하드웨어 트리거** (온도 센서 전담을 위해 별도 분리, 느리고 안정적인 **1kHz(1ms)** 주기로 동작)
 - **데이터 획득** : ADCA 인터럽트(`AdcaIsr`)에서 즉시 원시 데이터(`adcResult`) 획득
-- **연산 처리 주기** : CPU1 메인 루프의 **10ms 주기** 타이머 태스크에서 섭씨(℃) 온도 실수 연산 및 스케일링 적용.
+- **연산 처리 주기** : 기존의 10ms 폴링 방식에서 **CPU1 EPWM1 하드웨어 인터럽트(100us)** 내부에서 즉각 연산 및 처리하는 방식으로 고도화되어 실시간 응답성이 극대화되었습니다.
 - **변환 공식** : C2000Ware 내장 `scaleFactor`, `tempOffset`, `tempSlope` 적용 (Divide by Zero 방어 적용).
 - **필터링 (노이즈 방어)** :
   - ADC 고주파 전기적 노이즈로 인한 소수점 요동을 막기 위해 **IIR Low-Pass 필터 (Alpha = 0.05)** 탑재.
-  - 이를 통해 PC 모니터링 화면에서 소수점 첫째 자리가 실제 온도계처럼 안정적으로 표출됨.
 
 ---
 

@@ -1,8 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_IPC.c
-    Description      : IPC Protocol (CM to CPU1) 구현
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Version          : 00.01
+    Description      : CM IPC Protocol 구현
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (Phase 3: IPC Payload에 TxData 구조체 적용)
 **********************************************************************/
 
 #include "csu_IPC.h"
@@ -12,26 +14,28 @@ volatile stIpcDataPacket *pxIpcCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_T
 volatile stIpcDataPacket *pxIpcCmToCpu1 = (volatile stIpcDataPacket *)IPC_CM_TO_CPU1_MSGRAM_ADDR;
 
 /*
-@funtion    void recvIpcCpu1Message(uint32_t command, uint32_t addr, uint32_t data)
+@function    recvIpcCpu1Message
 @brief      CPU1 코어로부터 수신된 IPC 메시지 처리 핸들러
 @param      uint32_t command: 수신된 IPC 명령어 코드
-@param      uint32_t addr   : 수신된 데이터 (온도 x10 스케일 16bit = addr 하위 16비트)
-@param      uint32_t data   : 수신된 보조 데이터 (SeqNum=하위 8bit, Status=다음 8bit)
+@param      uint32_t addr   : 수신된 데이터 (미사용)
+@param      uint32_t data   : 수신된 보조 데이터 (미사용)
 @return     void
 @remark
     - IPC_CMD_CPU1_ETH_TX_DATA: CPU1 → CM
-        addr 하위 16bit = DspTemp (온도 x10)
-        data 하위  8bit = SeqNum
-        data   9~16bit = Status
+      pxIpcCpu1ToCm->Payload.TxData 파싱
 */
 void recvIpcCpu1Message(uint32_t command, uint32_t addr, uint32_t data)
 {
+    (void)addr;
+    (void)data;
+
     if (command == IPC_CMD_CPU1_ETH_TX_DATA)
     {
-        /* CPU1에서 보낸 온도 및 시퀀스 데이터 갱신 */
-        g_xEthTxData.DspTemp = (uint16_t)(addr & 0x0000FFFFU);
-        g_xEthTxData.SeqNum  = (uint8_t)(data & 0x000000FFU);
-        g_xEthTxData.Status  = (uint8_t)((data >> 8U) & 0x000000FFU);
+        /* CPU1에서 보낸 온도, 시퀀스, 사인파 데이터 갱신 */
+        g_xEthTxData.SineVal = pxIpcCpu1ToCm->Payload.TxData.sineValue;
+        g_xEthTxData.DspTemp = (uint16_t)pxIpcCpu1ToCm->Payload.TxData.adcTemperature;
+        g_xEthTxData.SeqNum  = (uint8_t)(pxIpcCpu1ToCm->Payload.TxData.sequenceNum & 0xFFU);
+        g_xEthTxData.Status  = 0U; /* TODO: CPU1에서 상태 필드 제거됨에 따른 기본값 */
     }
     else
     {

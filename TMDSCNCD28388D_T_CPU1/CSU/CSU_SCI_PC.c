@@ -8,8 +8,7 @@
 /* ************************** [[   include  ]]  *********************************************************** */
 #include "csu_SCI_PC.h"
 
-// csu_Adc.c에 선언된 실시간 섭씨 온도 전역 변수 공유 선언 (타입 미스매치 예방을 위해 float32_t로 선언)
-extern float32_t currentTemperatureC;
+/* 외부 참조 (xAdc 사용) */
 
 /* ************************** [[   define   ]]  *********************************************************** */
 #define SCI_PC_SOF		0x7Eu
@@ -81,8 +80,8 @@ void sendSciPcMessage1(void)
     Buf[pos++] = (uint16_t)(xXmtSciPcMsg1.Status & 0xFFu); // Buf[4]
 
     /* 4. DspTemp (uint16_t - 2 bytes, Little Endian, x10 스케일 및 반올림 적용) */
-    // 소수점 1자리 전송 규격에 맞게 10배 확대하고 0.5f를 더해 명확히 반올림 연산 처리 수행
-    xXmtSciPcMsg1.DspTemp = (uint16_t)((currentTemperatureC * 10.0f) + 0.5f);
+    /* float 온도(℃)를 x10 스케일 16bit 정수로 변환 후 전송 (반올림 포함) */
+    xXmtSciPcMsg1.DspTemp = (uint16_t)((xAdc.currentTemperatureC * 10.0f) + 0.5f);
     on16.u16 = xXmtSciPcMsg1.DspTemp;
     Buf[pos++] = on16.byte.B0; // Low Byte (Buf[5])
     Buf[pos++] = on16.byte.B1; // High Byte (Buf[6])

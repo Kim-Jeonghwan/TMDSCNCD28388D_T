@@ -78,33 +78,6 @@ void Initial_IPC(void)
     IPC_sync(IPC_CPU1_L_CM_R, IPC_FLAG31);
 }
 
-/* ---------------------------------------------------------------
- * CPU1 → CM IPC 이더넷 데이터 전송
- * --------------------------------------------------------------- */
-/*
-@funtion    void sendEthDataToCM(uint16_t dspTemp, uint8_t seqNum, uint8_t status)
-@brief      CPU1에서 이더넷 Tx 데이터(온도, 시퀀스, 상태)를 CM 코어로 IPC 전송합니다.
-@param      dspTemp: DSP 온도 x10 스케일 값 (uint16_t, Little Endian)
-@param      seqNum : 시퀀스 번호 (uint8_t)
-@param      status : 상태 바이트 (uint8_t)
-@return     void
-@remark
-    - IPC_FLAG1 을 사용하여 CM의 recvIpcCpu1Message() 를 트리거합니다.
-    - addr 하위 16bit = dspTemp
-    - data 하위  8bit = seqNum, data 9~16bit = status
-    - CWE-369: 분모 없음 (IPC 명령 전송만)
-*/
-void sendEthDataToCM(uint16_t dspTemp, uint8_t seqNum, uint8_t status)
-{
-    /* CM이 이전 메시지를 아직 ACK하지 않았으면 스킵 (2ms 후 재시도) */
-    if (!IPC_isFlagBusyLtoR(IPC_CPU1_L_CM_R, IPC_FLAG1))
-    {
-        uint32_t uiAddr = (uint32_t)dspTemp;
-        uint32_t uiData = ((uint32_t)status << 8U) | (uint32_t)seqNum;
-
-        IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, (uint32_t)IPC_CMD_CPU1_ETH_TX_DATA, uiAddr, uiData);
-    }
-}
 
 /* ---------------------------------------------------------------
  * CM→CPU1 IPC 수신 ISR

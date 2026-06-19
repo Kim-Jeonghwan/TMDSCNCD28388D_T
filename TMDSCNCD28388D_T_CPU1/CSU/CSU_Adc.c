@@ -1,9 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Adc.c
-    Description      : ADC Application Logic (10ms Periodic Task)
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
-***********************************************************************/
+    Version          : 00.01
+    Description      : CPU1 ADC Application Logic
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (코드 스타일 및 구조체 템플릿 적용)
+**********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 코드 스타일 및 구조체 템플릿 적용
+ * 2026. 06. 05. - 코드 주석 포맷팅 및 한글화
+ */
 
 /* ************************** [[   include  ]]  *********************************************************** */
 #include "csu_Adc.h"
@@ -12,8 +21,8 @@
 // hal_Adc.c에 선언된 실시간 온도 센서 원시 결과 전역 변수 공유 참조
 extern uint16_t adcResult;
 
-// 디버깅 및 실시간 표출용 온도 센서 결과 전역 변수 (타입 미스매치 방지를 위해 float32_t로 선언)
-float32_t currentTemperatureC = 0.0f;
+// 구조체 변수 선언
+stAdcState xAdc = {0};
 
 // C2000Ware OTP 캘리브레이션 셋업 전역 변수 참조
 extern float32 tempSensor_tempSlope;
@@ -30,7 +39,7 @@ static void updateDspTempSensor(void);
 /* ************************** [[  function  ]]  *********************************************************** */
 
 /*
-@funtion    void Initial_Adc(void)
+@function    Initial_Adc
 @brief      ADC 애플리케이션 초기화
 @param      void
 @return     void
@@ -45,7 +54,7 @@ void Initial_Adc(void)
 
 
 /*
-@funtion    void updateAdcData(void)
+@function    updateAdcData
 @brief      ADC 데이터 업데이트 (10ms 주기 호출)
 @param      void
 @return     void
@@ -60,7 +69,7 @@ void updateAdcData(void)
 
 
 /*
-@funtion    static void updateDspTempSensor(void)
+@function    updateDspTempSensor
 @brief      DSP 내부 온도 센서 데이터 측정 및 섭씨 온도 변환
 @param      void
 @return     static void
@@ -79,17 +88,17 @@ static void updateDspTempSensor(void)
         
         // IIR 로우패스 필터 적용 (노이즈로 인한 1의 자리 및 소수점 자리 요동 방지)
         // Alpha = 0.05 (새로운 값 5%, 기존 값 95% 반영)
-        if (currentTemperatureC == 0.0f)
+        if (xAdc.currentTemperatureC == 0.0f)
         {
-            currentTemperatureC = rawTempC; // 초기화
+            xAdc.currentTemperatureC = rawTempC; // 초기화
         }
         else
         {
-            currentTemperatureC = (currentTemperatureC * 0.95f) + (rawTempC * 0.05f);
+            xAdc.currentTemperatureC = (xAdc.currentTemperatureC * 0.95f) + (rawTempC * 0.05f);
         }
     }
     else
     {
-        currentTemperatureC = 0.0f; // 슬로프 값이 비정상일 경우 안전 디폴트 값 할당
+        xAdc.currentTemperatureC = 0.0f; // 슬로프 값이 비정상일 경우 안전 디폴트 값 할당
     }
 }

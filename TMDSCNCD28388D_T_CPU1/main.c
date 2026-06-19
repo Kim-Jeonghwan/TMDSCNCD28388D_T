@@ -1,9 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : main.c
-    Description      : Main background loop and periodic tasks
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Version          : 00.01
+    Description      : CPU1 코어 메인 루프 및 태스크
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (코드 스타일 및 주석 템플릿 적용)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 19. - 코드 스타일 및 주석 템플릿 적용
+ * 2026. 06. 05. - 코드 주석 포맷팅 및 한글화
+ */
 
 /* ************************** [[   include  ]]  *********************************************************** */
 #include "main.h"
@@ -113,8 +122,6 @@ static void cycle_1ms(void)
 */
 static void cycle_10ms(void)
 {
-    updateAdcData();
-    
     // 3. 통신 메시지 송신
     sendSciPcMessage1();
 }

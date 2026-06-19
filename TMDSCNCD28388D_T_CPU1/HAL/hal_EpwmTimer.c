@@ -1,8 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : hal_EpwmTimer.c
-    Description      : EPWM1 기반 2ms 하드웨어 타이머 구현 (UDP 이더넷 TX 트리거용)
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Version          : 00.01
+    Description      : CPU1 EPWM1 기반 100us 메인 인터럽트 구현
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (Phase 2: 100us 주기 및 ADC/Sine 연동)
 **********************************************************************/
 
 /*
@@ -23,16 +25,16 @@
 #include "hal_EpwmTimer.h"
 
 /* ISR 정적 선언 */
-static __interrupt void isr_Epwm1Timer2ms(void);
+static __interrupt void isr_Epwm1Timer100us(void);
 
 /*
-@funtion    void Initial_EpwmTimer(void)
-@brief      EPWM1 기반 2ms 타이머 초기화 및 ISR 등록
+@function    Initial_EpwmTimer
+@brief      EPWM1 기반 100us 타이머 초기화 및 ISR 등록
 @param      void
 @return     void
 @remark
     - EPWM1 모듈을 UP-DOWN 카운터 모드로 설정합니다.
-    - Period = 200,000 (200MHz 기준 2ms 주기)
+    - Period = 10,000 (200MHz 기준 100us 주기)
     - Zero Event 인터럽트 활성화 후 ISR 등록
     - EPWM_CLOCK_DIVIDER_1, EPWM_HSCLOCK_DIVIDER_1 (프리스케일러 1:1)
 */
@@ -57,28 +59,47 @@ void Initial_EpwmTimer(void)
     EPWM_setInterruptEventCount(EPWM_TIMER1_BASE, 1U); /* 매 1회 이벤트마다 인터럽트 */
 
     /* PIE 인터럽트 등록 및 활성화 */
-    Interrupt_register(INT_EPWM1, isr_Epwm1Timer2ms);
+    Interrupt_register(INT_EPWM1, isr_Epwm1Timer100us);
     Interrupt_enable(INT_EPWM1);
 }
 
 /*
-@funtion    static __interrupt void isr_Epwm1Timer2ms(void)
-@brief      EPWM1 타이머 2ms Zero Event ISR - UDP 이더넷 TX 데이터 CM 전송
+@function   isr_Epwm1Timer100us
+@brief      EPWM1 100us 타이머 ISR (메인 루프)
 @param      void
 @return     static __interrupt void
 @remark
-    - 2ms 마다 호출됩니다.
-    - xXmtSciPcMsg1 (csu_SCI_PC.h) 에서 온도/시퀀스 데이터를 읽어 CM으로 IPC 전송합니다.
-    - CM은 수신 즉시 UDP Reflect 패킷을 PC로 송신합니다.
+    - 100us 마다 호출됩니다.
+    - ADC를 갱신하고 사인파(Sine wave)를 생성합니다.
+    - 갱신된 데이터를 IPC의 Payload에 담아 CM으로 전송합니다.
 */
-extern float32_t currentTemperatureC; // ADC 최신 온도 공유 변수
+#define SINE_WAVE_STEP 0.0062831853f // 100Hz = 100us * 1000 step
+static float32_t sineAngle = 0.0f;
+static uint32_t ipcSeqNum = 0U;
 
-static __interrupt void isr_Epwm1Timer2ms(void)
+static __interrupt void isr_Epwm1Timer100us(void)
 {
-    /* CM 코어에 현재 최신 10ms 주기의 온도 + 시퀀스 + 상태 데이터만 순수하게 IPC 전송 */
-    sendEthDataToCM(xXmtSciPcMsg1.DspTemp,
-                    (uint8_t)xXmtSciPcMsg1.IncNumber,
-                    (uint8_t)xXmtSciPcMsg1.Status);
+    /* 1. ADC 데이터 갱신 */
+    updateAdcData();
+
+    /* 2. 사인파 생성 (100Hz 기준) */
+    float32_t sineValue = sinf(sineAngle);
+    sineAngle += SINE_WAVE_STEP;
+    if (sineAngle > 6.2831853f) // 2 * PI
+    {
+        sineAngle -= 6.2831853f;
+    }
+
+    /* 3. CM으로 IPC 데이터 전송 (TxData 캡슐화) */
+    if (!IPC_isFlagBusyLtoR(IPC_CPU1_L_CM_R, IPC_FLAG1))
+    {
+        pxIpcCpu1ToCm->Payload.TxData.sineValue = sineValue;
+        pxIpcCpu1ToCm->Payload.TxData.adcTemperature = xAdc.currentTemperatureC;
+        pxIpcCpu1ToCm->Payload.TxData.sequenceNum = ipcSeqNum++;
+        
+        IPC_sendCommand(IPC_CPU1_L_CM_R, IPC_FLAG1, IPC_ADDR_CORRECTION_DISABLE, 
+                        (uint32_t)IPC_CMD_CPU1_ETH_TX_DATA, 0U, 0U);
+    }
 
     /* EPWM 인터럽트 플래그 클리어 */
     EPWM_clearEventTriggerInterruptFlag(EPWM_TIMER1_BASE);

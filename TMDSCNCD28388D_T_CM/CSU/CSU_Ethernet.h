@@ -1,8 +1,10 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ethernet.h
-    Description      : UDP 프로토콜 처리 계층 (규격서 Payload/ACK MSG Format 준수)
-    Last Updated     : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
+    Version          : 00.01
+    Description      : UDP 프로토콜 처리 계층
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 19. (Phase 5: 사인파 추가 및 PC 요청 응답 구조 변경)
 **********************************************************************/
 
 #ifndef csu_ETHERNET_H
@@ -66,7 +68,7 @@
 
 /* MSG Header 크기 정의 */
 #define ETH_MSG_HEADER_SIZE     (12U)
-#define ETH_PAYLOAD_DATA_SIZE   (4U)    /* 온도+시퀀스 Reflect 데이터 크기 */
+#define ETH_PAYLOAD_DATA_SIZE   (8U)    /* 온도+시퀀스+상태+사인파 Reflect 데이터 크기 */
 #define ETH_PC_DATA_SIZE        (2U)    /* PC→DSP Update 데이터 크기 */
 #define ETH_ACK_DATA_SIZE       (4U)    /* ACK 데이터 크기 (Code Info + Ack Info) */
 #define ETH_CHECKSUM_SIZE       (2U)
@@ -76,6 +78,7 @@
  * --------------------------------------------------------------- */
 typedef struct
 {
+    float32_t SineVal;  /* 사인파 값 */
     uint16_t DspTemp;   /* 온도 x10 스케일, Little Endian */
     uint8_t  SeqNum;    /* 시퀀스 번호 */
     uint8_t  Status;    /* 상태 바이트 */
@@ -88,7 +91,7 @@ extern stEthSharedData g_xEthRxData;   /* 이더넷 Rx → CM → CPU1 */
 /* ---------------------------------------------------------------
  * 함수 프로토타입
  * --------------------------------------------------------------- */
-void buildAndSendUdpPacket(void);
+void buildAndSendUdpPacket(uint32_t rxTimestamp);
 void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length);
 void sendAckResponse(uint8_t ackResult, uint16_t ackInfo,
                      uint32_t timestamp, uint8_t targetCode);

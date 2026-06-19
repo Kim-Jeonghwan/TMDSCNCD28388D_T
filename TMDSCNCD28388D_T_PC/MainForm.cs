@@ -14,6 +14,7 @@ using System.Management;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
+using ScottPlot;
 
 namespace TMDSCNCD28388D_T_PC
 {
@@ -21,6 +22,7 @@ namespace TMDSCNCD28388D_T_PC
     {
         private IProtocol _protocol;
         private System.Windows.Forms.Timer _timer;
+        private System.Windows.Forms.Timer _reqTimer; // 100ms 데이터 요청 타이머
 
         private Color colorBg = Color.FromArgb(30, 30, 30);
         private Color colorPanelBg = Color.FromArgb(45, 45, 48);
@@ -59,6 +61,12 @@ namespace TMDSCNCD28388D_T_PC
         private RadioButton rdoUdp;
         private Label lblCommStatus;  // 통신 두절 표시
 
+        // Chart Data (ScottPlot 4.x)
+        private FormsPlot _formsPlot;
+        private double[] _sineData = new double[200];
+        private double[] _tempData = new double[200];
+        private int _dataNextIndex = 0;
+        private CheckBox chkAutoRequest;
 
         public MainForm()
         {
@@ -79,6 +87,9 @@ namespace TMDSCNCD28388D_T_PC
             _timer = new System.Windows.Forms.Timer { Interval = 100 }; // 100ms UI Update
             _timer.Tick += Timer_Tick;
 
+            _reqTimer = new System.Windows.Forms.Timer { Interval = 100 }; // 100ms 데이터 요청
+            _reqTimer.Tick += ReqTimer_Tick;
+
             BuildUI();
         }
 
@@ -87,13 +98,14 @@ namespace TMDSCNCD28388D_T_PC
             TableLayoutPanel mainLayout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                RowCount = 4,
+                RowCount = 5,
                 ColumnCount = 1,
                 Padding = new Padding(15, 40, 15, 15)
             };
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 220)); // Comm Panel
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 200)); // Status Panel
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 150)); // Control Panel
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 150)); // Status Panel
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 120)); // Control Panel
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 250)); // Chart Panel
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Log Panel
 
             // 1. Top Bar - Communication Panel
@@ -234,9 +246,36 @@ namespace TMDSCNCD28388D_T_PC
                 }
             };
 
-            pnlCtrl.Controls.AddRange(new Control[] { lblInputSeq, txtInputSeq, btnSendSeq });
+            chkAutoRequest = new CheckBox
+            {
+                Text = "데이터 자동 요청 (100ms)",
+                Location = new Point(700, 60),
+                AutoSize = true,
+                Font = new Font("맑은 고딕", 12, FontStyle.Bold),
+                ForeColor = Color.Yellow
+            };
+            chkAutoRequest.CheckedChanged += (s, e) =>
+            {
+                if (chkAutoRequest.Checked) _reqTimer.Start();
+                else _reqTimer.Stop();
+            };
+
+            pnlCtrl.Controls.AddRange(new Control[] { lblInputSeq, txtInputSeq, btnSendSeq, chkAutoRequest });
             mainLayout.Controls.Add(pnlCtrl, 0, 2);
 
+            // 3.5 Chart Panel
+            Panel pnlChart = CreateStyledPanel("REAL-TIME CHART (Sine & Temp)");
+            pnlChart.Dock = DockStyle.Fill;
+            pnlChart.Margin = new Padding(5);
+            _formsPlot = new FormsPlot() { Dock = DockStyle.Fill };
+            _formsPlot.Plot.AddSignal(_sineData, 10, Color.Cyan, "SineWave");
+            _formsPlot.Plot.AddSignal(_tempData, 10, Color.Orange, "Temp");
+            _formsPlot.Plot.Style(Style.Black);
+            _formsPlot.Plot.XAxis.Label("Time");
+            _formsPlot.Plot.YAxis.Label("Value");
+            pnlChart.Controls.Add(_formsPlot);
+            _formsPlot.BringToFront();
+            mainLayout.Controls.Add(pnlChart, 0, 3);
 
             // 4. Real-Time Log Panel
             Panel pnlLog = CreateStyledPanel("REAL-TIME LOG MONITOR");
@@ -261,7 +300,7 @@ namespace TMDSCNCD28388D_T_PC
 
             pnlLog.Resize += (s, e) => { btnLogDetail.Location = new Point(pnlLog.Width - 220, 45); };
 
-            mainLayout.Controls.Add(pnlLog, 0, 3);
+            mainLayout.Controls.Add(pnlLog, 0, 4);
 
             this.Controls.Add(mainLayout);
             UpdateConnectButtons();
@@ -428,6 +467,7 @@ namespace TMDSCNCD28388D_T_PC
                 lblPortConnected.ForeColor = Color.Gray;
                 lblCommReceiving.ForeColor = Color.Gray;
                 _timer.Stop();
+                chkAutoRequest.Checked = false;
             }
         }
 
@@ -452,6 +492,23 @@ namespace TMDSCNCD28388D_T_PC
                 /* 통신 정상 수신 시 통신 두절 표시 해제 */
                 if (lblCommStatus != null)
                     lblCommStatus.Text = "";
+
+                // Update Chart
+                if (_dataNextIndex < _sineData.Length)
+                {
+                    _sineData[_dataNextIndex] = data.SineValue;
+                    _tempData[_dataNextIndex] = data.DspTemp;
+                    _dataNextIndex++;
+                }
+                else
+                {
+                    Array.Copy(_sineData, 1, _sineData, 0, _sineData.Length - 1);
+                    Array.Copy(_tempData, 1, _tempData, 0, _tempData.Length - 1);
+                    _sineData[_sineData.Length - 1] = data.SineValue;
+                    _tempData[_tempData.Length - 1] = data.DspTemp;
+                }
+                _formsPlot.Plot.AxisAuto();
+                _formsPlot.Render();
             }));
         }
 
@@ -506,6 +563,17 @@ namespace TMDSCNCD28388D_T_PC
             if ((DateTime.Now - _lastRxTime).TotalMilliseconds > 500)
             {
                 lblCommReceiving.ForeColor = Color.Gray;
+            }
+        }
+
+        private void ReqTimer_Tick(object sender, EventArgs e)
+        {
+            if (_protocol != null && _protocol.IsConnected)
+            {
+                // UI Freezing 방지를 위해 비동기 Task 실행
+                Task.Run(() => {
+                    try { _protocol.SendControlMessage(_ctrlDto); } catch { }
+                });
             }
         }
 
