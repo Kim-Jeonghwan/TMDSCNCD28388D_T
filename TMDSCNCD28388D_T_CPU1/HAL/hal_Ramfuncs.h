@@ -1,28 +1,25 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Copyright 2021. All Rights Reserved.
-
-    Filename        : hal_Ramfuncs.h
-    Version         : 00.02
-    Description     : RAM 빌드 전용 RamfuncsLoad/Run 더미 심볼 정의 모듈
-    Tracebility     :
-    Programmer      : 
-    Last Updated    : 2026. 06. 04.
-
-    [목적]
-    SDK의 f2838x_globalprototypes.h 및 device.h 에는 아래 심볼들이
-    조건 없이 extern 선언되어 있어 RAM 빌드 시 미정의 링커 에러를 유발합니다.
-
-    본 헤더는 RAM 빌드(_FLASH 미정의) 환경일 때 전역 변수 형태로 더미 실체를 
-    직접 제공하여, 별도의 .c 파일 없이 링커 에러를 깔끔하게 해소합니다.
-
-    Function List   :
-                      (없음 - 심볼 정의 전용)
+    Filename         : hal_Ramfuncs.h
+    Version          : 00.02
+    Description      : RAM 빌드 전용 RamfuncsLoad/Run 더미 심볼 정의 모듈
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비)
 **********************************************************************/
+
+/*
+ * [목적]
+ * SDK의 f2838x_globalprototypes.h 및 device.h 에는 아래 심볼들이
+ * 조건 없이 extern 선언되어 있어 RAM 빌드 시 미정의 링커 에러를 유발합니다.
+ *
+ * 본 헤더는 RAM 빌드(_FLASH 미정의) 환경일 때 전역 변수 형태로 더미 실체를 
+ * 직접 제공하여, 별도의 .c 파일 없이 링커 에러를 깔끔하게 해소합니다.
+ */
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자 기입 및 이력 보완)
  * 2026.06.04 - 최초 작성 (RAM 빌드 시 링커 미정의 심볼 에러 해소 목적)
  * 2026.06.04 - 중복 정의 해결을 위해 변수 실체를 hal_Ramfuncs.c로 이관 및 extern 선언으로 변경
  */

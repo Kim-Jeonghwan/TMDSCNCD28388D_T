@@ -1,21 +1,17 @@
 /**********************************************************************
     Nexcom Co., Ltd.
-    Copyright 2021. All Rights Reserved.
-
-    Filename        : hal_Adc.c
-    Version         : 00.01
-    Description     : ADC Driver (Focus on internal Temperature Sensor & EPWM9 Trigger)
-    Tracebility     :
-    Programmer      :
-    Last Updated    : 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
-
-    Function List   :
-                      void InitialAdc(void)
-                      void InitAdcModules(void)
-                      void initEPWM8(void)
-                      void initEPWM9(void)
-                      interrupt void AdcaIsr(void)
+    Filename         : hal_Adc.c
+    Version          : 00.01
+    Description      : ADC Driver (Focus on internal Temperature Sensor & EPWM9 Trigger)
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 매크로 이동)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자 기입, 매크로 상수 헤더 이동 및 이력 보완)
+ */
 
 /* ************************** [[   include  ]] *********************************************************** */
 #include "hal_Adc.h"
@@ -30,8 +26,7 @@ static void setupEPWM9_TimeBase(uint16_t prd);
 static void setupEPWM9_AdcTrigger(void);
 
 /* ************************** [[   define   ]] *********************************************************** */
-#define DEFAULT_MAVE_COUNT  100u   // 이동 평균 필터 카운트
-#define DEFAULT_PWM_HZ      100000u // ePWM8 트리거 주파수 (100kHz 조정)
+
 
 /* ************************** [[   global   ]] *********************************************************** */
 uint16_t adcResult = 0u; // 실시간 온도 센서 원시 결과 전역 변수 (csu_Adc.c에서 참조)

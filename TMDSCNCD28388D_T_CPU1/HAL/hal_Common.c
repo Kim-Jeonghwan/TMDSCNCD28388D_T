@@ -1,23 +1,17 @@
 /**********************************************************************
-
 	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
-
-	Filename		: hal_Common.c
-	Version			: 00.00
-	Description		: 
-	Tracebility		: 
-	Programmer	    :
-	Last Updated	: 2026. 01. 21.
-
+	Filename         : hal_Common.c
+	Version          : 00.00
+	Description      : CPU1 공통 유틸리티 소스
+	Programmer       : Kim Jeonghwan
+	Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 
- * 
-*/
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자, 설명 기입 및 이력 보완)
+ */
 
 
 /* ************************** [[   include  ]]  *********************************************************** */

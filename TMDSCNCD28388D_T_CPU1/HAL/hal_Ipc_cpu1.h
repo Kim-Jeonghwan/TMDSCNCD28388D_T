@@ -4,8 +4,15 @@
     Version          : 00.01
     Description      : CM Core IPC Device Driver Header
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 22. (MSGRAM 롤백으로 인해 불필요해진 Initial_IPC_Mastership 삭제)
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (이력 블록 신설)
+ * 2026. 06. 22. - MSGRAM 롤백으로 인해 불필요해진 Initial_IPC_Mastership 삭제
+ */
 
 #ifndef HAL_IPC_CPU1_H
 #define HAL_IPC_CPU1_H

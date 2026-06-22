@@ -1,20 +1,17 @@
 /**********************************************************************
-
     Nexcom Co., Ltd.
-    Copyright 2021. All Rights Reserved.
-
-    Filename        : hal_DspInit.c
-    Version         : 00.06
-    Description     : CPU1 Master Initialization (CM Core Fault 해결을 위한 권한 양도 시퀀스 개편)
-    Tracebility     : 
-    Programmer      : Kim Jeonghwan
-    Last Updated    : 2026. 06. 22. (불필요해진 Initial_IPC_Mastership 호출 제거)
-
+    Filename         : hal_DspInit.c
+    Version          : 00.06
+    Description      : CPU1 Master Initialization (CM Core Fault 해결을 위한 권한 양도 시퀀스 개편)
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 인클루드 수정)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (자기 자신 헤더 인클루드 룰 정비 및 이력 보완)
+ * 2026. 06. 22. - MSGRAM 롤백으로 인해 불필요해진 Initial_IPC_Mastership 호출 완전 제거
  * 2026. 06. 19. - 전역 인터럽트(EINT, ERTM) 호출을 main_cpu1.c 내부 while(1) 직전으로 이동 (안전성 확보)
  * 2026. 06. 19. - Device_init() 직후 전체 EPWM 클럭(EPWMCLK)을 200MHz(1:1 분주)로 교정하는 로직 추가
  * 2026. 06. 19. - Init_GpioDout 내부에 GPIO 145 제어권 CM 코어로 양도
@@ -28,12 +25,11 @@
  * 2026. 06. 02. - 정석 Active-Low 리셋 시퀀스 복구 및 GPIO119 강력한 푸시풀 출력(STD) 모드 융합 적용
  * 2026. 06. 04. - IPC 동기화(Initial_IPC) 호출을 DSP_Initialization 내부에서 main.c로 상향 이동
  * 2026. 06. 04. - CM 하드폴트 원천 박멸을 위해 미존재 인터럽트 권한 양도 API 삭제 및 초기화 안정화
- * 2026. 06. 22. - MSGRAM 롤백으로 인해 불필요해진 Initial_IPC_Mastership 호출 완전 제거
  */
 
 
 /* ************************** [[    include    ]]    *********************************************************** */
-#include "main_cpu1.h"
+#include "hal_DspInit.h"
 
 
 /* ************************** [[    define     ]]    *********************************************************** */

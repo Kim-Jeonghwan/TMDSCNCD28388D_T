@@ -1,23 +1,17 @@
 /**********************************************************************
-
-	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
-
-	Filename		: hal_Sci.h
-	Version			: 00.00
-	Description		: 
-	Tracebility		: 
-	Programmer	    :
-	Last Updated	: 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
-
+    Nexcom Co., Ltd.
+    Filename         : hal_Sci.h
+    Version          : 00.00
+    Description      : CPU1 SCI(UART) 통신 드라이버 헤더
+    Programmer       : Kim Jeonghwan
+ 	Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 매크로 이동)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 
- * 
-*/
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자 기입, 매크로 상수 이동 및 이력 보완)
+ */
 
 
 #ifndef HAL_SCI_H
@@ -29,6 +23,11 @@
 
 /* ************************** [[   define   ]]  *********************************************************** */
 #define QUEUE_MAX_SCI 200u
+
+#define SCI_PC_GPIO_PIN_SCIA_RXD	28u             // SCI RX용 GPIO 핀 번호
+#define SCI_PC_GPIO_PIN_SCIA_TXD	29u             // SCI TX용 GPIO 핀 번호
+#define SCI_PC_GPIO_CFG_SCIA_RXD	GPIO_28_SCIA_RX	// SCI RX용 pinConfig
+#define SCI_PC_GPIO_CFG_SCIA_TXD	GPIO_29_SCIA_TX	// SCI TX용 pinConfig
 
 
 /* ************************** [[   enum or struct   ]]  *************************************************** */

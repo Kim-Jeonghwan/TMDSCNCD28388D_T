@@ -1,22 +1,16 @@
 /**********************************************************************
-
 	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
-
-	Filename		: hal_Timer.h
-	Version			: 00.10
-	Description		: 
-	Tracebility		: 
-	Programmer	    :
-	Last Updated	: 2026. 05. 29.
-
+	Filename         : hal_Timer.h
+	Version          : 00.10
+	Description      : CPU1 시스템 주기 타이머 (CPUTimer 0, 1, 2) 드라이버 헤더
+	Programmer       : Kim Jeonghwan
+	Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비)
 **********************************************************************/
 
 /*
- * 변경 이력
+ * Modification History
  * --------------------
- * 
- * 
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자 기입 및 이력 블록 보완)
  */
 
 

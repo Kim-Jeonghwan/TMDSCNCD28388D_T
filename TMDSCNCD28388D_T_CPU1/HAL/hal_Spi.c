@@ -1,25 +1,16 @@
 /**********************************************************************
-
-	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
-
-	Filename		: hal_Spi.c
-	Version			: 00.00
-	Description		: SPI Driver for SSI Encoder
-	Tracebility		: 
-	Programmer		: 
-	Last Updated	: 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
-
-	Function List	:	
-						
-
+    Nexcom Co., Ltd.
+    Filename         : hal_Spi.c
+    Version          : 00.00
+    Description      : SPI Driver for SSI Encoder
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 매크로 이동)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 
- * 
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자 기입, 매크로 상수 이동 및 이력 보완)
  */
 
 
@@ -33,10 +24,6 @@
 #include "hal_Spi.h"
 
 /* ************************** [[   define   ]]  *********************************************************** */
-// #define SSI_SIMO_SPIB	63u // SPI SIMOB
-#define ENCODER_SOMI_GPIC	51u // SPI SOMIC
-#define ENCODER_CLK_GPIC	52u // SPI CLKC
-// #define SSI_CS			66u // Chip Select
 
 
 

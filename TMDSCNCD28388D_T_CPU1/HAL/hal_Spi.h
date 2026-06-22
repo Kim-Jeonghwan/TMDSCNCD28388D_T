@@ -1,23 +1,17 @@
 /**********************************************************************
-
 	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
-
-	Filename		: hal_Spi.h
-	Version			: 00.00
-	Description		: 
-	Tracebility		: 
-	Programmer		: 
-	Last Updated	: 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
-
+	Filename         : hal_Spi.h
+	Version          : 00.00
+	Description      : CPU1 SPI 드라이버 헤더
+	Programmer       : Kim Jeonghwan
+	Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 매크로 이동)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 
- * 
-*/
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자 기입, 매크로 상수 이동 및 이력 보완)
+ */
 
 
 #ifndef HAL_SPI_H
@@ -28,6 +22,8 @@
 
 
 /* ************************** [[   define   ]]  *********************************************************** */
+#define ENCODER_SOMI_GPIC	51u // SPI SOMIC
+#define ENCODER_CLK_GPIC	52u // SPI CLKC
 
 
 

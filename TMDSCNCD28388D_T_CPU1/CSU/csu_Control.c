@@ -1,15 +1,16 @@
 /**********************************************************************
- Nexcom Co., Ltd.
- Filename         : csu_Control.c
- Version          : 00.02
- Description      : 시스템 메인 제어 및 인터럽트 로직 구현
- Programmer       : Kim Jeonghwan
- Last Updated     : 2026. 06. 22. (GSRAM 잔재 주석을 MSGRAM 기준으로 수정)
-**********************************************************************/
+    Nexcom Co., Ltd.
+    Filename         : csu_Control.c
+    Version          : 00.02
+    Description      : 시스템 메인 제어 및 인터럽트 로직 구현
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 매크로 이동)
+ **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (매크로 상수 헤더 이동 및 이력 보완)
  * 2026. 06. 22. - GSRAM 잔재 주석을 MSGRAM 기준으로 수정
  * 2026. 06. 19. - Control_Init() 내부 EPWM_clearEventTriggerInterruptFlag 강제 클리어 구문 추가
  * 2026. 06. 19. - hal_Epwm.c에서 100us 타이머 ISR 및 제어 로직 이전
@@ -19,7 +20,6 @@
 
 #include "csu_Control.h"
 
-#define SINE_WAVE_STEP 0.000314159f // 0.5Hz = 100us * 20000 step (PC 모니터링 시각화용)
 static float32_t sineAngle = 0.0f;
 static uint32_t ipcSeqNum = 0U;
 static uint32_t isrTickCnt = 0U;

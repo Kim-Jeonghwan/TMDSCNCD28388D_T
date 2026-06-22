@@ -1,23 +1,17 @@
 /**********************************************************************
-
 	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
-
-	Filename		: hal_DspInit.h
-	Version			: 00.00
-	Description		: 
-	Tracebility		: 
-	Programmer	    :
-	Last Updated	: 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
-
+	Filename         : hal_DspInit.h
+	Version          : 00.00
+	Description      : CPU1 마스터 시스템 초기화 드라이버 헤더
+	Programmer       : Kim Jeonghwan
+	Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 
- * 
-*/
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자, 설명 기입 및 이력 보완)
+ */
 
 
 #ifndef HAL_DSPINIT_H

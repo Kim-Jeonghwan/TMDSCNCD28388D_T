@@ -1,32 +1,24 @@
 /**********************************************************************
-
 	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
-
-	Filename		: hal_Adc.h
-	Version			: 00.00
-	Description		: 
-	Tracebility		: 
-	Programmer		: 
-	Last Updated	: 2026. 06. 05. (코드 주석 포맷팅 및 한글화)
-
-	Function List	:	
-						
-
+	Filename         : hal_Adc.h
+	Version          : 00.00
+	Description      : CPU1 ADC 주변장치 드라이버 헤더 (온도센서 및 ePWM 트리거 설정)
+	Programmer       : Kim Jeonghwan
+	Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 매크로 이동)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자, 설명 기입, 매크로 및 전역 변수 이동)
  * 2026. 06. 02. - 온도 센서 전용 1kHz 느린 트리거용 ePWM9 함수 전역 선언 추가
- * 
-*/
+ */
 
 
 /* DESCRIPTION
  * 
  * 
-*/
+ */
 
 #ifndef HAL_ADC_H
 #define HAL_ADC_H
@@ -45,12 +37,16 @@
 #define CONV_ADC_3V		0.000732421875f		// 3 / 4096
 #define CONV_ADC_3_3V	0.0008056640625f	// 3.3 / 4096
 
+#define DEFAULT_MAVE_COUNT  100u   // 이동 평균 필터 카운트
+#define DEFAULT_PWM_HZ      100000u // ePWM8 트리거 주파수 (100kHz 조정)
+
 
 
 /* ************************** [[   struct   ]]  *********************************************************** */
 
 
 /* ************************** [[   global   ]]  *********************************************************** */
+extern uint16_t adcResult;
 
 
 /* ************************** [[  function  ]]  *********************************************************** */

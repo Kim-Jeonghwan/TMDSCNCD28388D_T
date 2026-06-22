@@ -1,15 +1,16 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ethernet.c
-    Version          : 00.05
+    Version          : 00.06
     Description      : UDP 프로토콜 처리 - Payload/ACK MSG 조립/파싱
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 22. (수신 데이터 추출 로직 분기 이동하여 파형 변경 반영 오류 수정)
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 매크로 이동)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (소스 내 매크로 상수를 헤더 csu_Ethernet.h로 이동)
  * 2026. 06. 22. - 수신 데이터 추출 로직 분기 이동하여 파형 변경 반영 오류 수정
  * 2026. 06. 22. - 물리 파일명을 csu_Ethernet.c로 소문자 정정 및 GSRAM 잔재 주석 수정
  * 2026. 06. 19. - 변수명 규칙 적용 (xCsuEth, xHalEth -> xEthApp, xEthDriver 변경)
@@ -42,37 +43,8 @@
 
 /* 전송용 패킷 디스크립터 구조체 (Persistent 유지) */
 /* TX 패킷 디스크립터 풀 (단일 변수 사용 시 큐 꼬임 방지) */
-#define ETH_TX_NUM_PKT_DESC  (4U)
 static Ethernet_Pkt_Desc s_xTxPktDesc[ETH_TX_NUM_PKT_DESC];
 static uint8_t s_ucTxPktDescIdx = 0U;
-
-
-/* ---------------------------------------------------------------
- * IP 헤더 오프셋 상수 (이더넷 프레임 기준)
- * --------------------------------------------------------------- */
-#define ETH_HDR_DST_OFFSET   (0U)    /* 목적지 MAC (6B) */
-#define ETH_HDR_SRC_OFFSET   (6U)    /* 출발지 MAC (6B) */
-#define ETH_HDR_TYPE_OFFSET  (12U)   /* EtherType (2B): 0x0800=IPv4 */
-#define ETH_HDR_SIZE         (14U)
-
-#define IP_HDR_OFFSET        ETH_HDR_SIZE
-#define IP_HDR_VER_IHL       (0x45U) /* IPv4, 20B 헤더 */
-#define IP_HDR_DSCP          (0x00U)
-#define IP_TTL               (64U)
-#define IP_PROTO_UDP         (0x11U)
-#define IP_HDR_SIZE          (20U)
-
-#define UDP_HDR_OFFSET       (ETH_HDR_SIZE + IP_HDR_SIZE)
-#define UDP_HDR_SIZE         (8U)
-
-#define PAYLOAD_OFFSET       (ETH_HDR_SIZE + IP_HDR_SIZE + UDP_HDR_SIZE)
-
-/* 최대 프레임 크기 */
-#define TX_REFLECT_FRAME_SIZE  (64U) /* ETH(14) + IP(20) + UDP(8) + Payload(22) */
-#define TX_ACK_FRAME_SIZE      (60U) /* ETH + IP + UDP + 18B payload */
-
-/* 최소 수신 프레임 크기 (유효성 검사) */
-#define MIN_RX_FRAME_SIZE      (ETH_HDR_SIZE + IP_HDR_SIZE + UDP_HDR_SIZE + ETH_MSG_HEADER_SIZE + ETH_CHECKSUM_SIZE)
 
 /* ---------------------------------------------------------------
  * 공유 데이터 전역 변수 (csu_Ipc_cm.c 에서 갱신)
@@ -86,9 +58,6 @@ stEthAppState xEthApp = {
 
 /* 이더넷 활동(Tx/Rx) LED 표시용 타이머 (1ms 주기 감소) */
 uint16_t ethActivityTimer = 0U;
-
-#define ETH_LED_PIN 146U
-#define ETH_LED_ON()  GPIO_writePin(ETH_LED_PIN, 1U)
 
 /* ---------------------------------------------------------------
  * static 함수 선언

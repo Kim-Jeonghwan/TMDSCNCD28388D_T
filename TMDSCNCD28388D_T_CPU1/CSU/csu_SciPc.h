@@ -4,8 +4,15 @@
     Version          : 00.00
     Description      : PC Interface Communication (SCI_PC) Protocol Definition
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 매크로 이동)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (이력 블록 신설 및 매크로 상수 헤더 이동)
+ * 2026. 06. 19. - 모듈 및 파일명 리팩토링
+ */
 
 #ifndef CSU_SCIPC_H
 #define CSU_SCIPC_H
@@ -14,7 +21,9 @@
 #include "main_cpu1.h"
 
 /* ************************** [[   define   ]]  *********************************************************** */
-/* 통신 패킷 관련 상수는 csu_SciPc.c에 정의됨 (SOF: 0x7E, EOT: 0x0D, ID: 0x10) */
+#define SCI_PC_SOF		0x7Eu
+#define SCI_PC_EOT		0x0Du
+#define SCI_PC_MSG1	    0x10u
 
 /* ************************** [[   enum or struct   ]]  *************************************************** */
 

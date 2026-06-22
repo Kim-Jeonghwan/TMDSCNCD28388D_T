@@ -1,23 +1,18 @@
 /**********************************************************************
-
-	Nexcom Co., Ltd.
-	Copyright 2021. All Rights Reserved.
-
-	Filename		: hal_Timer.c
-	Version			: 00.10
-	Description		: 
-	Tracebility		: 
-	Programmer	    :
-	Last Updated	: 2026. 06. 04. (100us CPUTimer0 인터럽트 내 SCI 블로킹 송신 제거)
-
+    Nexcom Co., Ltd.
+    Filename         : hal_Timer.c
+    Version          : 00.10
+    Description      : CPU1 시스템 주기 타이머 (CPUTimer 0, 1, 2) 드라이버 소스
+    Programmer       : Kim Jeonghwan
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비)
 **********************************************************************/
 
 /*
- * 수정 이력
+ * Modification History
  * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (작성자 기입 및 이력 블록 보완)
  * 2026. 06. 04. - 100us CPUTimer0 인터럽트 내 SCI 블로킹 송신(sendScia_SCI_PC) 제거
- * 
-*/
+ */
 
 
 /* ************************** [[   include  ]]  *********************************************************** */

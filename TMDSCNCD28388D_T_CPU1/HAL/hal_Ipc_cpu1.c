@@ -4,12 +4,13 @@
     Version          : 00.03
     Description      : CM Core IPC Device Driver 및 공유 메모리 설정
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 22. (GSRAM 잔재 주석을 MSGRAM 기준으로 수정)
+    Last Updated     : 2026. 06. 23. (코딩 규칙 준수 정비 및 인클루드 수정)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 23. - 코딩 규칙 준수 정비 (중복 인클루드 제거 및 이력 보완)
  * 2026. 06. 22. - GSRAM 잔재 주석을 MSGRAM 기준으로 수정
  * 2026. 06. 22. - CPU1TOCM MSGRAM 사용으로 인해 불필요해진 Initial_IPC_Mastership 설정 변경 이력 기재
  * 2026. 06. 22. - 이더넷 데이터 폴링 방식으로 변경되어 isrIpcFromCM에서 recvIpcCmMessage 호출 분기 제거
@@ -17,7 +18,6 @@
  */
 
 #include "hal_Ipc_cpu1.h"
-#include "csu_Ipc_cpu1.h"
 
 /* 구조체 할당 */
 volatile stIpcState xIpcState = {false}; // CM 코어 기동 완료 여부 플래그
