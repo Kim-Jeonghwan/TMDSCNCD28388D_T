@@ -1,61 +1,23 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ipc_cm.c
-    Version          : 00.04
-    Description      : CM IPC Protocol 구현
+    Version          : 00.06
+    Description      : CM IPC Protocol 및 공유 메모리 구현
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (변수명 규칙 적용, xCsuEth -> xEthApp)
+    Last Updated     : 2026. 06. 22. (CM 코어의 GSRAM 쓰기 제약으로 인해 MSGRAM으로 롤백)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 22. - pxDataCpu1ToCm, pxDataCmToCpu1 포인터를 GSRAM 주소로 맵핑
+ * 2026. 06. 22. - IPC 전송 기반이 폴링으로 변경됨에 따라 recvIpcCpu1Message, processBulkDataFromCPU1 제거
+ * 2026. 06. 22. - F2838x 하드웨어 설계상 CM 코어는 GSRAM에 대한 쓰기 권한이 없어 MSGRAM 주소로 원복
+ */
 
 #include "csu_Ipc_cm.h"
 
-/* Message RAM 영역에 구조체 포인터 할당 */
-volatile stIpcDataPacket *pxIpcCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_TO_CM_MSGRAM_ADDR;
-volatile stIpcDataPacket *pxIpcCmToCpu1 = (volatile stIpcDataPacket *)IPC_CM_TO_CPU1_MSGRAM_ADDR;
+/* MSGRAM 영역에 구조체 포인터 할당 */
+volatile stIpcDataPacket *pxDataCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_TO_CM_MSGRAM_ADDR;
+volatile stIpcDataPacket *pxDataCmToCpu1 = (volatile stIpcDataPacket *)IPC_CM_TO_CPU1_MSGRAM_ADDR;
 
-/*
-@function    recvIpcCpu1Message
-@brief      CPU1 코어로부터 수신된 IPC 메시지 처리 핸들러
-@param      uint32_t command: 수신된 IPC 명령어 코드
-@param      uint32_t addr   : 수신된 데이터 (미사용)
-@param      uint32_t data   : 수신된 보조 데이터 (미사용)
-@return     void
-@remark
-    - IPC_CMD_CPU1_ETH_TX_DATA: CPU1 → CM
-      pxIpcCpu1ToCm->Payload.TxData 파싱
-*/
-void recvIpcCpu1Message(uint32_t command, uint32_t addr, uint32_t data)
-{
-    (void)addr;
-    (void)data;
-
-    if (command == IPC_CMD_CPU1_ETH_TX_DATA)
-    {
-        /* CPU1에서 보낸 온도, 시퀀스, 사인파 데이터 갱신 */
-        xEthApp.txData.SineVal = pxIpcCpu1ToCm->Payload.TxData.sineValue;
-        /* 온도는 소수점 첫째 자리까지 전송하기 위해 x10 스케일 변환 후 반올림 (+0.5f) */
-        xEthApp.txData.DspTemp = (uint16_t)((pxIpcCpu1ToCm->Payload.TxData.adcTemperature * 10.0f) + 0.5f);
-        xEthApp.txData.SeqNum  = (uint8_t)(pxIpcCpu1ToCm->Payload.TxData.sequenceNum & 0xFFU);
-        xEthApp.txData.Status  = 0U; /* TODO: CPU1에서 상태 필드 제거됨에 따른 기본값 */
-    }
-    else
-    {
-        /* 정의되지 않은 IPC 명령 수신 시 예외 방어 */
-    }
-}
-
-/*
-@funtion    void processBulkDataFromCPU1(void)
-@brief      공유 메모리(Message RAM)를 통한 대용량 데이터 처리 (현재 미사용 예비)
-@param      void
-@return     void
-*/
-void processBulkDataFromCPU1(void)
-{
-    uint32_t uiStatus = pxIpcCpu1ToCm->Status;
-
-    if (uiStatus == 0x01U) /* Data Ready */
-    {
-        pxIpcCpu1ToCm->Status = 0x00U; /* Done */
-    }
-}

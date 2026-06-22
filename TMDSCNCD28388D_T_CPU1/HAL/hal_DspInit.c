@@ -4,11 +4,11 @@
     Copyright 2021. All Rights Reserved.
 
     Filename        : hal_DspInit.c
-    Version         : 00.05
+    Version         : 00.06
     Description     : CPU1 Master Initialization (CM Core Fault 해결을 위한 권한 양도 시퀀스 개편)
     Tracebility     : 
     Programmer      : Kim Jeonghwan
-    Last Updated    : 2026. 06. 19. (전역 인터럽트 활성화 시점 이동)
+    Last Updated    : 2026. 06. 22. (불필요해진 Initial_IPC_Mastership 호출 제거)
 
 **********************************************************************/
 
@@ -28,6 +28,7 @@
  * 2026. 06. 02. - 정석 Active-Low 리셋 시퀀스 복구 및 GPIO119 강력한 푸시풀 출력(STD) 모드 융합 적용
  * 2026. 06. 04. - IPC 동기화(Initial_IPC) 호출을 DSP_Initialization 내부에서 main.c로 상향 이동
  * 2026. 06. 04. - CM 하드폴트 원천 박멸을 위해 미존재 인터럽트 권한 양도 API 삭제 및 초기화 안정화
+ * 2026. 06. 22. - MSGRAM 롤백으로 인해 불필요해진 Initial_IPC_Mastership 호출 완전 제거
  */
 
 
@@ -77,8 +78,6 @@ void DSP_Initialization(void)
     /* --- [최우선 조치] 동기화(IPC_sync) 대기 전에 물리 이더넷 PHY부터 즉시 깨움 --- */
     initEmacGpioPins();
 
-    // 1. CM 코어가 사용할 Shared RAM 권한을 먼저 부여 (CM의 .data, .bss 초기화에 필수)
-    Initial_IPC_Mastership();
 
     Initial_GPIO();
 

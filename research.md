@@ -1,46 +1,67 @@
-# Research Report: EPWM1 ISR 미동작 및 GPIO 34번 토글 불발 원인 분석
+# CPU1 - CM 간 공유 메모리 리서치 보고서
 
-## 1. 개요 (Overview)
-CPU1 코어에서 100us 주기로 실행되도록 설계된 `MainControl_Isr` (EPWM1 기반) 인터럽트 루틴이 호출되지 않아, 해당 ISR 내부에서 제어하는 GPIO 34번(디버그용 점멸 LED)이 토글되지 않는 현상이 발생하고 있습니다. 
-본 리서치는 C2000 MCU 하드웨어의 인터럽트, 타이머 동작 원리와 현 코드의 초기화 타이밍을 분석하여 이 문제의 원인을 규명하고 해결책을 제시합니다.
+## 1. 개요
+현재 모터 제어 ISR 내에서 발생한 변수들을 이더넷을 통해 전송하기 위해, CPU1에서 데이터를 쓰고 `IPC_sendCommand()`를 호출하여 CM 코어에 인터럽트를 발생시키는 구조입니다. 이로 인한 오버헤드를 줄이고자 순수하게 공유 메모리(Shared Memory) 읽기/쓰기 방식을 통한 폴링(Polling) 구조로의 전환을 검토합니다.
 
-## 2. 코드 분석 및 원인 규명 (Root Cause Analysis)
+## 2. MSGRAM vs GSRAM 비교 및 추천
 
-문제의 원인은 크게 세 가지 타이밍 및 초기화 누락 요소가 복합적으로 작용한 결과입니다.
+F28388D 디바이스에는 코어 간 데이터를 공유할 수 있는 두 가지 메모리가 있습니다: **MSGRAM(Message RAM)**과 **GSRAM(Global Shared RAM)**.
 
-### 2.1. EPWM Event Trigger Flag(ETFLG) 미초기화 문제
-- **현상**: `csu_Control.c`의 `Control_Init()`에서 `Interrupt_enable(INT_EPWM1);`을 통해 PIE 인터럽트를 활성화하기 전에, EPWM 모듈의 Event Trigger 인터럽트 플래그를 비워주지 않았습니다.
-- **원인**: 디바이스 부팅 및 하드웨어 초기화 과정에서 EPWM 레지스터를 조작하다 보면 가짜(spurious) 이벤트가 발생하여 플래그가 1로 Set될 수 있습니다. 플래그가 이미 1인 상태에서는 PIE가 활성화되어도 하드웨어가 새로운 상승 에지(Edge) 펄스를 만들어내지 못하기 때문에, 첫 번째 인터럽트 진입이 영구히 봉쇄됩니다 (Deadlock 현상).
-- **해결책**: 인터럽트를 활성화(enable)하기 직전에 반드시 `EPWM_clearEventTriggerInterruptFlag(EPWM_TIMER1_BASE);` 명령을 통해 플래그를 깨끗하게 강제 클리어해야 합니다.
+| 특징 | MSGRAM (Message RAM) | GSRAM (Global Shared RAM) |
+| --- | --- | --- |
+| **용도** | IPC 통신 및 소규모 데이터 교환을 위한 전용 메모리 | 대규모 데이터 버퍼링 및 범용 메모리 |
+| **개수 및 크기** | CPU1TOCM (1KB), CMTOCPU1 (1KB) 등 코어간 방향별 할당 | GS0 ~ GS15 (각 8KB), 총 128KB |
+| **마스터십 제어** | **하드웨어적으로 방향 고정** (설정 불필요). <br>CPU1TOCM의 경우 CPU1은 쓰기/읽기, CM은 읽기 전용. | **CPU1에서 레지스터로 마스터 할당 필요**. <br>기본적으로 CPU1 소유이며, 특정 GS 블록(예: GS1)을 CM에 넘겨줄 수 있음. |
+| **주소 변환** | 코어별 뷰(View) 주소가 다름 (CPU1: 0x39000, CM: 0x20080000) | 코어별 뷰(View) 주소가 다름 (CPU1: 0xD000, CM: 0x20014000) |
 
-### 2.2. 전역 인터럽트 활성화(`EINT`, `ERTM`) 시점의 오류
-- **현상**: `hal_DspInit.c`의 `DSP_Initialization()` 함수 맨 마지막 부분에서 전역 인터럽트(`EINT`)와 디버그 인터럽트(`ERTM`)를 활성화하고 있습니다. 
-- **원인**: `main_cpu1.c`의 부팅 시퀀스를 보면 `DSP_Initialization()` 호출이 끝난 **이후에** `Control_Init()`을 호출합니다. 즉, 문(Door)이 이미 활짝 열린(전역 인터럽트 ON) 상태에서 뒤늦게 문지기(인터럽트 벡터)를 등록하고 개별 인터럽트를 켜려는 형태입니다. 이는 C2000 하드웨어 구조상 레이스 컨디션을 유발할 수 있는 매우 위험한 안티 패턴입니다.
-- **해결책**: `EINT; ERTM;` 호출 시점을 `main_cpu1.c`의 백그라운드 유휴 루프(`while(1)`) 진입 바로 직전으로 대이동(Shift)하여, 모든 시스템 인터럽트 등록이 100% 끝난 안전한 시점에 일제히 가동되도록 해야 합니다.
+### 💡 어떤 것이 더 좋을까요?
+- **현재 상황 (소규모 구조체 유지 시)**: 현재 `stIpcDataPacket` 정도의 작은 구조체만 사용한다면, 마스터십 관리가 필요없고 하드웨어적으로 접근 권한이 안전하게 보호되는 **MSGRAM**이 더 유리할 수 있습니다. (이미 `pxIpcCpu1ToCm` 포인터가 MSGRAM에 맵핑되어 있습니다.)
+- **대용량 데이터 필요 시 (오실로스코프 파형 등)**: 향후 이더넷으로 보내야 할 데이터가 많아지거나 대형 배열을 사용한다면 크기가 1KB로 제한된 MSGRAM 대신 **GSRAM (GS0, GS1)**을 사용하는 것이 필수적입니다.
+- **결론**: 확장성을 고려하여 메모리 용량이 충분한 **GSRAM (GS0, GS1)**에 전역 변수 구조체를 할당하고, 폴링(Polling) 방식으로 읽어가는 방식을 강력히 추천합니다.
 
-### 2.3. TBCLKSYNC (타임베이스 클럭 동기화) 관리 누락
-- **현상**: `hal_Epwm.c`의 `Initial_EpwmTimer()`에서 EPWM1의 주기와 동작 모드 등을 세팅할 때, 전체 EPWM 카운터를 일시 정지시키는 `TBCLKSYNC` 제어가 누락되었습니다.
-- **원인**: `Device_init()`에서 이미 `TBCLKSYNC`가 1로 설정되어 모든 클럭이 도는 상태인데, 이 상태에서 카운터 주기(`PRD`)를 수정하거나 카운터(`TBCTR`)를 강제로 0으로 밀어버리면 타이머 모듈 내부가 엉키거나 다른 PWM 채널과의 동기화가 완전히 깨져버립니다.
-- **해결책**: EPWM 타이머를 설정하기 직전 `SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);`로 클럭을 멈추고 설정을 모두 마친 후, 다시 `SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);`를 호출해 모든 타이머가 깔끔하게 0부터 동시 출발하게 만들어야 합니다.
+## 3. GS0 / GS1을 활용한 양방향 공유 메모리 설계 (예시)
 
-## 3. 구현 및 수정 계획 (Implementation Plan)
+GS0는 CPU1 -> CM, GS1은 CM -> CPU1으로 할당하여 인터럽트 없이 데이터를 교환하는 설계 방법입니다.
 
-### 3.1. `main_cpu1.c` 수정
-- 파일 최상단 수정 이력에 `EINT`, `ERTM` 이동 관련 내역 추가
-- `while(1)` 메인 유휴 루프 진입 직전 위치로 `EINT;` 및 `ERTM;` 추가
+### (1) 마스터십 설정 (CPU1)
+GS0는 기본적으로 CPU1 소유이므로 그대로 두고, GS1의 마스터십만 CM 코어로 위임합니다.
+```c
+// hal_Ipc_cpu1.c 내 초기화 함수
+MemCfg_setGSRAMMasterSel(MEMCFG_SECT_GS1, MEMCFG_GSRAMMASTER_CM); 
+```
 
-### 3.2. `hal_DspInit.c` 수정
-- 파일 최상단 수정 이력에 `EINT`, `ERTM` 이동 관련 내역 추가
-- `DSP_Initialization()` 함수 맨 끝단에 존재하는 `EINT;` 및 `ERTM;` 삭제 (main_cpu1.c로 이관)
+### (2) 코어별 메모리 주소 매핑
+```c
+// csu_Ipc_cpu1.h / csu_Ipc_cm.h 등에 공통 매크로 정의
+#define GS0_CPU_ADDR  0x0000D000U // CPU1 관점 GS0
+#define GS0_CM_ADDR   0x20014000U // CM 관점 GS0
 
-### 3.3. `csu_Control.c` 수정
-- 파일 최상단 수정 이력에 인터럽트 플래그 강제 클리어 추가 내역 기재
-- `Control_Init()` 함수 내부, `Interrupt_enable(INT_EPWM1);` 호출 바로 윗줄에 `EPWM_clearEventTriggerInterruptFlag(EPWM_TIMER1_BASE);` 삽입
+#define GS1_CPU_ADDR  0x0000E000U // CPU1 관점 GS1
+#define GS1_CM_ADDR   0x20016000U // CM 관점 GS1
+```
 
-### 3.4. `hal_Epwm.c` 수정
-- 파일 최상단 수정 이력에 TBCLKSYNC 동기화 로직 추가 내역 기재
-- `Initial_EpwmTimer()` 함수의 EPWM1 타이머 관련 설정 구간 앞/뒤로 `SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);` 와 `SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);` 추가
+### (3) 전역 변수 구조체 선언 및 활용
+현재 프로젝트에서 IPC로 보내는 데이터를 메모리에 저장하고 구조체로 확인할 수 있는지에 대한 답변은 **"이미 가능하며, 약간의 주소 변경만 하면 됩니다"** 입니다.
+```c
+// ===== CPU1 코드 =====
+// GS0 공간 (CPU1 쓰기, CM 읽기)
+volatile stIpcDataPacket *pxDataCpu1ToCm = (volatile stIpcDataPacket *)GS0_CPU_ADDR;
+// GS1 공간 (CM 쓰기, CPU1 읽기)
+volatile stIpcDataPacket *pxDataCmToCpu1 = (volatile stIpcDataPacket *)GS1_CPU_ADDR;
 
-## 4. 예상 효과 및 부작용 검토 (Expected Results & Side Effects)
-- **효과**: EPWM1 인터럽트가 100us 주기로 정상 진입하며, GPIO 34가 500ms 간격으로 정상 점멸하게 됩니다. 또한 CM 코어와의 IPC 통신 및 ADC 갱신 사이클도 완벽하게 살아납니다.
-- **부작용 방어**: `EINT` 이동으로 인해 타 인터럽트(Timer0, SCI 등) 역시 초기화 과정 중 불필요하게 튀는 증상이 함께 방지되어 시스템 부팅 안정성이 극대화됩니다. `TBCLKSYNC` 처리 역시 EPWM8, EPWM9 등 이미 초기화된 타이머들과 동시에 출발선(0)에서 시작하도록 만들어 주어 완벽한 동기화를 보장합니다.
+// 모터 제어 ISR 내에서 (IPC_sendCommand 호출 제거)
+pxDataCpu1ToCm->Payload.TxData.sineValue = sineValue;
+pxDataCpu1ToCm->Payload.TxData.adcTemperature = currentTemperatureC;
+
+// ===== CM 코드 =====
+volatile stIpcDataPacket *pxDataCpu1ToCm = (volatile stIpcDataPacket *)GS0_CM_ADDR;
+volatile stIpcDataPacket *pxDataCmToCpu1 = (volatile stIpcDataPacket *)GS1_CM_ADDR;
+
+// 이더넷 전송 태스크 또는 Main Loop 내에서 직접 읽기 (인터럽트 불필요)
+xEthApp.txData.SineVal = pxDataCpu1ToCm->Payload.TxData.sineValue;
+```
+
+## 4. 구조 전환 시 기대 효과 및 유의점
+1. **IPC 오버헤드 완벽 제거**: `IPC_sendCommand`로 인한 잦은 인터럽트가 사라지므로, CPU1 모터 제어 루틴의 타이밍 지연(Jitter)이 사라지고 CM 코어의 부하도 획기적으로 줄어듭니다.
+2. **동기화 문제 (Tearing)**: CPU1이 구조체를 업데이트하는 도중에 CM 코어가 절반만 읽어가는 데이터 불일치(Tearing) 문제가 발생할 수 있습니다. 하지만 이더넷 모니터링 수준의 데이터라면 무시할 수 있으며, 엄격한 동기가 필요하다면 구조체 맨 앞에 `SeqNum`이나 `UpdateFlag`를 두고 상태를 확인한 뒤 읽는 간단한 핸드쉐이킹을 추가하면 됩니다.
+3. **가시성**: 디버거(CCS)의 Expressions 탭에서 `*pxDataCpu1ToCm`을 등록하면 전체 구조체 내용을 실시간 전역 변수처럼 쉽게 모니터링할 수 있습니다.

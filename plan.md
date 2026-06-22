@@ -1,84 +1,117 @@
-# 아키텍처 표준화 및 리팩토링 계획 (Implementation Plan)
+# 모터 제어 및 이더넷 통신 부하 최소화를 위한 GSRAM 공유 메모리 전환 계획
 
-## 1. 개요
-프로젝트 전체(CPU1, CM)의 CSU, HAL, main 소스 코드를 스캔 및 분석하여 최신 아키텍처 규정(이름 규칙, 헤더 포함 의존성, 매크로 위치, CM 코어 전용 규칙 등)에 위배되는 사항들을 모두 식별하였습니다. 이를 기반으로 일관성 있는 펌웨어 아키텍처로 리팩토링하기 위한 종합 계획입니다.
+현재 IPC 인터럽트를 통해 이루어지고 있는 CPU1과 CM 간의 데이터 교환(이더넷 송수신 데이터)을 GSRAM(GS0, GS1)을 이용한 직접 메모리 접근(Polling) 방식으로 전환하여 시스템 부하를 최소화합니다.
+
+## User Review Required
 
 > [!IMPORTANT]
-> **User Review Required**
-> 1. 모듈 접두사(`csu_`, `hal_`)를 변수명 및 함수명에서 일괄 제거할 경우, 전역 영역에서 이름 충돌(Name Collision)이 발생할 가능성이 있는지 확인해 주세요. (예: `hal_Adc_read` -> `Adc_read` 등)
-> 2. `CSU_Ethernet.c` 등 일부 파일에서 상당히 많은 매크로가 `.c` 내부에 정의되어 있습니다. 이를 모두 해당 `.h` 파일로 이동시키는 것을 승인해 주시기 바랍니다.
+> **마스터십 분할 검토**
+> 기존에는 `0x00FFU`를 통해 GS0~GS7 전체의 제어권을 CM으로 넘겨주었습니다.
+> 이 계획에서는 GS0를 CPU1 전용(CPU1 쓰기, CM 읽기)으로 사용하기 위해, GS0의 제어권을 CPU1에 남겨두고 GS1~GS7만 CM에 위임(`0x00FEU`)하도록 수정합니다. 이 변경 사항이 시스템의 다른 부분에 영향을 주지 않는지 확인이 필요합니다.
 
-## 2. Proposed Changes
+> [!TIP]
+> **양방향 Lock-Free 동기화 (Seqlock & Try-Lock) 도입 완료**
+> 메인루프(100us)와 이더넷(100ms) 간의 속도 차이로 인한 데이터 찢김(Tearing)을 완벽하게 방지하기 위해 양방향으로 **Seqlock** 기법을 도입합니다.
+> - **[GS0] CPU1 쓰기 / CM 읽기**: CPU1이 쓸 때 카운터를 홀수 $\rightarrow$ 짝수로 변경하며, CM은 짝수일 때만 읽고 도중에 변하면 다시 읽습니다(Spin-Lock).
+> - **[GS1] CM 쓰기 / CPU1 읽기**: CM이 이더넷 수신 데이터를 쓸 때 카운터를 홀수 $\rightarrow$ 짝수로 변경합니다. 단, CPU1(100us ISR)은 읽으려 할 때 카운터가 홀수(CM이 쓰는 중)이면 **기다리지 않고 바로 포기(Try-Lock)** 한 뒤 이전 100us의 데이터를 그대로 사용합니다. 이를 통해 모터 제어 ISR의 지연(Jitter)을 0으로 완벽히 보장합니다.
 
-### Component 1: File Naming Convention (파일 네이밍 규칙 수정)
-- 모듈 및 파일명에만 소문자 접두사(`csu_`, `hal_`)를 사용해야 하므로 대문자로 시작하는 파일명을 수정합니다.
-#### [MODIFY] `CSU_Ethernet.c` -> `csu_Ethernet.c`
-#### [MODIFY] `CSU_Ethernet.h` -> `csu_Ethernet.h`
-
----
-
-### Component 2: Header Dependency & Include Rules (헤더 인클루드 규칙 수정)
-- **.c 소스 파일 규칙**: 자신의 이름과 동일한 헤더 파일 단 하나만 포함해야 합니다.
-- **.h 헤더 파일 규칙**: 오직 중심 허브인 `main_cpu1.h` 또는 `main_cm.h`만을 포함해야 합니다.
-
-#### [MODIFY] CPU1 `.c` / `.h` 파일 일괄 수정
-- `hal_DspInit.c`: `#include "main_cpu1.h"` 등 불필요한 인클루드 제거 및 `#include "hal_DspInit.h"`만 남김.
-- 그 외 발견된 `.c` 및 `.h` 파일들의 `#include` 구문 정리 (CPU1 CSU/HAL 전역).
-
-#### [MODIFY] CM `.c` / `.h` 파일 일괄 수정
-- `csu_Ethernet.c` 및 `hal_Timer.c` 등의 파일에서 `#include` 구문 정리.
+## Proposed Changes
 
 ---
 
-### Component 3: Macros & Constants Move (매크로/상수 선언 헤더로 이동)
-- 모든 `#define` 및 전역 변수 선언을 `.c`에서 `.h` 파일로 이동시킵니다.
+### 공통 헤더 및 구조체 변경 (CSU 계층)
 
-#### [MODIFY] CPU1: 매크로가 포함된 `.c` 파일들
-- `csu_Control.c`, `csu_Led.c`, `csu_SciPc.c`
-- `hal_Adc.c`, `hal_Sci.c`, `hal_Spi.c`
-- 위 파일들의 내부 `#define` 매크로들을 각각의 헤더 파일로 이동.
+#### [MODIFY] csu_Ipc_cpu1.h / csu_Ipc_cm.h
+- **내용**: 
+  - GS0(CPU1 -> CM) 및 GS1(CM -> CPU1)의 물리적 시작 주소(CPU1 관점 및 CM 관점)를 매크로로 정의합니다.
+  - 구조체 `stIpcDataPacket` 내부에 동기화를 위한 `uint32_t seqCount;` 변수를 추가합니다.
+  - 기존 MSGRAM 포인터 대신 GS0, GS1을 가리키는 `pxDataCpu1ToCm`, `pxDataCmToCpu1` 전역 포인터를 선언합니다.
 
-#### [MODIFY] CM: 매크로가 포함된 `.c` 파일들
-- `csu_Ethernet.c` (약 19개의 매크로 존재)
-- `hal_Timer.c` (약 4개의 매크로 존재)
-- 내부 `#define` 매크로들을 각각의 헤더 파일로 이동.
-
----
-
-### Component 4: Prefix Elimination (구조체, 변수, 함수명 접두어 제거)
-- 구조체, 변수명, 함수명에 `csu_` 또는 `hal_` 접두어가 사용된 부분을 찾아 순수한 이름으로 변경합니다.
-
-#### [MODIFY] CPU1 코드 영역 접두어 제거
-- `hal_Adc.c`, `csu_Adc.c` 등에서 교차 사용된 변수/함수명 (예: `csu_Adc`, `hal_Adc`, `hal_Epwm`, `csu_Led` 등을 포함하는 이름) 제거 처리.
-- `main_cpu1.h`의 구조체 선언부 점검 및 `xHalEth`, `xCsuEth` 등의 이름 수정.
-
-#### [MODIFY] CM 코드 영역 접두어 제거
-- `csu_Ethernet.c/h`, `hal_Ipc_cm.c/h` 등에서 사용된 변수/함수명 수정.
+#### [MODIFY] csu_Ipc_cpu1.c / csu_Ipc_cm.c
+- **내용**:
+  - 선언된 포인터 변수에 실제 GS0 및 GS1의 주소를 할당합니다.
+  - CM 코어의 경우 `csu_Ipc_cm.c`에 있던 불필요한 IPC 수신 인터럽트 파싱 로직(`pxIpcCpu1ToCm->Payload.TxData` 파싱 후 `xEthApp` 갱신)을 제거합니다.
 
 ---
 
-### Component 5: CM Core ARM Cortex-M4 Rules (CM 코어 특수 규칙 반영)
-- ARM 환경에 맞지 않는 C28x DSP 전용 코드를 수정합니다.
+### 하드웨어 추상화 계층 (HAL)
 
-#### [MODIFY] `main_cm.c` (CM)
-- DSP 스타일의 `__asm(" NOP");` 명령어를 CMSIS 표준 함수인 `__NOP();` 로 변경.
-- 데이터 타입(예: `int`, `char`) 사용 점검 및 `uint16_t`, `uint32_t` 등 고정 크기 타입으로 강제.
+#### [MODIFY] hal_Ipc_cpu1.c
+- **내용**: `Initial_IPC_Mastership()` 함수 수정
+  - 기존: `HWREG(MEMCFG_BASE + MEMCFG_O_GSXMSEL) ... | 0x00FFU;` (GS0~GS7 CM 할당)
+  - 변경: `| 0x00FEU;` (GS0는 0으로 두어 CPU1이 마스터 유지, GS1~GS7은 CM에 할당)
+  - 목적: GS0는 CPU1이 쓰고, GS1은 CM이 쓸 수 있도록 하드웨어 권한 분리.
 
 ---
 
-### Component 6: Documentation & Standards (주석 및 품질 규격)
-#### [MODIFY] 모든 수정 대상 CSU/HAL 및 main 파일
-- 파일 최상단 Header Comment Auto-Update (`Version`, `Last Updated`).
-- `Modification History` 항목에 수정 내역 추가 (예: `2026. 06. 19. - 아키텍처 규칙에 따른 헤더 및 매크로 수정`).
+### 비즈니스 로직 계층 (CSU) - CPU1
 
-## 3. 질문 및 확인 사항 (Open Questions)
-> [!WARNING]
-> 현재 `main_cpu1.h`와 `main_cm.h` 내에 모든 하위 헤더들(`hal_*.h`, `csu_*.h`)이 포함(include)되어 있으며, 이들은 상호 의존성을 갖게 됩니다. 이로 인해 특정 모듈에서 `csu_`, `hal_` 접두사를 일괄 제거하게 되면 다른 모듈과 이름이 겹치는 문제가 발생할 수 있습니다. 예를 들어, `Timer_init` 이라는 이름이 CSU와 HAL 양쪽에서 선언될 위험이 있습니다. 이 경우 모듈명을 어떻게 구분하실지 방향성 승인이 필요합니다.
+#### [MODIFY] csu_Control.c
+- **내용**: `MainControl_Isr()` 함수 수정
+  - **GS1 읽기 (Try-Lock 적용)**: 
+    ```c
+    uint32_t seq0 = pxDataCmToCpu1->seqCount;
+    // CM이 쓰는 중(홀수)이 아닐 때만 읽기 시도 (기다리지 않고 Pass하여 실시간성 보장)
+    if ((seq0 & 1U) == 0U) {
+        uint8_t tempSeq = pxDataCmToCpu1->Payload.RxData.seqNum;
+        uint8_t tempStatus = pxDataCmToCpu1->Payload.RxData.status;
+        uint32_t seq1 = pxDataCmToCpu1->seqCount;
+        if (seq0 == seq1) {
+            // 정상적으로 읽었을 때만 실제 변수에 반영
+            validSeq = tempSeq;
+            validStatus = tempStatus;
+        }
+    }
+    ```
+  - **GS0 쓰기 (Seqlock 적용)**: 
+    ```c
+    pxDataCpu1ToCm->seqCount++; // 홀수 (쓰기 시작)
+    pxDataCpu1ToCm->Payload.TxData.sineValue = sineValue;
+    pxDataCpu1ToCm->Payload.TxData.adcTemperature = currentTemperatureC;
+    pxDataCpu1ToCm->Payload.TxData.sequenceNum = ipcSeqNum;
+    pxDataCpu1ToCm->seqCount++; // 짝수 (쓰기 완료)
+    ```
+  - **IPC 제거**: `IPC_sendCommand()` 호출 및 Busy 대기 로직을 완전히 삭제합니다.
 
-## 4. 검증 계획 (Verification Plan)
-1. **Automated Analysis**:
-   - 파이썬 스크립트를 재실행하여 아키텍처 규정 위반이 없는지 100% 점검.
-2. **Build Verification**:
-   - IDE (CCS Theia)에서 CPU1 및 CM 프로젝트를 각각 `gmake` (빌드)하여 컴파일 에러나 헤더 순환 참조 에러가 없는지 사용자에게 확인 요청.
-3. **Static Test Compliance**:
-   - 무기체계 소프트웨어 코딩규칙 (Cyclomatic Complexity, Call Levels 등) 위반 여부 점검.
+---
+
+### 비즈니스 로직 계층 (CSU) - CM
+
+#### [MODIFY] CSU_Ethernet.c
+- **내용**: 
+  - `processReceivedEthernetPacket()` 함수 수정 (이더넷 수신 시):
+    - 기존에 `sendIpcMessageToCPU1(...)`를 호출하여 CPU1에 IPC를 날리던 코드를 삭제합니다.
+    - 대신 **GS1 쓰기 (Seqlock 적용)**: 
+      ```c
+      pxDataCmToCpu1->seqCount++; // 홀수 (쓰기 시작)
+      pxDataCmToCpu1->Payload.RxData.seqNum = pPayload[12U];
+      pxDataCmToCpu1->Payload.RxData.status = pPayload[13U];
+      pxDataCmToCpu1->seqCount++; // 짝수 (쓰기 완료)
+      ```
+  - `buildAndSendUdpPacket()` 함수 수정 (이더넷 송신 시):
+    - 패킷 조립 시 `xEthApp.txData`를 의존하지 않고 GS0 메모리를 Seqlock으로 읽어옵니다.
+    - **GS0 읽기 (Seqlock 검증)**:
+      ```c
+      uint32_t seq0, seq1;
+      do {
+          seq0 = pxDataCpu1ToCm->seqCount;
+          if (seq0 & 1U) continue; // 홀수면 CPU1이 쓰기 중이므로 대기
+          
+          // 데이터 읽기 복사
+          tempSine = pxDataCpu1ToCm->Payload.TxData.sineValue;
+          tempTemp = pxDataCpu1ToCm->Payload.TxData.adcTemperature;
+          tempSeq  = pxDataCpu1ToCm->Payload.TxData.sequenceNum;
+          
+          seq1 = pxDataCpu1ToCm->seqCount;
+      } while (seq0 != seq1); // 읽는 도중 CPU1이 업데이트했다면 다시 읽기
+      
+      // 읽어온 데이터를 기반으로 UDP Payload 구성
+      ```
+
+## Verification Plan
+
+### Manual Verification
+- **빌드 확인**: CPU1 및 CM 프로젝트를 각각 빌드하여 에러나 경고가 없는지 확인합니다.
+- **메모리 브라우저 확인**: CCS 디버거에서 CPU1은 `0xD000`, CM은 `0x20014000`(GS0)를 띄워두고 값이 정상적으로 업데이트되는지 눈으로 확인합니다.
+- **이더넷 통신 테스트**: PC 모니터링 프로그램을 통해 사인파 데이터와 온도가 끊김 없이 10ms (또는 2ms) 주기로 수신되는지 확인합니다.
+- **성능 측정**: `MainControl_Isr`의 실행 시간이 줄어들었는지 GPIO 토글이나 CPU 타이머로 측정하여 검증합니다.

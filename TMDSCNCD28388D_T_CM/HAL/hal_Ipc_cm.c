@@ -1,11 +1,17 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : hal_Ipc_cm.c
-    Version          : 00.00
+    Version          : 00.01
     Description      : CM Core IPC Device Driver
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
+    Last Updated     : 2026. 06. 22. (미사용 recvIpcCpu1Message 호출 제거)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 22. - CPU1의 송신이 GSRAM 폴링으로 변경됨에 따라 recvIpcCpu1Message 호출 제거
+ */
 
 #include "hal_Ipc_cm.h"
 
@@ -59,8 +65,8 @@ static void isrIpcFromCPU1(void)
         // 하드웨어 플래그를 먼저 클리어(ACK)하여 CPU1이 다음 주기를 즉시 준비할 수 있도록 채널을 개방합니다.
         IPC_ackFlagRtoL(IPC_CM_L_CPU1_R, IPC_FLAG1);
 
-        // csu_Ipc_cm 핸들러 호출 (이 내부 연산 속도가 길어지더라도 하드웨어 인터럽트 흐름은 깨지지 않음)
-        recvIpcCpu1Message(command, addr, data);
+        // CPU1 -> CM 데이터 송신이 GSRAM 폴링으로 변경되어 더 이상 IPC 페이로드 파싱을 수행하지 않습니다.
+        // recvIpcCpu1Message(command, addr, data);
     }
 }
 

@@ -1,42 +1,26 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ipc_cpu1.c
-    Version          : 00.00
-    Description      : CM Core IPC 통신 프로토콜 구현
+    Version          : 00.02
+    Description      : CM Core IPC 통신 프로토콜 및 공유 메모리 구현
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
+    Last Updated     : 2026. 06. 22. (GSRAM 하드웨어 접근 제한으로 인해 MSGRAM으로 롤백)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 22. - pxDataCpu1ToCm, pxDataCmToCpu1 포인터를 GSRAM 주소로 맵핑
+ * 2026. 06. 22. - 불필요해진 recvIpcCmMessage() 제거
+ * 2026. 06. 22. - CM 코어의 GSRAM 쓰기 권한 부재(Hard Fault 방지)로 인해 MSGRAM 주소로 원복
+ */
 
 #include "csu_Ipc_cpu1.h"
 
-/* Message RAM 영역에 구조체 포인터 할당 */
-volatile stIpcDataPacket *pxIpcCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_TO_CM_MSGRAM_ADDR;
-volatile stIpcDataPacket *pxIpcCmToCpu1 = (volatile stIpcDataPacket *)IPC_CM_TO_CPU1_MSGRAM_ADDR;
+/* MSGRAM 영역에 구조체 포인터 할당 */
+volatile stIpcDataPacket *pxDataCpu1ToCm = (volatile stIpcDataPacket *)IPC_CPU1_TO_CM_MSGRAM_ADDR;
+volatile stIpcDataPacket *pxDataCmToCpu1 = (volatile stIpcDataPacket *)IPC_CM_TO_CPU1_MSGRAM_ADDR;
 
 /* CM→CPU1 수신 공유 변수 (csu_SciPc.c 등에서 참조) */
 volatile stEthRxData xEthRxData = {0U, 0U};
 
-/*
-@funtion    void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data)
-@brief      CM 코어로부터 수신된 IPC 메시지 처리 (CPU1 측)
-@param      uint32_t command: IPC 명령어 코드
-@param      uint32_t addr   : 보조 데이터 addr (미사용)
-@param      uint32_t data   : 하위 8bit = SeqNum, 9~16bit = Status
-@return     void
-@remark
-    - IPC_CMD_CM_ETH_RX_DATA: CM이 PC로부터 수신한 Update MSG 데이터를 CPU1으로 전달
-*/
-void recvIpcCmMessage(uint32_t command, uint32_t addr, uint32_t data)
-{
-    (void)addr; /* 미사용 파라미터 */
-
-    if (command == IPC_CMD_CM_ETH_RX_DATA)
-    {
-        xEthRxData.seqNum = (uint8_t)(data & 0x000000FFU);
-        xEthRxData.status = (uint8_t)((data >> 8U) & 0x000000FFU);
-    }
-    else
-    {
-        /* 정의되지 않은 명령어 수신 시 예외 방어 */
-    }
-}
