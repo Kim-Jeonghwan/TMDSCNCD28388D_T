@@ -1,16 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ipc_cpu1.h
-    Version          : 00.04
+    Version          : 00.06
     Description      : CPU1 IPC 및 공유 메모리 통신 프로토콜 정의
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 22. (GSRAM 하드웨어 접근 불가로 인해 MSGRAM으로 롤백 및 최적화)
+    Last Updated     : 2026. 06. 22. (GSRAM 잔재 주석을 MSGRAM 기준으로 수정)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 2026. 06. 22. - GSRAM 기반 공유 메모리(GS0, GS1) 사용으로 전환
+ * 2026. 06. 22. - GSRAM 잔재 주석을 MSGRAM 기준으로 수정
+ * 2026. 06. 22. - 파형 선택 기능 지원을 위해 구조체 내부 필드명 변경 (status -> waveType, sineValue -> waveValue)
+ * 2026. 06. 22. - MSGRAM 기반 공유 메모리 사용으로 전환
  * 2026. 06. 22. - Lock-Free 동기화를 위한 stIpcDataPacket에 seqCount 추가
  * 2026. 06. 22. - CM 코어의 GSRAM 쓰기 권한 부재(Hard Fault 방지)로 인해 MSGRAM으로 맵핑 변경
  */
@@ -29,13 +31,13 @@ typedef struct {
     union {
         uint32_t PayloadRaw[16];   // 실제 데이터 배열
         struct {
-            float32_t sineValue;
+            float32_t waveValue;
             float32_t adcTemperature;
             uint32_t sequenceNum;
         } TxData;
         struct {
             uint32_t seqNum;
-            uint32_t status;
+            uint32_t waveType;
         } RxData;
     } Payload;
 } stIpcDataPacket;
@@ -57,7 +59,7 @@ extern volatile stIpcDataPacket *pxDataCmToCpu1;
 /* CM 코어로부터 이더넷 수신 데이터 구조체 */
 typedef struct {
     uint8_t seqNum;
-    uint8_t status;
+    uint8_t waveType;
 } stEthRxData;
 
 extern volatile stEthRxData xEthRxData;

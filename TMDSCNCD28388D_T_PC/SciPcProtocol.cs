@@ -10,13 +10,14 @@ namespace TMDSCNCD28388D_T_PC
         public byte IncNumber { get; set; }
         public byte Status { get; set; }
         public double DspTemp { get; set; }
-        public float SineValue { get; set; }  // 추가: 사인파 데이터
+        public float WaveValue { get; set; }  // 수정: 파형 데이터 (기존 SineValue)
         public bool IsCommError { get; set; }
     }
 
     public class ControlMessageData
     {
         public byte ManualSeqNum { get; set; }
+        public byte WaveType { get; set; } // 0: Sine, 1: Square, 2: Triangle
     }
 
     public class SciPcProtocol : IProtocol
@@ -97,7 +98,7 @@ namespace TMDSCNCD28388D_T_PC
 
                 // Payload (2 bytes)
                 packet[3] = ctrlDto.ManualSeqNum;
-                packet[4] = 0x00; // Command (Reserved 1~8) - unused, set to 0
+                packet[4] = ctrlDto.WaveType; // Command 영역에 파형 종류 전송
 
                 // CheckSum
                 int crcSum = packet[2]; // start with LEN

@@ -1,19 +1,21 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ethernet.c
-    Version          : 00.03
+    Version          : 00.05
     Description      : UDP 프로토콜 처리 - Payload/ACK MSG 조립/파싱
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 22. (GSRAM 동기화 적용 및 IPC 호출 제거)
+    Last Updated     : 2026. 06. 22. (수신 데이터 추출 로직 분기 이동하여 파형 변경 반영 오류 수정)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 22. - 수신 데이터 추출 로직 분기 이동하여 파형 변경 반영 오류 수정
+ * 2026. 06. 22. - 물리 파일명을 csu_Ethernet.c로 소문자 정정 및 GSRAM 잔재 주석 수정
  * 2026. 06. 19. - 변수명 규칙 적용 (xCsuEth, xHalEth -> xEthApp, xEthDriver 변경)
  * 2026. 06. 19. - 이더넷 전역 변수 캡슐화 적용
  * 2026. 06. 19. - Phase 5: 사인파 추가 및 PC 요청 응답 구조 변경
- * 2026. 06. 22. - IPC 전송(sendIpcMessageToCPU1) 제거 및 GSRAM Seqlock 동기화 쓰기(GS1)/읽기(GS0) 적용
+ * 2026. 06. 22. - IPC 전송(sendIpcMessageToCPU1) 제거 및 MSGRAM Seqlock 동기화 쓰기(CMTOCPU1)/읽기(CPU1TOCM) 적용
  */
 
 /*
@@ -357,7 +359,7 @@ static bool sendEthernetFrame(uint8_t *pFrame, uint16_t frameSize)
 @param      uint32_t rxTimestamp: 요청 패킷의 Timestamp (응답 시 반환)
 @return     void
 @remark
-    - CPU1이 GS0 공유 메모리에 기록한 데이터를 Seqlock 방식으로 읽어옵니다.
+    - CPU1이 CPU1TOCM MSGRAM에 기록한 데이터를 Seqlock 방식으로 읽어옵니다.
     - Payload: MSG Header(12B) + Data(8B) + Checksum(2B) = 22B
     - Request Ack = 0xFF (Reflect 타입, ACK 미요청)
 */
@@ -368,18 +370,18 @@ void buildAndSendUdpPacket(uint32_t rxTimestamp)
     uint16_t  uiChksumLen = 0U;
     uint32_t  sineBits   = 0U;
 
-    float32_t tempSine = 0.0f;
+    float32_t tempWave = 0.0f;
     float32_t tempTemp = 0.0f;
     uint32_t  tempSeq  = 0U;
     uint32_t  seq0, seq1;
 
-    /* ---- CPU1 GS0 데이터 읽기 (Seqlock Spin-Lock 검증) ---- */
+    /* ---- CPU1TOCM MSGRAM 데이터 읽기 (Seqlock Spin-Lock 검증) ---- */
     do {
         seq0 = pxDataCpu1ToCm->seqCount;
         if ((seq0 & 1U) != 0U) { continue; } /* 홀수면 CPU1이 쓰기 중이므로 대기 */
         
         /* 데이터 복사 */
-        tempSine = pxDataCpu1ToCm->Payload.TxData.sineValue;
+        tempWave = pxDataCpu1ToCm->Payload.TxData.waveValue;
         tempTemp = pxDataCpu1ToCm->Payload.TxData.adcTemperature;
         tempSeq  = pxDataCpu1ToCm->Payload.TxData.sequenceNum;
         
@@ -410,8 +412,8 @@ void buildAndSendUdpPacket(uint32_t rxTimestamp)
     uint16_t dspTempUint16 = (uint16_t)((tempTemp * 10.0f) + 0.5f);
     pPayload[14U] = (uint8_t)(dspTempUint16 & 0x00FFU);
     pPayload[15U] = (uint8_t)(dspTempUint16 >> 8U);
-    /* SineVal (4B, Little Endian) */
-    (void)memcpy(&sineBits, &tempSine, sizeof(uint32_t));
+    /* WaveVal (4B, Little Endian) */
+    (void)memcpy(&sineBits, &tempWave, sizeof(uint32_t));
     pPayload[16U] = (uint8_t)(sineBits & 0x000000FFU);
     pPayload[17U] = (uint8_t)((sineBits >>  8U) & 0x000000FFU);
     pPayload[18U] = (uint8_t)((sineBits >> 16U) & 0x000000FFU);
@@ -559,6 +561,17 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
                         }
                         else
                         {
+                            /* ---- 공통: Data 추출 및 CMTOCPU1 MSGRAM 기록 (Seqlock 방식) ---- */
+                            /* 정상 수신 패킷이므로 무조건 상태 업데이트 적용 */
+                            xEthApp.rxData.SeqNum = pPayload[12U];
+                            xEthApp.rxData.WaveType = pPayload[13U];
+
+                            /* CPU1으로 전달할 CMTOCPU1 MSGRAM에 기록 */
+                            pxDataCmToCpu1->seqCount++; /* 홀수 (쓰기 시작) */
+                            pxDataCmToCpu1->Payload.RxData.seqNum = pPayload[12U];
+                            pxDataCmToCpu1->Payload.RxData.waveType = pPayload[13U];
+                            pxDataCmToCpu1->seqCount++; /* 짝수 (쓰기 완료) */
+
                             /* 모니터링 코드 확인 시 실시간 응답 (데이터 전송) */
                             if (ucCode == ETH_MSG_CODE_MONITOR)
                             {
@@ -568,16 +581,6 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length)
                             {
                                 /* 정상 수신 업데이트 패킷 → ACK 응답 */
                                 sendAckResponse(ETH_ACK_OK, ETH_ACKINFO_OK, uiTimestamp, ucCode);
-
-                                /* ---- Data 추출 및 GS1 기록 (Seqlock 방식) ---- */
-                                xEthApp.rxData.SeqNum = pPayload[12U];
-                                xEthApp.rxData.Status = pPayload[13U];
-
-                                /* CPU1으로 전달할 GS1 메모리에 기록 */
-                                pxDataCmToCpu1->seqCount++; /* 홀수 (쓰기 시작) */
-                                pxDataCmToCpu1->Payload.RxData.seqNum = pPayload[12U];
-                                pxDataCmToCpu1->Payload.RxData.status = pPayload[13U];
-                                pxDataCmToCpu1->seqCount++; /* 짝수 (쓰기 완료) */
                             }
                         }
                     }

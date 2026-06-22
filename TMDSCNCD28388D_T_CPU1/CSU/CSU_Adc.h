@@ -1,21 +1,23 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Adc.h
-    Version          : 00.01
+    Version          : 00.03
     Description      : CPU1 ADC Application Logic
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (코드 스타일 및 구조체 템플릿 적용)
+    Last Updated     : 2026. 06. 22. (헤더 가드 매크로 대문자 규격화)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 22. - 헤더 가드 매크로를 규칙에 맞춰 대문자(CSU_ADC_H)로 규격화
+ * 2026. 06. 22. - 물리 파일명을 csu_Adc.h로 소문자 정정
  * 2026. 06. 19. - 코드 스타일 및 구조체 템플릿 적용
  * 2026. 06. 05. - 코드 주석 포맷팅 및 한글화
  */
 
-#ifndef csu_ADC_H
-#define csu_ADC_H
+#ifndef CSU_ADC_H
+#define CSU_ADC_H
 
 /* ************************** [[   include  ]]  *********************************************************** */
 #include "main_cpu1.h"
@@ -53,4 +55,4 @@ void updateAdcData(void);
 
 
 
-#endif /* csu_ADC_H */
+#endif /* CSU_ADC_H */

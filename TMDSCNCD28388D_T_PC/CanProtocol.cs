@@ -8,15 +8,15 @@ namespace TMDSCNCD28388D_T_PC
 {
     public class CanProtocol : IProtocol
     {
-        private SerialPort _serialPort;
-        private Thread _readThread;
+        private SerialPort? _serialPort;
+        private Thread? _readThread;
         private bool _keepReading;
 
-        public event Action<StatusMessageData> OnStatusReceived;
-        public event Action<string> OnCommError;
-        public event Action OnPortClosed;
-        public event Action<byte[]> OnRawTx;
-        public event Action<byte[]> OnRawRx;
+        public event Action<StatusMessageData>? OnStatusReceived;
+        public event Action<string>? OnCommError;
+        public event Action? OnPortClosed;
+        public event Action<byte[]>? OnRawTx;
+        public event Action<byte[]>? OnRawRx;
 
         private string _rxBuffer = "";
 

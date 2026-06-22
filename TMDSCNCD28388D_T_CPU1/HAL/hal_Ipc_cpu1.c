@@ -1,16 +1,17 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : hal_Ipc_cpu1.c
-    Version          : 00.02
+    Version          : 00.03
     Description      : CM Core IPC Device Driver 및 공유 메모리 설정
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 22. (MSGRAM 롤백으로 인해 불필요해진 Initial_IPC_Mastership 삭제)
+    Last Updated     : 2026. 06. 22. (GSRAM 잔재 주석을 MSGRAM 기준으로 수정)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 2026. 06. 22. - GS0를 CPU1 전용(CPU1 쓰기)으로 쓰기 위해 Initial_IPC_Mastership에서 0x00FEU 로 변경
+ * 2026. 06. 22. - GSRAM 잔재 주석을 MSGRAM 기준으로 수정
+ * 2026. 06. 22. - CPU1TOCM MSGRAM 사용으로 인해 불필요해진 Initial_IPC_Mastership 설정 변경 이력 기재
  * 2026. 06. 22. - 이더넷 데이터 폴링 방식으로 변경되어 isrIpcFromCM에서 recvIpcCmMessage 호출 분기 제거
  * 2026. 06. 22. - MSGRAM 롤백으로 인해 불필요해진 Initial_IPC_Mastership 함수 완전 삭제
  */

@@ -1,11 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Epwm.h
-    Version          : 00.00
+    Version          : 00.01
     Description      : EPWM 7A Control
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
+    Last Updated     : 2026. 06. 22. (물리 파일명 소문자화 정정)
 **********************************************************************/
+
+/*
+ * Modification History
+ * --------------------
+ * 2026. 06. 22. - 물리 파일명을 csu_Epwm.h로 소문자 정정
+ * 2026. 06. 19. - 모듈 및 파일명 리팩토링
+ */
 
 #ifndef CSU_EPWM_H
 #define CSU_EPWM_H

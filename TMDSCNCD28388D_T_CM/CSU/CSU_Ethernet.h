@@ -1,22 +1,24 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ethernet.h
-    Version          : 00.02
+    Version          : 00.04
     Description      : UDP 프로토콜 처리 계층
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (이더넷 전역 변수 캡슐화)
+    Last Updated     : 2026. 06. 22. (헤더 가드 매크로 대문자 규격화)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 22. - 헤더 가드 매크로를 규칙에 맞춰 대문자(CSU_ETHERNET_H)로 규격화
+ * 2026. 06. 22. - 물리 파일명을 csu_Ethernet.h로 소문자 정정
  * 2026. 06. 19. - 변수명 규칙 적용 (xCsuEth -> xEthApp 변경)
  * 2026. 06. 19. - 이더넷 전역 변수 캡슐화 적용
  * 2026. 06. 19. - Phase 5: 사인파 추가 및 PC 요청 응답 구조 변경
  */
 
-#ifndef csu_ETHERNET_H
-#define csu_ETHERNET_H
+#ifndef CSU_ETHERNET_H
+#define CSU_ETHERNET_H
 
 #include "main_cm.h"
 
@@ -86,10 +88,10 @@
  * --------------------------------------------------------------- */
 typedef struct
 {
-    float32_t SineVal;  /* 사인파 값 */
+    float32_t WaveVal;  /* 파형 값 */
     uint16_t DspTemp;   /* 온도 x10 스케일, Little Endian */
     uint8_t  SeqNum;    /* 시퀀스 번호 */
-    uint8_t  Status;    /* 상태 바이트 */
+    uint8_t  WaveType;  /* 선택된 파형 종류 */
 } stEthSharedData;
 
 /* ---------------------------------------------------------------
@@ -116,4 +118,4 @@ void processReceivedEthernetPacket(uint8_t *pPacket, uint16_t length);
 void sendAckResponse(uint8_t ackResult, uint16_t ackInfo,
                      uint32_t timestamp, uint8_t targetCode);
 
-#endif /* csu_ETHERNET_H */
+#endif /* CSU_ETHERNET_H */

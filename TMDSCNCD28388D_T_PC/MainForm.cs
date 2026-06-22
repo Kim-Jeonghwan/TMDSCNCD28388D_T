@@ -2,7 +2,7 @@
  * File: MainForm.cs
  * Created: 2026-06-01 (Modified by Antigravity)
  * Description: TMDSCNCD28388D_T PC Monitoring Dashboard MainForm
- * Last Updated: 2026. 06. 01. (SCI/UDP 프로토콜 선택 RadioButton 및 통신 두절 UI 추가)
+ * Last Updated: 2026. 06. 22. (통신 상태 오류 메시지 UI 겹침 수정)
  */
 
 using System;
@@ -20,9 +20,9 @@ namespace TMDSCNCD28388D_T_PC
 {
     public class MainForm : Form
     {
-        private IProtocol _protocol;
-        private System.Windows.Forms.Timer _timer;
-        private System.Windows.Forms.Timer _reqTimer; // 100ms 데이터 요청 타이머
+        private IProtocol _protocol = null!;
+        private System.Windows.Forms.Timer _timer = null!;
+        private System.Windows.Forms.Timer _reqTimer = null!; // 100ms 데이터 요청 타이머
 
         private Color colorBg = Color.FromArgb(30, 30, 30);
         private Color colorPanelBg = Color.FromArgb(45, 45, 48);
@@ -34,46 +34,49 @@ namespace TMDSCNCD28388D_T_PC
 
         private ControlMessageData _ctrlDto = new ControlMessageData();
 
-        private ComboBox cmbPorts;
-        private ComboBox cmbBauds;
-        private Button btnConnect;
-        private Button btnDisconnect;
-        private Button btnInit;
-        private Button btnRefresh;
-        private Label lblPortConnected;
-        private Label lblCommReceiving;
+        private ComboBox cmbPorts = null!;
+        private ComboBox cmbBauds = null!;
+        private Button btnConnect = null!;
+        private Button btnDisconnect = null!;
+        private Button btnInit = null!;
+        private Button btnRefresh = null!;
+        private Label lblPortConnected = null!;
+        private Label lblCommReceiving = null!;
 
         // Status & Control UI
-        private Label lblSeqNumber;
-        private Label lblBoardTemp;
-        private Label lblCrcErrors;
+        private Label lblSeqNumber = null!;
+        private Label lblBoardTemp = null!;
+        private Label lblCrcErrors = null!;
         
-        private TextBox txtInputSeq;
-        private Button btnSendSeq;
+        private TextBox txtInputSeq = null!;
+        private Button btnSendSeq = null!;
 
         // Log
         private LogForm _logForm;
-        private Label lblLogRxInfo;
-        private Label lblLogTxInfo;
+        private Label lblLogRxInfo = null!;
+        private Label lblLogTxInfo = null!;
 
         // 프로토콜 선택 UI
-        private RadioButton rdoSci;
-        private RadioButton rdoUdp;
-        private Label lblCommStatus;  // 통신 두절 표시
+        private RadioButton rdoSci = null!;
+        private RadioButton rdoUdp = null!;
+        private Label lblCommStatus = null!;  // 통신 두절 표시
 
         // Chart Data (ScottPlot 4.x)
-        private FormsPlot _formsPlot;
-        private double[] _sineData = new double[200];
+        private FormsPlot _formsPlot = null!;
+        private double[] _waveData = new double[200];
         private double[] _tempData = new double[200];
         private int _dataNextIndex = 0;
-        private ScottPlot.Plottable.SignalPlot _sineSignal;
-        private CheckBox chkAutoRequest;
+        private ScottPlot.Plottable.SignalPlot _waveSignal = null!;
+        private CheckBox chkAutoRequest = null!;
+        
+        // 추가: 파형 선택
+        private ComboBox cmbWaveType = null!;
 
         public MainForm()
         {
             this.Text = "TMDSCNCD28388D_T Monitoring & Dashboard";
-            this.Size = new Size(1200, 1350); // Compact Size
-            this.MinimumSize = new Size(1200, 1350);
+            this.Size = new Size(1200, 1400); // Compact Size
+            this.MinimumSize = new Size(1200, 1400);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = colorBg;
             this.ForeColor = colorText;
@@ -105,7 +108,7 @@ namespace TMDSCNCD28388D_T_PC
             };
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 220)); // Comm Panel
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 190)); // Status Panel
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130)); // Control Panel
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 170)); // Control Panel
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 500)); // Chart Panel
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Log Panel
 
@@ -183,7 +186,7 @@ namespace TMDSCNCD28388D_T_PC
             lblCommStatus = new Label
             {
                 Text = "",
-                Location = new Point(680, commY + 50),
+                Location = new Point(530, commY + 105),
                 AutoSize = true,
                 Font = new Font("맑은 고딕", 11, FontStyle.Bold),
                 ForeColor = Color.Red
@@ -257,6 +260,27 @@ namespace TMDSCNCD28388D_T_PC
                 }
             };
 
+            Label lblWaveType = new Label { Text = "파형 선택:", Location = new Point(30, 105), AutoSize = true, Font = new Font("맑은 고딕", 12, FontStyle.Bold) };
+            cmbWaveType = new ComboBox
+            {
+                Location = new Point(160, 103),
+                Size = new Size(180, 30),
+                BackColor = Color.FromArgb(60, 60, 60),
+                ForeColor = Color.White,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("맑은 고딕", 11)
+            };
+            cmbWaveType.Items.AddRange(new object[] { "0: Sine", "1: Square", "2: Triangle" });
+            cmbWaveType.SelectedIndex = 0;
+            cmbWaveType.SelectedIndexChanged += (s, e) =>
+            {
+                _ctrlDto.WaveType = (byte)cmbWaveType.SelectedIndex;
+                // 차트 제목 변경
+                string waveName = cmbWaveType.SelectedItem?.ToString()?.Substring(3) ?? "";
+                _waveSignal.Label = waveName + " Wave";
+                _formsPlot.Refresh();
+            };
+
             chkAutoRequest = new CheckBox
             {
                 Text = "데이터 자동 요청 (100ms)",
@@ -271,16 +295,16 @@ namespace TMDSCNCD28388D_T_PC
                 else _reqTimer.Stop();
             };
 
-            pnlCtrl.Controls.AddRange(new Control[] { lblInputSeq, txtInputSeq, btnSendSeq, chkAutoRequest });
+            pnlCtrl.Controls.AddRange(new Control[] { lblInputSeq, txtInputSeq, btnSendSeq, lblWaveType, cmbWaveType, chkAutoRequest });
             mainLayout.Controls.Add(pnlCtrl, 0, 2);
 
             // 3.5 Chart Panel
-            Panel pnlChart = CreateStyledPanel("REAL-TIME CHART (Sine Wave)");
+            Panel pnlChart = CreateStyledPanel("REAL-TIME CHART (Waveform)");
             pnlChart.Dock = DockStyle.Fill;
             pnlChart.Margin = new Padding(5);
             _formsPlot = new FormsPlot() { Dock = DockStyle.Fill };
-            _sineSignal = _formsPlot.Plot.AddSignal(_sineData, 10, Color.Cyan, "SineWave");
-            _sineSignal.MaxRenderIndex = 0; // 아직 받은 데이터가 없으므로 선을 그리지 않음
+            _waveSignal = _formsPlot.Plot.AddSignal(_waveData, 10, Color.Cyan, "Sine Wave");
+            _waveSignal.MaxRenderIndex = 0; // 아직 받은 데이터가 없으므로 선을 그리지 않음
             // _formsPlot.Plot.AddSignal(_tempData, 10, Color.Orange, "Temp"); // 온도 그래프 제외
             _formsPlot.Plot.Style(Style.Black);
             _formsPlot.Plot.XAxis.Label("Time");
@@ -366,7 +390,7 @@ namespace TMDSCNCD28388D_T_PC
 
         private void UpdatePortsList()
         {
-            string selected = cmbPorts.SelectedItem as string;
+            string? selected = cmbPorts.SelectedItem as string;
             cmbPorts.Items.Clear();
 
             try
@@ -378,7 +402,7 @@ namespace TMDSCNCD28388D_T_PC
                     
                     foreach (var p in ports)
                     {
-                        string caption = p["Caption"].ToString();
+                        string caption = p["Caption"]?.ToString() ?? "";
                         list.Add(caption);
                     }
 
@@ -434,11 +458,15 @@ namespace TMDSCNCD28388D_T_PC
                 }
                 else
                 {
-                    string rawSelection = cmbPorts.SelectedItem.ToString();
+                    string? rawSelection = cmbPorts.SelectedItem?.ToString();
+                    if (rawSelection == null) return;
                     string portName = rawSelection;
                     var match = Regex.Match(rawSelection, @"\((COM\d+)\)");
                     if (match.Success) portName = match.Groups[1].Value;
-                    _protocol.Connect(portName, int.Parse(cmbBauds.SelectedItem.ToString()));
+                    
+                    string? baudStr = cmbBauds.SelectedItem?.ToString();
+                    if (baudStr == null) return;
+                    _protocol.Connect(portName, int.Parse(baudStr));
                 }
 
                 UpdateConnectButtons();
@@ -507,17 +535,17 @@ namespace TMDSCNCD28388D_T_PC
                     lblCommStatus.Text = "";
 
                 // Update Chart
-                if (_dataNextIndex < _sineData.Length)
+                if (_dataNextIndex < _waveData.Length)
                 {
-                    _sineData[_dataNextIndex] = data.SineValue;
+                    _waveData[_dataNextIndex] = data.WaveValue;
                     _dataNextIndex++;
-                    _sineSignal.MaxRenderIndex = _dataNextIndex - 1;
+                    _waveSignal.MaxRenderIndex = _dataNextIndex - 1;
                 }
                 else
                 {
-                    Array.Copy(_sineData, 1, _sineData, 0, _sineData.Length - 1);
-                    _sineData[_sineData.Length - 1] = data.SineValue;
-                    _sineSignal.MaxRenderIndex = _sineData.Length - 1;
+                    Array.Copy(_waveData, 1, _waveData, 0, _waveData.Length - 1);
+                    _waveData[_waveData.Length - 1] = data.WaveValue;
+                    _waveSignal.MaxRenderIndex = _waveData.Length - 1;
                 }
                 _formsPlot.Plot.AxisAuto();
                 _formsPlot.Render();
@@ -569,7 +597,7 @@ namespace TMDSCNCD28388D_T_PC
             }));
         }
 
-        private void Timer_Tick(object sender, EventArgs e)
+        private void Timer_Tick(object? sender, EventArgs e)
         {
             // 통신 수신 인디케이터 관리 (500ms 무응답 시 회색)
             if ((DateTime.Now - _lastRxTime).TotalMilliseconds > 500)
@@ -578,7 +606,7 @@ namespace TMDSCNCD28388D_T_PC
             }
         }
 
-        private void ReqTimer_Tick(object sender, EventArgs e)
+        private void ReqTimer_Tick(object? sender, EventArgs e)
         {
             if (_protocol != null && _protocol.IsConnected)
             {

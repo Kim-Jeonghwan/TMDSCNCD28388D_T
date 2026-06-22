@@ -1,16 +1,17 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ipc_cpu1.c
-    Version          : 00.02
+    Version          : 00.03
     Description      : CM Core IPC 통신 프로토콜 및 공유 메모리 구현
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 22. (GSRAM 하드웨어 접근 제한으로 인해 MSGRAM으로 롤백)
+    Last Updated     : 2026. 06. 22. (GSRAM 잔재 주석을 MSGRAM 기준으로 수정)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 2026. 06. 22. - pxDataCpu1ToCm, pxDataCmToCpu1 포인터를 GSRAM 주소로 맵핑
+ * 2026. 06. 22. - GSRAM 잔재 주석을 MSGRAM 기준으로 수정
+ * 2026. 06. 22. - pxDataCpu1ToCm, pxDataCmToCpu1 포인터를 MSGRAM 주소로 맵핑
  * 2026. 06. 22. - 불필요해진 recvIpcCmMessage() 제거
  * 2026. 06. 22. - CM 코어의 GSRAM 쓰기 권한 부재(Hard Fault 방지)로 인해 MSGRAM 주소로 원복
  */

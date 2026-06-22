@@ -46,12 +46,15 @@ namespace TMDSCNCD28388D_T_PC
             if (_logQueue.IsEmpty) return;
 
             lstLog.BeginUpdate();
-            while (_logQueue.TryDequeue(out string logLine))
+            while (_logQueue.TryDequeue(out string? logLine))
             {
-                lstLog.Items.Add(logLine);
-                if (lstLog.Items.Count > MAX_LOGS)
+                if (logLine != null)
                 {
-                    lstLog.Items.RemoveAt(0);
+                    lstLog.Items.Add(logLine);
+                    if (lstLog.Items.Count > MAX_LOGS)
+                    {
+                        lstLog.Items.RemoveAt(0);
+                    }
                 }
             }
             // Auto scroll

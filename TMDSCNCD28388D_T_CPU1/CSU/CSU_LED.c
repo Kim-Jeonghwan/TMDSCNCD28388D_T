@@ -1,15 +1,16 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Led.c
-    Version          : 00.01
+    Version          : 00.02
     Description      : System Status LED Control (Green / Orange)
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 19. (모듈 및 파일명 리팩토링)
+    Last Updated     : 2026. 06. 22. (물리 파일명 소문자화 정정)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
+ * 2026. 06. 22. - 물리 파일명을 csu_Led.c로 소문자 정정
  * 2026. 06. 19. - 불필요한 HAL 래퍼 함수 제거, GPIO 초기화 HAL 이관, ATTLA_T 구조 동기화
  * 2026. 06. 05. - (코드 주석 포맷팅 및 한글화)
  */

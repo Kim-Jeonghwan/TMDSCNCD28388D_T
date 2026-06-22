@@ -45,10 +45,10 @@ namespace TMDSCNCD28388D_T_PC
         private const int   MaxSendCount    = 4;     // 최대 전송 횟수 (1회 + 재전송 3회)
 
         // ── 내부 상태 ─────────────────────────────────────────
-        private UdpClient       _udpClient;
-        private IPEndPoint      _dspEndPoint;
-        private IPEndPoint      _localEndPoint;
-        private Thread          _rxThread;
+        private UdpClient?      _udpClient;
+        private IPEndPoint?     _dspEndPoint;
+        private IPEndPoint?     _localEndPoint;
+        private Thread?         _rxThread;
         private volatile bool   _keepReceiving;
         private volatile bool   _ackReceived;
         private volatile bool   _commError;
@@ -56,11 +56,11 @@ namespace TMDSCNCD28388D_T_PC
         private readonly object _sendLock = new object();
 
         // ── IProtocol 이벤트 ──────────────────────────────────
-        public event Action<StatusMessageData> OnStatusReceived;
-        public event Action<string>            OnCommError;
-        public event Action                    OnPortClosed;
-        public event Action<byte[]>            OnRawTx;
-        public event Action<byte[]>            OnRawRx;
+        public event Action<StatusMessageData>? OnStatusReceived;
+        public event Action<string>?            OnCommError;
+        public event Action?                    OnPortClosed;
+        public event Action<byte[]>?            OnRawTx;
+        public event Action<byte[]>?            OnRawRx;
         public bool IsConnected => _udpClient != null;
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace TMDSCNCD28388D_T_PC
                 while (_currentSendCount <= MaxSendCount)
                 {
                     byte[] payload = BuildUpdatePayload(ctrlDto.ManualSeqNum,
-                                                        cmd: 0x00,
+                                                        cmd: ctrlDto.WaveType,
                                                         sendCount: _currentSendCount);
                     SendPayload(payload);
 
@@ -173,7 +173,7 @@ namespace TMDSCNCD28388D_T_PC
             {
                 try
                 {
-                    byte[] data = _udpClient?.Receive(ref remoteEp);
+                    byte[]? data = _udpClient?.Receive(ref remoteEp);
                     if (data == null || data.Length == 0) continue;
 
                     OnRawRx?.Invoke(data);
@@ -199,10 +199,10 @@ namespace TMDSCNCD28388D_T_PC
             byte code    = data[6];
             byte reqAck  = data[7];
 
-            // ① DSP→PC Reflect 메시지 (온도+시퀀스+사인파)
+            // ① DSP→PC Reflect 메시지 (온도+시퀀스+파형)
             if (srcId == DstIdDsp && code == MsgCodeMonitor && reqAck == ReqAckNone)
             {
-                // Reflect 메시지 구조: 헤더(12) + Data(8: Seq, Status, Temp, Sine) + Checksum(2) = 총 22바이트
+                // Reflect 메시지 구조: 헤더(12) + Data(8: Seq, Status, Temp, Wave) + Checksum(2) = 총 22바이트
                 if (!VerifyChecksum(data, 22)) return;
 
                 _ackReceived = true; // Reflect 메시지 수신 시 정상 응답으로 처리하여 Task 무한 대기 방지
@@ -211,14 +211,14 @@ namespace TMDSCNCD28388D_T_PC
                 byte   seqNum  = data[12];
                 byte   status  = data[13];
                 ushort tempRaw = (ushort)(data[14] | (data[15] << 8)); // Little Endian
-                float  sineVal = BitConverter.ToSingle(data, 16);      // Little Endian float
+                float  waveVal = BitConverter.ToSingle(data, 16);      // Little Endian float
 
                 var msg = new StatusMessageData
                 {
                     IncNumber   = seqNum,
                     Status      = status,
                     DspTemp     = tempRaw / 10.0,
-                    SineValue   = sineVal,
+                    WaveValue   = waveVal,
                     IsCommError = _commError
                 };
                 OnStatusReceived?.Invoke(msg);

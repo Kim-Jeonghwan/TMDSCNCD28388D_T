@@ -1,16 +1,18 @@
 /**********************************************************************
     Nexcom Co., Ltd.
     Filename         : csu_Ipc_cm.h
-    Version          : 00.04
+    Version          : 00.06
     Description      : CM IPC 및 공유 메모리 통신 프로토콜 정의
     Programmer       : Kim Jeonghwan
-    Last Updated     : 2026. 06. 22. (CM의 GSRAM 쓰기 불가 제약으로 인해 MSGRAM으로 롤백)
+    Last Updated     : 2026. 06. 22. (GSRAM 잔재 주석을 MSGRAM 기준으로 수정)
 **********************************************************************/
 
 /*
  * Modification History
  * --------------------
- * 2026. 06. 22. - GSRAM 기반 공유 메모리 사용으로 stIpcDataPacket에 seqCount 추가
+ * 2026. 06. 22. - GSRAM 잔재 주석을 MSGRAM 기준으로 수정
+ * 2026. 06. 22. - 파형 선택 기능 지원을 위해 구조체 내부 필드명 변경 (status -> waveType, sineValue -> waveValue)
+ * 2026. 06. 22. - MSGRAM 기반 공유 메모리 사용으로 stIpcDataPacket에 seqCount 추가
  * 2026. 06. 22. - 포인터 변수명을 pxDataCpu1ToCm / pxDataCmToCpu1 로 변경
  * 2026. 06. 22. - CM 코어는 GSRAM에 쓰기 권한이 없으므로(Hard Fault 발생), 통신 수단을 MSGRAM으로 원복
  */
@@ -29,13 +31,13 @@ typedef struct {
     union {
         uint32_t PayloadRaw[16];   // 실제 데이터 배열
         struct {
-            float32_t sineValue;
+            float32_t waveValue;
             float32_t adcTemperature;
             uint32_t sequenceNum;
         } TxData;
         struct {
             uint32_t seqNum;
-            uint32_t status;
+            uint32_t waveType;
         } RxData;
     } Payload;
 } stIpcDataPacket;
